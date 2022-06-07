@@ -1,4 +1,4 @@
-# Install required packages
+# Install and load required packages
 if (!require("febr")) {
   install.packages("febr", dependencies = TRUE)
 }
@@ -74,4 +74,4 @@ febr_data[!dsi_notna_idx, "dsi"][outsider_idx] <- NA_real_
 hist(febr_data[["dsi"]])
 
 # Write data on disk
-write.table(febr_data, "mapbiomas-solos/data/febr-data.txt", sep = "\t", dec = ",")
+data.table::fwrite(febr_data, "mapbiomas-solos/data/febr-data.txt", sep = "\t", dec = ",")
