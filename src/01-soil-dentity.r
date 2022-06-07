@@ -1,12 +1,12 @@
 # Install and load required packages
 if (!require("febr")) {
-  install.packages("febr", dependencies = TRUE)
+  install.packages("febr")
 }
 if (!require("sf")) {
-  install.packages("sf", dependencies = TRUE)
+  install.packages("sf")
 }
 if (!require("partykit")) {
-  install.packages("partykit", dependencies = TRUE)
+  install.packages("partykit")
 }
 
 # Download data from FEBR
