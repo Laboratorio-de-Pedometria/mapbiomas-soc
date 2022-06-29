@@ -35,6 +35,30 @@ has_time <- !is.na(febr_data[["evento_ano"]])
 sf_idx <- !is.na(febr_data[, coord_x]) & !is.na(febr_data[, coord_y])
 topsoil_has_stock_coord_idx <- which((topsoil_idx + has_stock_idx + sf_idx + has_time) == 4)
 
+# Write table to disk with events missing date
+write.table(
+  x = febr_data[!has_time, c("dataset_id", "observacao_id")],
+  file = "mapbiomas-solos/data/no-time-coord.txt",
+  sep = "\t", row.names = FALSE)
+
+tmp <- febr_data[dataset_id == "ctb0572", c("coord_x", "coord_y", "evento_ano", "observacao_id")]
+tmp[, evento_ano := ifelse(is.na(evento_ano), 1, evento_ano - 1970)]
+plot(tmp[, c("coord_x", "coord_y")], col = tmp[["evento_ano"]], pch = 20)
+
+idx <- which(grepl("^RS", tmp[["observacao_id"]]))
+
+points(tmp[idx, c("coord_x", "coord_y")], pch = 20, cex = 2)
+
+
+text(tmp[, c("coord_x", "coord_y")], label = febr_data[dataset_id == "ctb0572", ][["evento_ano"]], cex = 0.8, pos = 4)
+text(tmp[, c("coord_x", "coord_y")], label = febr_data[dataset_id == "ctb0572" && grepl("RS/SC", observacao_id), ][["observacao_id"]], cex = 0.8, pos = 2)
+
+
+
+colors()[12]
+
+unique(tmp[["evento_ano"]])
+
 # Ignore event date
 febr_data[, evento_ano := ifelse(evento_ano < 1985, 1985, evento_ano)]
 
