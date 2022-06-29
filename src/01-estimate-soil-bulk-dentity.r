@@ -28,8 +28,10 @@ febr_data[, argila_carbono := argila * carbono]
 sibcs <- do.call(rbind, strsplit(febr_data[["taxon_sibcs"]], " "))
 febr_data[, sibcs_ordem := as.factor(sibcs[, 1])]
 febr_data[, sibcs_subordem := as.factor(sibcs[, 2])]
+febr_data[, taxon_sibcs := as.factor(taxon_sibcs)]
 table(febr_data[["sibcs_ordem"]])
 table(febr_data[["sibcs_subordem"]])
+table(febr_data[["taxon_sibcs"]])
 
 # Identify layers missing soil density data
 dsi_notna_idx <- !is.na(febr_data[["dsi"]])
@@ -48,18 +50,25 @@ state_table <- sort(table(febr_data[dsi_notna_idx, estado_id]), decreasing = TRU
 barplot(state_table, xlab = "Unidade da federação", ylab = "Frequência")
 
 # Estimate random forest model
+colnames(febr_data)
 dsi_formula <- dsi ~
-  terrafina + areia + silte + argila +
-  carbono + log_carbono + argila_carbono +
+  # terrafina + silte +
+  areia + argila +
+  # ctc + ph +
+  carbono + argila_carbono +
+  # log_carbono +
   profund +
-  estado_id +
-  sibcs_ordem + sibcs_subordem
+  # estado_id +
+  sibcs_ordem +
+  # sibcs_subordem +
+  # taxon_sibcs +
+  coord_x + coord_y
 t0 <- proc.time()
 dsi_model <- randomForest::randomForest(
   formula = dsi_formula,
   data = febr_data[dsi_notna_idx, ],
   na.action = randomForest::na.roughfix,
-  ntree = 300,
+  ntree = 500,
   importance = TRUE
 )
 proc.time() - t0
