@@ -25,13 +25,13 @@ febr_data[, cos_estoque_kgm2 := round(cos_estoque_kgm2, 2)]
 hist(febr_data[, cos_estoque_kgm2])
 
 # Prepare time coordinate
-febr_data[, evento_ano := as.integer(format(as.Date(observacao_data, format = "%Y-%m-%d"), "%Y"))]
+febr_data[, data_coleta_ano := as.integer(format(as.Date(observacao_data, format = "%Y-%m-%d"), "%Y"))]
 
 # Create spatial object
 topsoil_idx <- febr_data[["profund_sup"]] == 0
 has_stock_idx <- !is.na(febr_data[["cos_estoque_kgm2"]])
 has_coord_idx <- (!is.na(febr_data[["coord_x"]]) + !is.na(febr_data[["coord_y"]]) == 2)
-has_time <- !is.na(febr_data[["evento_ano"]])
+has_time <- !is.na(febr_data[["data_coleta_ano"]])
 sf_idx <- !is.na(febr_data[, coord_x]) & !is.na(febr_data[, coord_y])
 topsoil_has_stock_coord_idx <- which((topsoil_idx + has_stock_idx + sf_idx + has_time) == 4)
 
@@ -45,12 +45,19 @@ write.table(
   file = "mapbiomas-solos/data/no-time-coord.csv",
   sep = "\t", row.names = FALSE)
 
+
+key <- "1UbuI_oMzFmclztmhZQYsuU0mn_Lx3NhSeBoFw0m4lv0"
+sheet <- "dados"
+cmd <- paste0("https://docs.google.com/spreadsheets/d/", key, "/gviz/tq?tqx=out:csv&sheet=", sheet)
+no_time_coord <- read.table(cmd, sep = ",", header = TRUE)
+head(no_time_coord)
+
 # Ignore event date
-febr_data[, evento_ano := ifelse(evento_ano < 1985, 1985, evento_ano)]
+febr_data[, data_coleta_ano := ifelse(data_coleta_ano < 1985, 1985, data_coleta_ano)]
 
 # Write object to disk
 colnames(febr_data)
-vars_idx <- c("dataset_id", "observacao_id", "camada_id", "coord_x", "coord_y", "evento_ano", "cos_estoque_kgm2")
+vars_idx <- c("dataset_id", "observacao_id", "camada_id", "coord_x", "coord_y", "data_coleta_ano", "cos_estoque_kgm2")
 febr_data[, coord_x := round(as.numeric(coord_x), 8)]
 febr_data[, coord_y := round(as.numeric(coord_y), 8)]
 write.table(febr_data[topsoil_has_stock_coord_idx, ..vars_idx],
