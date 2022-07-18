@@ -38,19 +38,21 @@ rug(febr_data[["espessura"]])
 # 4) terrafina / 1000: 1
 febr_data[,
   carbono_estoque_kgm2 := (carbono / 1000) * (espessura / 100) * (dsi * 1000) * (terrafina / 1000)]
-febr_data[, carbono_estoque_kgm2 := round(carbono_estoque_kgm2, 2)]
+febr_data[, carbono_estoque_kgm2 := carbono_estoque_kgm2]
 hist(febr_data[, carbono_estoque_kgm2])
 rug(febr_data[, carbono_estoque_kgm2])
 
 # Agregar estoque de carbono na camada superficial (0 até 30 cm) de cada evento
 febr_data <- febr_data[
   !is.na(carbono_estoque_kgm2) & !is.na(coord_x) & !is.na(coord_y) & !is.na(data_coleta_ano),
-  .(carbono_estoque_kgm2 = sum(carbono_estoque_kgm2, na.rm = TRUE),
-    data_coleta_ano = mean(data_coleta_ano, na.rm = TRUE),
+  .(carbono_estoque_g.m2 = as.integer(round(sum(carbono_estoque_kgm2, na.rm = TRUE) * 1000)),
+    data_coleta_ano = as.integer(round(mean(data_coleta_ano, na.rm = TRUE))),
     coord_x = mean(coord_x, na.rm = TRUE),
     coord_y = mean(coord_y, na.rm = TRUE)),
   by = id]
 febr_data
+hist(febr_data[, carbono_estoque_g.m2])
+rug(febr_data[, carbono_estoque_g.m2])
 
 # Avaliar distribuição temporal
 hist(febr_data[, data_coleta_ano], sub = paste("N = ", nrow(febr_data)))
@@ -60,8 +62,8 @@ rug(febr_data[, data_coleta_ano])
 brazil <- geobr::read_biomes()
 febr_data_sf <- sf::st_as_sf(febr_data, coords = c("coord_x", "coord_y"), crs = 4623)
 plot(brazil["name_biome"], reset = FALSE)
-plot(febr_data_sf["carbono_estoque_kgm2"], add = TRUE, pch = 20,
-  cex = febr_data_sf[["carbono_estoque_kgm2"]] / (max(febr_data_sf[["carbono_estoque_kgm2"]]) * 0.2))
+plot(febr_data_sf["carbono_estoque_g.m2"], add = TRUE, pch = 20,
+  cex = febr_data_sf[["carbono_estoque_g.m2"]] / (max(febr_data_sf[["carbono_estoque_g.m2"]]) * 0.2))
 
 # Escrever dados em disco
 colnames(febr_data)
