@@ -26,6 +26,7 @@ febr_data[profund_inf < target_layer[1], profund_inf := target_layer[1]]
 febr_data[profund_sup > target_layer[2], profund_sup := target_layer[2]]
 febr_data[profund_inf > target_layer[2], profund_inf := target_layer[2]]
 febr_data[, espessura := profund_inf - profund_sup]
+dev.off()
 hist(febr_data[["espessura"]])
 rug(febr_data[["espessura"]])
 
@@ -80,8 +81,9 @@ rug(febr_data[, data_coleta_ano])
 brazil <- geobr::read_biomes()
 febr_data_sf <- sf::st_as_sf(febr_data, coords = c("coord_x", "coord_y"), crs = 4623)
 plot(brazil["name_biome"], reset = FALSE)
+cex <- febr_data_sf[["carbono_estoque_g.m2"]] / (max(febr_data_sf[["carbono_estoque_g.m2"]]) * 0.2)
 plot(febr_data_sf["carbono_estoque_g.m2"], add = TRUE, pch = 20,
-  cex = febr_data_sf[["carbono_estoque_g.m2"]] / (max(febr_data_sf[["carbono_estoque_g.m2"]]) * 0.2))
+  cex = cex)
 
 # Escrever dados de estoque de carbono no solo em disco
 febr_data[, coord_x := round(as.numeric(coord_x), 8)]
