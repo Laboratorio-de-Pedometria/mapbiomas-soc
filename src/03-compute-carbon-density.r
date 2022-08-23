@@ -90,3 +90,4 @@ febr_data[, coord_x := round(as.numeric(coord_x), 8)]
 febr_data[, coord_y := round(as.numeric(coord_y), 8)]
 write.table(febr_data, file = paste0("mapbiomas-solos/res/pontos-estoque.csv"),
   row.names = FALSE, sep = ",", dec = ".")
+nrow(febr_data)
