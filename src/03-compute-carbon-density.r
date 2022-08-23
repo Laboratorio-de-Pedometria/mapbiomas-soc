@@ -30,6 +30,10 @@ dev.off()
 hist(febr_data[["espessura"]])
 rug(febr_data[["espessura"]])
 
+# Corrigir conteúdo de carbono estimado usando combustão úmida
+# Considerar todas as amostras do século XX
+febr_data[data_coleta_ano < 2000, carbono := carbono * 1.11]
+
 # Calcular o estoque de carbono (kg/m^2) em cada camada
 # Fonte: T. Hengl et al., “SoilGrids1km–global soil information based on automated mapping,” PLoS
 # ONE, vol. 9, no. 8, p. e105992, 2014, doi: 10.1371/journal.pone.0105992.
@@ -90,4 +94,6 @@ febr_data[, coord_x := round(as.numeric(coord_x), 8)]
 febr_data[, coord_y := round(as.numeric(coord_y), 8)]
 write.table(febr_data, file = paste0("mapbiomas-solos/res/pontos-estoque.csv"),
   row.names = FALSE, sep = ",", dec = ".")
+
 nrow(febr_data)
+cor(febr_data[, c("data_coleta_ano", "carbono_estoque_g.m2")], method = "spearman")
