@@ -44,7 +44,11 @@ rug(febr_data[, carbono_estoque_kgm2])
 
 # Agregar estoque de carbono na camada superficial (0 até 30 cm) de cada evento
 febr_data <- febr_data[
-  !is.na(carbono_estoque_kgm2) & !is.na(coord_x) & !is.na(coord_y) & !is.na(data_coleta_ano),
+  !is.na(carbono_estoque_kgm2) &
+  espessura > 0 &
+  !is.na(coord_x) &
+  !is.na(coord_y) &
+  !is.na(data_coleta_ano),
   .(carbono_estoque_g.m2 = as.integer(round(sum(carbono_estoque_kgm2, na.rm = TRUE) * 1000)),
     data_coleta_ano = as.integer(round(mean(data_coleta_ano, na.rm = TRUE))),
     coord_x = mean(coord_x, na.rm = TRUE),
@@ -53,6 +57,20 @@ febr_data <- febr_data[
 febr_data
 hist(febr_data[, carbono_estoque_g.m2])
 rug(febr_data[, carbono_estoque_g.m2])
+
+# Carregar dados de conjuntos de dados ainda não disponíveis no FEBR
+files_stock <- list.files(
+  path = "/home/alessandro/ownCloud/febr-repo/processamento", pattern = "-estoque.csv$",
+  full.names = TRUE, recursive = TRUE)
+data_stocks <- list()
+for (i in seq_along(files_stock)) {
+  data_stocks[[i]] <- data.table::fread(
+    files_stock[i], sep = ",", dec = ".")
+}
+data_stocks <- do.call(rbind, data_stocks)
+data.table::setnames(data_stocks, old = c("evento_id_febr", "coord_longitude", "coord_latitude"),
+  new = c("id", "coord_x", "coord_y"))
+febr_data <- rbind(febr_data, data_stocks)
 
 # Avaliar distribuição temporal
 hist(febr_data[, data_coleta_ano], sub = paste("N = ", nrow(febr_data)))
@@ -65,9 +83,8 @@ plot(brazil["name_biome"], reset = FALSE)
 plot(febr_data_sf["carbono_estoque_g.m2"], add = TRUE, pch = 20,
   cex = febr_data_sf[["carbono_estoque_g.m2"]] / (max(febr_data_sf[["carbono_estoque_g.m2"]]) * 0.2))
 
-# Escrever dados em disco
-colnames(febr_data)
+# Escrever dados de estoque de carbono no solo em disco
 febr_data[, coord_x := round(as.numeric(coord_x), 8)]
 febr_data[, coord_y := round(as.numeric(coord_y), 8)]
-write.table(febr_data, file = "mapbiomas-solos/res/pontos-estoque.csv",
+write.table(febr_data, file = paste0("mapbiomas-solos/res/pontos-estoque.csv"),
   row.names = FALSE, sep = ",", dec = ".")
