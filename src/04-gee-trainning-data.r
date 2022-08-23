@@ -13,6 +13,10 @@ trainning <- data.table::fread(file, header = TRUE, na.strings = c("-", ""), sep
 head(trainning)
 str(trainning)
 
+# Remover amostras com estoque de carbono igual a zero
+idx_zero <- trainning[, estoque] == 0
+trainning <- trainning[!idx_zero, ]
+
 # Calcular correlação entre estoque e idade da cobertura e uso da terra
 landuse <- c(
   "formacaoFlorestal",
