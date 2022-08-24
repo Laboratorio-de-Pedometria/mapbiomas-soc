@@ -60,6 +60,7 @@ febr_data <- febr_data[
     coord_y = mean(coord_y, na.rm = TRUE)),
   by = id]
 febr_data
+dev.off()
 hist(febr_data[, carbono_estoque_g.m2])
 rug(febr_data[, carbono_estoque_g.m2])
 
