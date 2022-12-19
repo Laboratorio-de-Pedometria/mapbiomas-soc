@@ -6,7 +6,6 @@ if (!require("data.table")) {
 }
 
 # Read processed data (FEBR snapshot)
-# febr_data <- data.table::fread("~/ownCloud/febr-repo/publico/febr-superconjunto.txt", dec = ",")
 url <- "http://cloud.utfpr.edu.br/index.php/s/QpG6Tcr6x1NBOcI/download"
 temp <- tempfile(fileext = '.zip')
 download.file(url = url, destfile = temp)
