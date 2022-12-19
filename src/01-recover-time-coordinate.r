@@ -5,9 +5,18 @@ if (!require("data.table")) {
   install.packages("data.table")
 }
 
-# Read data from FEBR
-febr_data <- data.table::fread("~/ownCloud/febr-repo/publico/febr-superconjunto.txt", dec = ",")
+# Read processed data (FEBR snapshot)
+# febr_data <- data.table::fread("~/ownCloud/febr-repo/publico/febr-superconjunto.txt", dec = ",")
+url <- "http://cloud.utfpr.edu.br/index.php/s/QpG6Tcr6x1NBOcI/download"
+temp <- tempfile(fileext = '.zip')
+download.file(url = url, destfile = temp)
+febr_data <- data.table::fread(unzip(temp), sep = ";", dec = ",")
 colnames(febr_data)
+
+# Corrigir amostras com terrafina = 0
+# Assume-se que se tratam de amostras com dado faltante e que, quando faltante, o valor de terra
+# fina é 1000 g/kg
+febr_data[terrafina == 0, terrafina := 1000]
 
 # Prepare time coordinate
 febr_data[, observacao_data := as.Date(observacao_data, format = "%Y-%m-%d")]
@@ -44,7 +53,7 @@ recovered_time[, data_coleta_ano := as.integer(data_coleta_ano)]
 head(recovered_time)
 
 # Verificar intervalo de valores
-# Erros são corrigidos na planilha
+# Qualquer erro presente nos dados descarregados são corrigidos na planilha do Google Sheets
 range(recovered_time[["data_coleta_ano"]], na.rm = TRUE)
 
 # Preencher tabela de dados original usando dados resgatados
