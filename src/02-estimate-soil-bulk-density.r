@@ -54,26 +54,27 @@ state_table <- sort(table(febr_data[dsi_notna_idx, estado_id]), decreasing = TRU
 barplot(state_table, xlab = "Unidade da federação", ylab = "Frequência")
 
 # Imputar valores faltantes
-colnames(febr_data)
-febr_data[, areia := randomForest::na.roughfix(areia)]
-febr_data[, argila := randomForest::na.roughfix(argila)]
+# colnames(febr_data)
+# febr_data[, areia := randomForest::na.roughfix(areia)]
+# febr_data[, argila := randomForest::na.roughfix(argila)]
 # febr_data[, carbono := randomForest::na.roughfix(carbono)]
-febr_data[, argila_carbono := randomForest::na.roughfix(argila_carbono)]
-febr_data[, profund := randomForest::na.roughfix(profund)]
-febr_data[, sibcs_ordem := randomForest::na.roughfix(sibcs_ordem)]
-febr_data[, sibcs_subordem := randomForest::na.roughfix(sibcs_subordem)]
+# febr_data[, argila_carbono := randomForest::na.roughfix(argila_carbono)]
+# febr_data[, profund := randomForest::na.roughfix(profund)]
+# febr_data[, sibcs_ordem := randomForest::na.roughfix(sibcs_ordem)]
+# febr_data[, sibcs_subordem := randomForest::na.roughfix(sibcs_subordem)]
 # febr_data[, coord_x := randomForest::na.roughfix(coord_x)]
 # febr_data[, coord_y := randomForest::na.roughfix(coord_y)]
 
 # Estimate random forest model
 dsi_formula <- dsi ~
-  # terrafina + silte +
+  terrafina +
+  # silte +
   areia + argila +
   # ctc + ph +
   carbono + argila_carbono +
   # log_carbono +
-  profund
-  # estado_id +
+  profund +
+  estado_id
   # sibcs_ordem +
   # sibcs_subordem +
   # taxon_sibcs +
@@ -101,6 +102,7 @@ barplot(dsi_model_imp[, 1], horiz = TRUE, las = 1)
 # Predict soil bulk density
 febr_data[!dsi_notna_idx, "dsi"] <- predict(
   dsi_model, newdata = febr_data[!dsi_notna_idx, ])
+febr_data[, dsi := round(dsi, 2)]
 hist(febr_data[["dsi"]])
 rug(febr_data[["dsi"]])
 
