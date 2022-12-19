@@ -110,6 +110,7 @@ plot(brazil["name_biome"], reset = FALSE,
   key.pos = NULL, graticule = TRUE)
 cex <- febr_data_sf[["carbono_estoque_g.m2"]] / (max(febr_data_sf[["carbono_estoque_g.m2"]]) * 0.2)
 plot(febr_data_sf["carbono_estoque_g.m2"], add = TRUE, pch = 20, cex = cex)
+dev.off()
 
 # Escrever dados de estoque de carbono no solo em disco
 febr_data[, coord_x := round(as.numeric(coord_x), 8)]
