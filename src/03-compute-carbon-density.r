@@ -77,14 +77,37 @@ data.table::setnames(data_stocks, old = c("evento_id_febr", "coord_longitude", "
   new = c("id", "coord_x", "coord_y"))
 febr_data <- rbind(febr_data, data_stocks)
 
-# Avaliar distribuição temporal
-hist(febr_data[, data_coleta_ano], sub = paste("N = ", nrow(febr_data)))
+# Avaliar distribuição de frequência dos dados de estoque de carbono
+dev.off()
+png("mapbiomas-solos/res/fig/distribuicao-dos-estoques-de-carbono.png",
+  width = 480 * 3, height = 480 * 3, res = 72 * 3)
+hist(febr_data[, carbono_estoque_g.m2] / 1000,
+  main = "Distribuição do estoque de carbono, kg/m^2",
+  sub = paste("N = ", nrow(febr_data)),
+  xlab = "Ano", ylab = "Frequência absoluta")
+rug(febr_data[, carbono_estoque_g.m2] / 1000)
+dev.off()
+
+# Avaliar distribuição de frequência dos dados pontuais ao longo do tempo
+dev.off()
+png("mapbiomas-solos/res/fig/distribuicao-temporal-dos-dados.png",
+  width = 480 * 3, height = 480 * 3, res = 72 * 3)
+hist(febr_data[, data_coleta_ano],
+  main = "Distribuição temporal dos dados",
+  sub = paste("N = ", nrow(febr_data)),
+  xlab = "Ano", ylab = "Frequência absoluta")
 rug(febr_data[, data_coleta_ano])
+dev.off()
 
 # Criar objeto espacial e avaliar distribuição por bioma
 brazil <- geobr::read_biomes()
 febr_data_sf <- sf::st_as_sf(febr_data, coords = c("coord_x", "coord_y"), crs = 4623)
-plot(brazil["name_biome"], reset = FALSE)
+dev.off()
+png("mapbiomas-solos/res/fig/distribuicao-espacial-dos-dados.png",
+  width = 480 * 3, height = 480 * 3, res = 72 * 3)
+plot(brazil["name_biome"], reset = FALSE,
+  main = "Distribuição espacial dos dados",
+  key.pos = NULL, graticule = TRUE)
 cex <- febr_data_sf[["carbono_estoque_g.m2"]] / (max(febr_data_sf[["carbono_estoque_g.m2"]]) * 0.2)
 plot(febr_data_sf["carbono_estoque_g.m2"], add = TRUE, pch = 20, cex = cex)
 

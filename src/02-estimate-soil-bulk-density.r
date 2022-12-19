@@ -7,6 +7,9 @@ rm(list = ls())
 if (!require("randomForest")) {
   install.packages("randomForest")
 }
+if (!require("pedometrics")) {
+  install.packages("pedometrics")
+}
 
 # Ler dados do disco
 febr_data <- data.table::fread("mapbiomas-solos/data/01-febr-data.txt", dec = ",", sep = "\t")

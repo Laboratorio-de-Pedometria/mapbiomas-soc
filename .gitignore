@@ -39,3 +39,4 @@ vignettes/*.pdf
 .Renviron
 data/*.txt
 res/gee-trainning-stock-time-landuse.png
+res/fig/*.png
