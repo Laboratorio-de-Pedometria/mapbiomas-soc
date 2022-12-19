@@ -36,6 +36,11 @@ febr_data[data_coleta_ano < 2000, carbono := carbono * 1.2]
 # Calcular o estoque de carbono (kg/m^2) em cada camada
 # Fonte: T. Hengl et al., “SoilGrids1km–global soil information based on automated mapping,” PLoS
 # ONE, vol. 9, no. 8, p. e105992, 2014, doi: 10.1371/journal.pone.0105992.
+# O primeiro passo consiste em transformar os dados de conteúdo de terra fina (g/kg) para volume
+# (cm3/cm3). Isso é feito assumindo que a densidade dos fragmentos grossos é 2,65 g/cm3.
+febr_data[, fragmentos := 1000 - terrafina]
+febr_data[, fragmentos := fragmentos / 2.65]
+febr_data[, terrafina := round(1000 - fragmentos)]
 # 1) carbono / 1000: kg/kg
 # 2) espessura / 100: m
 # 3) dsi * 1000: kg/m^3
