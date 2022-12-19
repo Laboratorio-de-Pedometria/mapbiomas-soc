@@ -26,13 +26,12 @@ febr_data[profund_inf < target_layer[1], profund_inf := target_layer[1]]
 febr_data[profund_sup > target_layer[2], profund_sup := target_layer[2]]
 febr_data[profund_inf > target_layer[2], profund_inf := target_layer[2]]
 febr_data[, espessura := profund_inf - profund_sup]
-dev.off()
 hist(febr_data[["espessura"]])
 rug(febr_data[["espessura"]])
 
 # Corrigir conteúdo de carbono estimado usando combustão úmida
 # Considerar todas as amostras do século XX
-febr_data[data_coleta_ano < 2000, carbono := carbono * 1.11]
+febr_data[data_coleta_ano < 2000, carbono := carbono * 1.2]
 
 # Calcular o estoque de carbono (kg/m^2) em cada camada
 # Fonte: T. Hengl et al., “SoilGrids1km–global soil information based on automated mapping,” PLoS
@@ -54,13 +53,13 @@ febr_data <- febr_data[
   !is.na(coord_x) &
   !is.na(coord_y) &
   !is.na(data_coleta_ano),
-  .(carbono_estoque_g.m2 = as.integer(round(sum(carbono_estoque_kgm2, na.rm = TRUE) * 1000)),
+  .(
+    carbono_estoque_g.m2 = as.integer(round(sum(carbono_estoque_kgm2, na.rm = TRUE) * 1000)),
     data_coleta_ano = as.integer(round(mean(data_coleta_ano, na.rm = TRUE))),
     coord_x = mean(coord_x, na.rm = TRUE),
-    coord_y = mean(coord_y, na.rm = TRUE)),
+    coord_y = mean(coord_y, na.rm = TRUE)
+  ),
   by = id]
-febr_data
-dev.off()
 hist(febr_data[, carbono_estoque_g.m2])
 rug(febr_data[, carbono_estoque_g.m2])
 
@@ -87,8 +86,7 @@ brazil <- geobr::read_biomes()
 febr_data_sf <- sf::st_as_sf(febr_data, coords = c("coord_x", "coord_y"), crs = 4623)
 plot(brazil["name_biome"], reset = FALSE)
 cex <- febr_data_sf[["carbono_estoque_g.m2"]] / (max(febr_data_sf[["carbono_estoque_g.m2"]]) * 0.2)
-plot(febr_data_sf["carbono_estoque_g.m2"], add = TRUE, pch = 20,
-  cex = cex)
+plot(febr_data_sf["carbono_estoque_g.m2"], add = TRUE, pch = 20, cex = cex)
 
 # Escrever dados de estoque de carbono no solo em disco
 febr_data[, coord_x := round(as.numeric(coord_x), 8)]
