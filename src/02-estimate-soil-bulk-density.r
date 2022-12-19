@@ -110,7 +110,9 @@ hist(febr_data[["dsi"]])
 rug(febr_data[["dsi"]])
 
 # Escrever dados em disco
-data.table::fwrite(febr_data, "mapbiomas-solos/data/02-febr-data.txt", sep = "\t", dec = ",")
+data.table::fwrite(
+  febr_data[!is.na(carbono) | !is.na(dsi), ],
+  "mapbiomas-solos/data/02-febr-data.txt", sep = "\t", dec = ",")
 
 # Estimate recursive partitioning regression model #################################################
 # dsi_formula <- dsi ~ argila + silte + carbono + log1p(carbono) + I(argila * carbono) | profund + terrafina + areia
