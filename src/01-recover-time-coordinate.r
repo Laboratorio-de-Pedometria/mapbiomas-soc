@@ -15,6 +15,7 @@ colnames(febr_data)
 # Corrigir amostras com terrafina = 0
 # Assume-se que se tratam de amostras com dado faltante e que, quando faltante, o valor de terra
 # fina é 1000 g/kg
+# febr_data[terrafina == 0, c("dataset_id", "observacao_id")]
 febr_data[terrafina == 0, terrafina := 1000]
 
 # Prepare time coordinate
