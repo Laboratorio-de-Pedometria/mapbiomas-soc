@@ -15,29 +15,10 @@ if (!require("pedometrics")) {
 febr_data <- data.table::fread("mapbiomas-solos/data/01-febr-data.txt", dec = ",", sep = "\t")
 colnames(febr_data)
 
-# Calculate sampling depth and layer thickness
-febr_data[, espessura := profund_inf - profund_sup]
-febr_data[, profund := (profund_sup + profund_inf) / 2]
-summary(febr_data[, c("espessura", "profund")])
-
 # Compute carbon related covariates
 febr_data[, log_carbono := log1p(carbono)]
 febr_data[, argila_carbono := argila * carbono]
 summary(febr_data[, c("log_carbono", "argila_carbono")])
-
-# Compute soil class
-sibcs <- strsplit(febr_data[["taxon_sibcs"]], " ")
-idx_notaxon <- sapply(sibcs, length) == 0
-sibcs[idx_notaxon] <- list(c(NA_character_, NA_character_))
-idx_singletaxon <- sapply(sibcs, length) == 1
-sibcs[idx_singletaxon] <- lapply(sibcs[idx_singletaxon], function(x) c(x, NA_character_))
-sibcs <- do.call(rbind, sibcs)
-febr_data[, sibcs_ordem := as.factor(sibcs[, 1])]
-febr_data[, sibcs_subordem := as.factor(sibcs[, 2])]
-febr_data[, taxon_sibcs := as.factor(taxon_sibcs)]
-table(febr_data[["sibcs_ordem"]])
-table(febr_data[["sibcs_subordem"]])
-table(febr_data[["taxon_sibcs"]])
 
 # Identify layers missing soil density data
 dsi_notna_idx <- !is.na(febr_data[["dsi"]])
