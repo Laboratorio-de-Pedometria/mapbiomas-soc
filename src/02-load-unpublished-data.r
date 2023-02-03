@@ -4,6 +4,9 @@ rm(list = ls())
 if (!require("data.table")) {
   install.packages("data.table")
 }
+if (!require("sf")) {
+  install.packages("sf")
+}
 
 # Carregar dados de conjuntos de dados ainda não disponíveis no FEBR
 # Eventos
@@ -18,6 +21,22 @@ for (i in seq_along(files_event)) {
   data_event[[i]][, dados_id_febr := id]
 }
 data_event <- do.call(rbind, data_event)
+
+# Standardize coordinate reference system
+data_event[, coord_datum_epsg := as.integer(gsub("EPSG:", "", coord_datum_epsg))]
+sf_data_event <- split(data_event, data_event[, coord_datum_epsg])
+idx_transform <- which(names(sf_data_event) != 4326)
+for (i in idx_transform) {
+  crs <- as.integer(names(sf_data_event[i]))
+  sf_data_event[[i]] <- sf::st_as_sf(
+    sf_data_event[[i]], coords = c("coord_longitude", "coord_latitude"), crs = crs)
+  sf_data_event[[i]] <- sf::st_transform(sf_data_event[[i]], crs = 4326)
+}
+data_event <- do.call(rbind, sf_data_event)
+data_event <- cbind(sf::st_coordinates(data_event), as.data.frame(data_event))
+data_event <- data.table::as.data.table(data_event)
+data_event[coord_datum_epsg != 4326 & !is.na(coord_datum_epsg), coord_datum_epsg := 4326]
+data.table::setnames(data_event, old = c("X", "Y"), new = c("coord_longitude", "coord_latitude"))
 
 # Camadas
 files_layer <- list.files(
