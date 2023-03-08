@@ -1,12 +1,12 @@
 rm(list = ls())
-x11()
+
 # Install and load required packages
 if (!require("data.table")) {
   install.packages("data.table")
 }
-if (!require("ranger")) {
-  install.packages("ranger")
-}
+# if (!require("ranger")) {
+#   install.packages("ranger")
+# }
 
 # Ler dados do disco
 febr_data <- data.table::fread("mapbiomas-solos/data/02-febr-data.txt", dec = ",", sep = "\t")
@@ -28,18 +28,30 @@ febr_data[esqueleto > 800, esqueleto := 1000 - terrafina]
 
 # PREPARE PREDICTOR VARIABLES
 # Soil classes
+febr_data[taxon_sibcs == "", taxon_sibcs := "NA NA NA NA"]
 sibcs <- strsplit(febr_data[["taxon_sibcs"]], " ")
-idx_notaxon <- sapply(sibcs, length) == 0
-sibcs[idx_notaxon] <- list(c(NA_character_, NA_character_))
-idx_singletaxon <- sapply(sibcs, length) == 1
-sibcs[idx_singletaxon] <- lapply(sibcs[idx_singletaxon], function(x) c(x, NA_character_))
-sibcs <- do.call(rbind, sibcs)
+sibcs <- lapply(sibcs, function(x) {
+  len <- length(x)
+  if (len > 4) {
+    x <- x[1:4]
+  } else if (len < 4) {
+    x <- c(x, rep("NA", 4 - len))
+  }
+  return(x)
+})
+sibcs <- data.table::as.data.table(do.call(rbind, sibcs))
 febr_data[, ORDER := sibcs[, 1]]
 febr_data[, SUBORDER := sibcs[, 2]]
+febr_data[, GREATGROUP := sibcs[, 3]]
+febr_data[, SUBGROUP := sibcs[, 4]]
 febr_data[is.na(ORDER), ORDER := "UNKNOWN"]
 febr_data[is.na(SUBORDER), SUBORDER := "UNKNOWN"]
+febr_data[is.na(GREATGROUP), GREATGROUP := "UNKNOWN"]
+febr_data[is.na(SUBGROUP), SUBGROUP := "UNKNOWN"]
 febr_data[, ORDER := as.factor(ORDER)]
 febr_data[, SUBORDER := as.factor(SUBORDER)]
+febr_data[, GREATGROUP := as.factor(GREATGROUP)]
+febr_data[, SUBGROUP := as.factor(SUBGROUP)]
 
 # Soil classes known for having a skeleton
 febr_data[, STONESOL := "UNKNOWN"]
@@ -55,6 +67,10 @@ febr_data[, STONESOL := as.factor(STONESOL)]
 summary(febr_data[, STONESOL])
 
 # camada_nome
+# Newer dataset do not use the field "camada_nome", which has been replaced by the field
+# "camada_id" in the recent updates of the FEBR. So, we check if "camada_nome" is missing and,
+# if it is, we fill it up with whatever data is stored in "camada_id".
+febr_data[is.na(camada_nome), camada_nome := camada_id]
 febr_data[, camada_nome := as.character(camada_nome)]
 febr_data[is.na(camada_nome) | camada_nome == "" & profund_sup == 0, camada_nome := "A"]
 febr_data[is.na(camada_nome) | camada_nome == "" & profund_sup != 0, camada_nome := NA_character_]
@@ -70,6 +86,7 @@ febr_data[, camada_nome := gsub("^I", "", camada_nome, ignore.case = FALSE, perl
 febr_data[, camada_nome := gsub("^X", "", camada_nome, ignore.case = FALSE, perl = TRUE)]
 febr_data[, camada_nome := gsub("Ap1", "Ap", camada_nome, ignore.case = FALSE)]
 febr_data[, camada_nome := gsub("p1", "pl", camada_nome, ignore.case = FALSE)]
+febr_data[, camada_nome := gsub(" ", "", camada_nome, ignore.case = FALSE)]
 febr_data[, camada_nome := gsub("1", "", camada_nome, ignore.case = FALSE)]
 febr_data[, camada_nome := gsub("2", "", camada_nome, ignore.case = FALSE)]
 febr_data[, camada_nome := gsub("3", "", camada_nome, ignore.case = FALSE)]
@@ -86,6 +103,8 @@ febr_data[grepl("mudar", camada_nome, ignore.case = TRUE), camada_nome := "UNKNO
 febr_data[grepl("cam", camada_nome, ignore.case = TRUE), camada_nome := "UNKNOWN"]
 febr_data[grepl("Secçã", camada_nome, ignore.case = TRUE), camada_nome := "UNKNOWN"]
 febr_data[grepl("AREIA", camada_nome, ignore.case = TRUE), camada_nome := "SAND"]
+febr_data[grepl("Leito", camada_nome, ignore.case = TRUE), camada_nome := "SAND"]
+unique(febr_data[, camada_nome])
 
 # Concretions, nodules, rock fragments, rock-like pedogenic layers, and human artifacts
 febr_data[, STONES := "UNKNOWN"]
@@ -121,8 +140,16 @@ febr_data[, DEPTHna := "NOTNA"]
 febr_data[is.na(DEPTH), DEPTHplus := +Inf]
 febr_data[is.na(DEPTH), DEPTHminus := -Inf]
 febr_data[is.na(DEPTH), DEPTHna := "NA"]
-febr_data[, CLAYna := as.factor(DEPTHna)]
+febr_data[, DEPTHna := as.factor(DEPTHna)]
 febr_data[is.na(DEPTH), c("DEPTH", "DEPTHplus", "DEPTHminus", "DEPTHna")]
+
+# Particle size distribution
+# Start by checking if all three fractions are present and, if so, check if their sum is 100%
+# of 1000 g/kg -- the later is the standard!
+febr_data[, psd := argila + silte + areia]
+febr_data[psd != 1000, argila := round(argila / psd * 1000)]
+febr_data[psd != 1000, silte := round(silte / psd * 1000)]
+febr_data[psd != 1000, areia := round(areia / psd * 1000)]
 
 # Clay content
 febr_data[, CLAY := as.numeric(argila)]
