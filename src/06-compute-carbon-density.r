@@ -9,13 +9,13 @@ if (!require("geobr")) {
 }
 
 # Ler dados do disco
-febr_data <- data.table::fread("mapbiomas-solos/data/02-febr-data.txt", dec = ",", sep = "\t")
+febr_data <- data.table::fread("mapbiomas-solos/data/05-febr-data.txt", dec = ",", sep = "\t")
 colnames(febr_data)
 
 # Configurar dados em função da profundidade
 # Camadas superficiais de constituição orgânica (serrapilheira) são ignoradas
-febr_data[profund_sup > profund_inf, carbono := NA_real_]
-febr_data[profund_sup < 0, carbono := NA_real_]
+# febr_data[profund_sup > profund_inf, carbono := NA_real_]
+# febr_data[profund_sup < 0, carbono := NA_real_]
 
 # Redefinir limites de cada camada em função do intervalo de profundidade alvo (0 e 30 cm)
 # Fonte: https://github.com/ncss-tech/aqp/blob/master/R/depthWeights.R
