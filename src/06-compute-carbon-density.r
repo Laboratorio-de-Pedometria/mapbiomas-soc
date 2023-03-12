@@ -26,18 +26,27 @@ febr_data[profund_inf < target_layer[1], profund_inf := target_layer[1]]
 febr_data[profund_sup > target_layer[2], profund_sup := target_layer[2]]
 febr_data[profund_inf > target_layer[2], profund_inf := target_layer[2]]
 febr_data[, espessura := profund_inf - profund_sup]
+x11()
 hist(febr_data[["espessura"]])
 rug(febr_data[["espessura"]])
 
 # Corrigir conteúdo de carbono estimado usando combustão úmida
 # Considerar todas as amostras do século XX
-febr_data[data_coleta_ano < 2000, carbono := carbono * 1.2]
+febr_data[data_coleta_ano < 2000, carbono := carbono * 1.1]
+
+# Corrigir dados de esqueleto de camada R
+febr_data[camada_nome == "R", terrafina := 0]
 
 # Calcular o estoque de carbono (kg/m^2) em cada camada
 # Fonte: T. Hengl et al., “SoilGrids1km–global soil information based on automated mapping,” PLoS
 # ONE, vol. 9, no. 8, p. e105992, 2014, doi: 10.1371/journal.pone.0105992.
 # O primeiro passo consiste em transformar os dados de conteúdo de terra fina (g/kg) para volume
 # (cm3/cm3). Isso é feito assumindo que a densidade dos fragmentos grossos é 2,65 g/cm3.
+colnames(febr_data)
+
+
+
+
 febr_data[, fragmentos := 1000 - terrafina]
 febr_data[, fragmentos := fragmentos / 2.65]
 febr_data[, terrafina := round(1000 - fragmentos)]
