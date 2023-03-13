@@ -27,13 +27,22 @@ x11()
 plot(brazil, reset = FALSE)
 plot(sf_febr_data, add = TRUE, col = "black", cex = 0.5)
 
+# Prepare for sampling on GEE
+n_points <- nrow(sf_febr_data)
+n_lags <- ceiling(n_points / 5000)
+lag_width <- ceiling(n_points / n_lags)
+lags <- rep(1:n_lags, each = lag_width)
+lags <- lags[1:n_points]
+
+
 # MapBiomas Land Cover Land Use
-n_years <- unique(febr_data[])
 mapbiomas <- list()
+x <- rgee::ee$ImageCollection("projects/mapbiomas-workspace/public/collection7/mapbiomas_collection70_integration_v2")
 for (i in 1:n_lags) {
   bdod_mean[[i]] <- rgee::ee_extract(
-    x = ee$Image("projects/soilgrids-isric/bdod_mean"),
-    y = sf_febr_data[lags == i, ], scale = 250
+    x = rgee::ee$ImageCollection$filterDate(x, paste0(year, "-01-01"), paste0(year, "-12-31")),
+    y = sf_febr_data[lags == i, ],
+    scale = 30,
+    fun = ee$Reducer$first()
   )
 }
-
