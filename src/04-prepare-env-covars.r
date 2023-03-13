@@ -10,6 +10,7 @@ if (!require("sf")) {
 if (!require("rgee")) {
   install.packages("rgee", dependencies = TRUE)
   rgee::ee_install()
+  # snap install google-cloud-cli --classic
 }
 if (!require("geobr")) {
   install.packages("geobr")
