@@ -9,6 +9,7 @@ if (!require("sf")) {
 }
 if (!require("rgee")) {
   install.packages("rgee", dependencies = TRUE)
+  rgee::ee_install()
 }
 if (!require("geobr")) {
   install.packages("geobr")
