@@ -86,6 +86,7 @@ febr_data02 <- data.table::fread("mapbiomas-solos/data/01-febr-data.txt", dec = 
 febr_data02[, coord_datum_epsg := 4326]
 
 # Juntar dados
+febr_data01[, id := paste0(dataset_id, "-", id)]
 idx <- match(colnames(febr_data02), colnames(febr_data01))
 idx01 <- na.exclude(idx)
 idx02 <- which(!is.na(idx))
