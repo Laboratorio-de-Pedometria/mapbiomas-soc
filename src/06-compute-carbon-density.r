@@ -26,7 +26,7 @@ febr_data[profund_inf < target_layer[1], profund_inf := target_layer[1]]
 febr_data[profund_sup > target_layer[2], profund_sup := target_layer[2]]
 febr_data[profund_inf > target_layer[2], profund_inf := target_layer[2]]
 febr_data[, espessura := profund_inf - profund_sup]
-x11()
+
 hist(febr_data[["espessura"]])
 rug(febr_data[["espessura"]])
 
@@ -37,26 +37,24 @@ febr_data[data_coleta_ano < 2000, carbono := carbono * 1.1]
 # Corrigir dados de esqueleto de camada R
 febr_data[camada_nome == "R", terrafina := 0]
 
+# Compute the volume of coarse fragments
+# ctb0054 - Solos da Reserva Particular do Patrimônio Natural SESC Pantanal
+colnames(febr_data)
+febr_data[, fragmentos := esqueleto / 2.65 / 1000]
+febr_data[dataset_id == "ctb0054", fragmentos := 0]
+
 # Calcular o estoque de carbono (kg/m^2) em cada camada
 # Fonte: T. Hengl et al., “SoilGrids1km–global soil information based on automated mapping,” PLoS
 # ONE, vol. 9, no. 8, p. e105992, 2014, doi: 10.1371/journal.pone.0105992.
 # O primeiro passo consiste em transformar os dados de conteúdo de terra fina (g/kg) para volume
 # (cm3/cm3). Isso é feito assumindo que a densidade dos fragmentos grossos é 2,65 g/cm3.
-colnames(febr_data)
-
-
-
-
-febr_data[, fragmentos := 1000 - terrafina]
-febr_data[, fragmentos := fragmentos / 2.65]
-febr_data[, terrafina := round(1000 - fragmentos)]
+# g/kg / g/cm3
 # 1) carbono / 1000: kg/kg
 # 2) espessura / 100: m
 # 3) dsi * 1000: kg/m^3
-# 4) terrafina / 1000: 1
+# 4) fragmentos: 1
 febr_data[,
-  carbono_estoque_kgm2 := (carbono / 1000) * (espessura / 100) * (dsi * 1000) * (terrafina / 1000)]
-febr_data[, carbono_estoque_kgm2 := carbono_estoque_kgm2]
+  carbono_estoque_kgm2 := (carbono / 1000) * (espessura / 100) * (dsi * 1000) * (1 - fragmentos)]
 hist(febr_data[, carbono_estoque_kgm2])
 rug(febr_data[, carbono_estoque_kgm2])
 
@@ -78,18 +76,18 @@ hist(febr_data[, carbono_estoque_g.m2])
 rug(febr_data[, carbono_estoque_g.m2])
 
 # Carregar dados de conjuntos de dados ainda não disponíveis no FEBR
-files_stock <- list.files(
-  path = "/home/alessandro/ownCloud/febr-repo/processamento", pattern = "-estoque.csv$",
-  full.names = TRUE, recursive = TRUE)
-data_stocks <- list()
-for (i in seq_along(files_stock)) {
-  data_stocks[[i]] <- data.table::fread(
-    files_stock[i], sep = ",", dec = ".")
-}
-data_stocks <- do.call(rbind, data_stocks)
-data.table::setnames(data_stocks, old = c("evento_id_febr", "coord_longitude", "coord_latitude"),
-  new = c("id", "coord_x", "coord_y"))
-febr_data <- rbind(febr_data, data_stocks)
+# files_stock <- list.files(
+#   path = "/home/alessandro/ownCloud/febr-repo/processamento", pattern = "-estoque.csv$",
+#   full.names = TRUE, recursive = TRUE)
+# data_stocks <- list()
+# for (i in seq_along(files_stock)) {
+#   data_stocks[[i]] <- data.table::fread(
+#     files_stock[i], sep = ",", dec = ".")
+# }
+# data_stocks <- do.call(rbind, data_stocks)
+# data.table::setnames(data_stocks, old = c("evento_id_febr", "coord_longitude", "coord_latitude"),
+#   new = c("id", "coord_x", "coord_y"))
+# febr_data <- rbind(febr_data, data_stocks)
 
 # Avaliar distribuição de frequência dos dados de estoque de carbono
 dev.off()
@@ -126,11 +124,5 @@ cex <- febr_data_sf[["carbono_estoque_g.m2"]] / (max(febr_data_sf[["carbono_esto
 plot(febr_data_sf["carbono_estoque_g.m2"], add = TRUE, pch = 20, cex = cex)
 dev.off()
 
-# Escrever dados de estoque de carbono no solo em disco
-febr_data[, coord_x := round(as.numeric(coord_x), 8)]
-febr_data[, coord_y := round(as.numeric(coord_y), 8)]
-write.table(febr_data, file = paste0("mapbiomas-solos/res/pontos-estoque.csv"),
-  row.names = FALSE, sep = ",", dec = ".")
-
-nrow(febr_data)
-cor(febr_data[, c("data_coleta_ano", "carbono_estoque_g.m2")], method = "spearman")
+# Escrever dados em disco
+data.table::fwrite(febr_data, "mapbiomas-solos/data/06-febr-data.txt", sep = "\t", dec = ",")
