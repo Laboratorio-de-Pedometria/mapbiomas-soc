@@ -31,12 +31,6 @@ download.file(url = url, destfile = temp)
 febr_data <- data.table::fread(unzip(temp), sep = ";", dec = ",")
 colnames(febr_data)
 
-# Corrigir amostras com terrafina = 0
-# febr_data[terrafina == 0, c("dataset_id", "observacao_id")]
-# Assume-se que se tratam de amostras com dado faltante e que, quando faltante, o valor de terra
-# fina é 1000 g/kg
-febr_data[terrafina == 0, terrafina := 1000]
-
 # Prepare time coordinate
 febr_data[, observacao_data := as.Date(observacao_data, format = "%Y-%m-%d")]
 febr_data[, data_coleta_dia := as.integer(format(observacao_data, "%d"))]
