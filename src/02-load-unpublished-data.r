@@ -1,3 +1,14 @@
+# LOAD UNPUBLISHED DATA ############################################################################
+# SUMMARY. Several data sets were selected to enter the FEBR during the last months. However, these
+# data sets have not been modelled according to the data model used in the FEBR. The reason for this
+# is that we were looking for data that could be readily used to model the spatio-temporal variation
+# of soil organic carbon stocks in Brazil. In other words, our focus was on simply gathering data
+# that could help improve the predictions, thus focusing on key variables. The main data source
+# in these phase was the National Forest Inventory, available at
+# https://snif.florestal.gov.br/pt-br/inventario-florestal-nacional-ifn/ifn-dados-abertos. We also
+# ingested data from a private natural reserve in the Pantanal biome (SESC Pantanal). Differences
+# in laboratory methods were ignored during data processing and the new data was merged with the
+# existing data -- the exception is the coordinate reference system, with EPSG:4326 set as target.
 rm(list = ls())
 
 # Install and load required packages
@@ -10,19 +21,19 @@ if (!require("sf")) {
 
 # Renomear colunas de acordo com padrão antigo
 rename <- c(
-  "dados_id_febr", "dataset_id",
-  "evento_id_febr", "id",
-  "camada_id_febr", "camada_id",
-  "coord_longitude", "coord_x",
-  "coord_latitude", "coord_y",
-  "coord_estado_sigla", "estado_id",
-  "ph_h2o_25_eletrodo", "ph",
-  "ph_h2o", "ph",
-  "ctc_soma_calc", "ctc",
-  "carbono_forno_1min950_cgdct", "carbono",
-  "argila_sodio_pipeta", "argila",
-  "densidade_solo_cilindro", "dsi",
-  "sibcs_20xx", "taxon_sibcs"
+  "dados_id_febr",                "dataset_id",
+  "evento_id_febr",               "id",
+  "camada_id_febr",               "camada_id",
+  "coord_longitude",              "coord_x",
+  "coord_latitude",               "coord_y",
+  "coord_estado_sigla",           "estado_id",
+  "ph_h2o_25_eletrodo",           "ph",
+  "ph_h2o",                       "ph",
+  "ctc_soma_calc",                "ctc",
+  "carbono_forno_1min950_cgdct",  "carbono",
+  "argila_sodio_pipeta",          "argila",
+  "densidade_solo_cilindro",      "dsi",
+  "sibcs_20xx",                   "taxon_sibcs"
 )
 rename <- matrix(rename, ncol = 2, byrow = TRUE)
 
@@ -74,12 +85,12 @@ data_layer <- data.table::rbindlist(data_layer, fill = TRUE)
 # Juntar dados de eventos e camadas
 febr_data01 <- merge(data_event, data_layer)
 colnames(febr_data01)
-# febr_data01[, areia := NA_real_]
-# febr_data01[, silte := NA_real_]
-# febr_data01[, taxon_sibcs := NA_character_]
-# febr_data01[, estado_id := NA_character_]
-febr_data01[, terrafina := NA_real_]
-febr_data01[, camada_nome := NA_character_]
+if (!"terrafina" %in% colnames(febr_data01)) {
+  febr_data01[, terrafina := NA_real_]
+}
+if (!"camada_nome" %in% colnames(febr_data01)) {
+  febr_data01[, camada_nome := NA_character_]
+}
 
 # Ler dados do disco
 febr_data02 <- data.table::fread("mapbiomas-solos/data/01-febr-data.txt", dec = ",", sep = "\t")
