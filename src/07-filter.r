@@ -63,6 +63,31 @@ lulc <- lulc[cbind(1:nrow(lulc), lulc_idx)]
 febr_data[["lulc"]] <- lulc
 febr_data[["natural"]] <- lulc %in% c(1, 3, 4, 5, 10, 49, 11, 12, 32, 29, 50, 13, 9)
 
+
+
+febr_data <- data.table::as.data.table(febr_data)
+hist(febr_data[natural == 1, carbono_estoque_g.m2])
+
+# Check if LULC from MapBiomas matches the field description
+# Non natural LULC
+ctb <- febr_data[natural & carbono_estoque_g.m2 > 40000, id]
+ctb_id <- strsplit(ctb, "-")
+ctb_id <- sapply(ctb_id, function(x) x[1])
+febr_event <- febr::observation(data.set = ctb_id, variable = c("terra_", "taxon"))
+febr_event <- data.table::rbindlist(febr_event, fill = TRUE)
+febr_event[, id := paste0(dataset_id, "-", evento_id_febr)]
+febr_event <- febr_event[!duplicated(id), ]
+febr_event <- febr_event[id %in% ctb, ]
+
+natutal <- merge(febr_data[, c("carbono_estoque_g.m2", "id")],
+  febr_event[, c("id", "terra_uso_descricao", "taxon_sibcs_xxx")])
+View(natutal)
+
+
+tmp <- data.table::as.data.table(tmp)
+tmp[evento_id_febr == "PERFIL-92", terra_uso_descricao]
+
+
 x11()
 hist(febr_data[["carbono_estoque_g.m2"]][which(febr_data$natural)])
 rug(febr_data[["carbono_estoque_g.m2"]][which(febr_data$natural)])
