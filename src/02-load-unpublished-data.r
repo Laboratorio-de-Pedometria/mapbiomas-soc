@@ -9,6 +9,8 @@
 # ingested data from a private natural reserve in the Pantanal biome (SESC Pantanal). Differences
 # in laboratory methods were ignored during data processing and the new data was merged with the
 # existing data -- the exception is the coordinate reference system, with EPSG:4326 set as target.
+# KEY RESULTS. We had 14043 events (50470 layers) and added another 1079 events (2419) layers to
+# the data base.
 rm(list = ls())
 
 # Install and load required packages
@@ -67,6 +69,7 @@ data_event <- cbind(sf::st_coordinates(data_event), as.data.frame(data_event))
 data_event <- data.table::as.data.table(data_event)
 data_event[coord_datum_epsg != 4326 & !is.na(coord_datum_epsg), coord_datum_epsg := 4326]
 data.table::setnames(data_event, old = c("X", "Y"), new = c("coord_x", "coord_y"))
+nrow(data_event)
 
 # Camadas
 files_layer <- list.files(
@@ -81,6 +84,7 @@ for (i in seq_along(files_layer)) {
   data.table::setnames(data_layer[[i]], old = rename[, 1], new = rename[, 2], skip_absent = TRUE)
 }
 data_layer <- data.table::rbindlist(data_layer, fill = TRUE)
+nrow(data_layer)
 
 # Juntar dados de eventos e camadas
 febr_data01 <- merge(data_event, data_layer)
@@ -99,6 +103,8 @@ if (!"camada_nome" %in% colnames(febr_data01)) {
 febr_data02 <- data.table::fread("mapbiomas-solos/data/01-febr-data.txt", dec = ",", sep = "\t")
 febr_data02[, coord_datum_epsg := 4326]
 febr_data02[terrafina == 0, terrafina := 1000]
+length(unique(febr_data02[, id]))
+nrow(febr_data02)
 
 # Juntar dados
 febr_data01[, id := paste0(dataset_id, "-", id)]
