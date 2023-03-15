@@ -1,12 +1,23 @@
+# COMPUTE SOIL-DERIVED COVARIATES ##################################################################
+# SUMMARY. Soil covariates are predictor variables created using soil variables. This covariates
+# will be necessary later on to train a random forest regression model. That regression model will
+# be used to estimate the bulk density of soil samples that are missing data on such variable. The
+# bulk density is a key soil property to compute SOC stocks. Soil covariates include categorical and
+# continuous variables. A key feature of the process of creating soil covariates is the handling of
+# missing data. For categorical variables, a new category named UNKNOWN is created. For continuous
+# variables, three variables are created: (1) a continuous variable with the missing data replaced
+# with +Inf, (2) a continuous variable with the missing data replaced with -Inf, and (3) a
+# categorical variable with two levels, ISNA and ISNOTNA, indicating if the data was or not missing.
+# This approach is based on the idea of incorporating the missingness in attributes (MIA). We also
+# create bivariate categorical variables to record the presence/absence of particular features in
+# the soil such as concretions and nodules.
+# KEY RESULTS. 
 rm(list = ls())
 
 # Install and load required packages
 if (!require("data.table")) {
   install.packages("data.table")
 }
-# if (!require("ranger")) {
-#   install.packages("ranger")
-# }
 
 # Ler dados do disco
 febr_data <- data.table::fread("mapbiomas-solos/data/02-febr-data.txt", dec = ",", sep = "\t")
