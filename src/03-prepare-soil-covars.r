@@ -1,4 +1,4 @@
-# COMPUTE SOIL-DERIVED COVARIATES ##################################################################
+# COMPUTE SOIL COVARIATES ##########################################################################
 # SUMMARY. Soil covariates are predictor variables created using soil variables. This covariates
 # will be necessary later on to train a random forest regression model. That regression model will
 # be used to estimate the bulk density of soil samples that are missing data on such variable. The
