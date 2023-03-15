@@ -1,3 +1,19 @@
+# RECOVER THE TIME COORDINATE ######################################################################
+# SUMMARY. Various events in the latest FEBR snapshot are missing the time coordinate. These events
+# were identified and written to disk in file named no-time-coord.csv. Our team of data curators
+# searched for the sampling date of each of these events in the original soil survey reports. The
+# recovered time coordinates were registered in a Google Spreadsheet. The data stored in this
+# spreadsheet is used to update the FEBR snapshot. However, for various events, the sampling date
+# is not registered in the survey report. For each of these events, we attribute the average (mean)
+# year of sampling of the survey report from which they were compiled -- we consider that to be the
+# most likely sampling date. The exception are the events of the volumes 01-19 of the RADAM project.
+# For these events, if the sampling date is missing, we set the sampling year to be 1970.
+# * start with 13 112 events, 4249 without sampling date
+# * sampling date recovered: between 1957 and 2007
+# * only 2657 event remain without sampling date
+# * using the average date, only 1790 event remain without sampling date
+# * after processing the RADAM volumes, 1015 event miss the sampling date
+# KEY RESULTS. We recovered or inferred the sampling date of 4249 - 1015 = 3234 events.
 rm(list = ls())
 
 # Install and load required packages
@@ -25,7 +41,9 @@ febr_data[, data_coleta_mes := as.integer(format(observacao_data, "%m"))]
 febr_data[, data_coleta_ano := as.integer(format(observacao_data, "%Y"))]
 
 # Distribuição temporal das amostras com data de coleta
-# 32145 camadas
+# 13 112 events, 4249 without sampling date
+nrow(febr_data[profund_sup == 0, ])
+nrow(febr_data[is.na(data_coleta_ano) & profund_sup == 0, ])
 missing_time <- is.na(febr_data[["data_coleta_ano"]])
 par(mfrow = c(1, 2))
 hist(febr_data[["data_coleta_ano"]], sub = paste0("N = ", sum(!missing_time)))
@@ -54,6 +72,7 @@ head(recovered_time)
 
 # Verificar intervalo de valores
 # Qualquer erro presente nos dados descarregados são corrigidos na planilha do Google Sheets
+# Sampling date recovered: between 1957 and 2007
 range(recovered_time[["data_coleta_ano"]], na.rm = TRUE)
 
 # Preencher tabela de dados original usando dados resgatados
@@ -66,6 +85,8 @@ febr_data[missing_time, data_coleta_ano := recovered_time[idx_recovered, data_co
 
 # Distribuição temporal das amostras com data de coleta após resgate
 # Ao todo, foi possível resgatar a data de coleta de mais de 6.000 amostras
+# only 2657 event remain without sampling date
+nrow(febr_data[is.na(data_coleta_ano) & profund_sup == 0, ])
 # N = 38800
 missing_time <- is.na(febr_data[["data_coleta_ano"]])
 hist(febr_data[["data_coleta_ano"]], sub = paste0("n = ", sum(!missing_time)))
@@ -73,11 +94,13 @@ rug(febr_data[["data_coleta_ano"]])
 
 # Atribuir data de coleta mais provável
 # Utilizar a data média do trabalho
+# using the average date, only 1790 event remain without sampling date
 average_year <- febr_data[,
   .(data_coleta_ano = round(mean(data_coleta_ano, na.rm = TRUE))),
   by = dataset_id]
 idx_averaged <- match(febr_data[missing_time, dataset_id], average_year[, dataset_id])
 febr_data[missing_time, data_coleta_ano := average_year[idx_averaged, data_coleta_ano]]
+nrow(febr_data[is.na(data_coleta_ano) & profund_sup == 0, ])
 
 # Distribuição temporal das amostras com data de coleta após resgate
 # N = 42.553
@@ -86,16 +109,23 @@ hist(febr_data[["data_coleta_ano"]], sub = paste0("n = ", sum(!missing_time)))
 rug(febr_data[["data_coleta_ano"]])
 
 # Para dados do RADAM, volumes 1 a 19
+# after processing the RADAM volumes, 1015 event miss the sampling date
 idx_radam <- grepl("RADAMBRASIL", febr_data[, dataset_titulo]) &
   !grepl("Volume 2", febr_data[, dataset_titulo]) &
   !grepl("Volume 3", febr_data[, dataset_titulo])
 febr_data[idx_radam, data_coleta_ano := 1970]
+nrow(febr_data[is.na(data_coleta_ano) & profund_sup == 0, ])
 
 # Distribuição temporal das amostras com data de coleta após resgate
 # N = 46.221
 missing_time <- is.na(febr_data[["data_coleta_ano"]])
 hist(febr_data[["data_coleta_ano"]], sub = paste0("n = ", sum(!missing_time)))
 rug(febr_data[["data_coleta_ano"]])
+
+ctb <- febr_data[is.na(data_coleta_ano), unique(dataset_id)]
+ctb <- febr::identification(data.set = ctb)
+ctb <- sapply(ctb, function(x) x[2, 2])
+View(ctb)
 
 # Escrever dados em disco
 data.table::fwrite(febr_data, "mapbiomas-solos/data/01-febr-data.txt", sep = "\t", dec = ",")
