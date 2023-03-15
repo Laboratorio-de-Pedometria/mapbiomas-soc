@@ -1,3 +1,11 @@
+# PREPARE ENVIRONMENTAL  COVARIATES ################################################################
+# SUMMARY. Environmental covariates are predictor variables extracted from maps of soil properties
+# and other spatial information. Like the soil variables, the environmental covariates will be used
+# to train a random forest regression model to estimate the bulk density of soil samples that are
+# missing data on such variable. We sample SoilGrids soil property maps to obtain data on four soil
+# properties (clay, sand, bulk density, and SOC) at three depth layers (0-5, 5-15, and 16-30 cm).
+# Missing data is handled using the MIA approach described earlier for soil covariates.
+# KEY RESULTS. 
 rm(list = ls())
 
 # Install and load required packages
@@ -42,9 +50,9 @@ colnames(febr_data)
 # Also keep a single sample per soil profile
 is_na_coordinates <- is.na(febr_data[, coord_x]) | is.na(febr_data[, coord_y])
 sp_febr_data <- febr_data[!is_na_coordinates, ]
-sf_febr_data <- sp_febr_data[,
-  data.frame(coord_x = mean(coord_x), coord_y = mean(coord_y)),
-  by = c("dataset_id", "id")
+sf_febr_data <- sp_febr_data[
+  profund_sup == 0,
+  c("dataset_id", "id", "coord_x", "coord_y", "data_coleta_ano")
 ]
 sf_febr_data <- sf::st_as_sf(sf_febr_data, coords = c("coord_x", "coord_y"), crs = 4326)
 brazil <- geobr::read_country()
@@ -53,8 +61,9 @@ plot(brazil, reset = FALSE)
 plot(sf_febr_data, add = TRUE, col = "black", cex = 0.5)
 
 # Prepare for sampling on GEE
+n_max <- 5000
 n_points <- nrow(sf_febr_data)
-n_lags <- ceiling(n_points / 5000)
+n_lags <- ceiling(n_points / n_max)
 lag_width <- ceiling(n_points / n_lags)
 lags <- rep(1:n_lags, each = lag_width)
 lags <- lags[1:n_points]
@@ -69,7 +78,7 @@ for (i in 1:n_lags) {
 }
 bdod_mean <- data.table::rbindlist(bdod_mean)
 bdod_mean[, c("bdod_30.60cm_mean", "bdod_60.100cm_mean", "bdod_100.200cm_mean") := NULL]
-bdod_mean[, c("dataset_id", "id") := NULL]
+bdod_mean[, c("dataset_id", "id", "data_coleta_ano") := NULL]
 
 # Soil Grids 250m v2.0: clay_mean
 clay_mean <- list()
@@ -111,6 +120,47 @@ soc_mean[, c("dataset_id", "id") := NULL]
 SoilGrids <- cbind(bdod_mean, clay_mean, sand_mean, soc_mean)
 colnames(SoilGrids) <- gsub("_mean", "", colnames(SoilGrids), fixed = TRUE)
 colnames(SoilGrids) <- gsub("_", "", colnames(SoilGrids), fixed = TRUE)
+
+# Prepare to sample MapBiomas on GEE
+n_max <- 1000
+n_points <- nrow(febr_data)
+n_lags <- ceiling(n_points / n_max)
+lag_width <- ceiling(n_points / n_lags)
+lags <- rep(1:n_lags, each = lag_width)
+lags <- lags[1:n_points]
+
+# Sample MapBiomas LULC
+gee_path <- "projects/mapbiomas-workspace/public/collection7/mapbiomas_collection70_integration_v2"
+mapbiomas <- list()
+for (i in 1:n_lags) {
+  mapbiomas[[i]] <- rgee::ee_extract(
+    x = ee$Image(gee_path),
+    y = sf_febr_data[lags == i, ],
+    scale = 30,
+    fun = rgee::ee$Reducer$first()
+  )
+}
+mapbiomas <- data.table::rbindlist(mapbiomas)
+
+# Get LULC class at the year of sampling
+colnames(mapbiomas) <- gsub("classification_", "", colnames(mapbiomas))
+lulc_idx <- match(mapbiomas[, data_coleta_ano], colnames(mapbiomas))
+lulc <- as.matrix(mapbiomas)
+lulc <- lulc[cbind(1:nrow(lulc), lulc_idx)]
+mapbiomas[, LULC := as.factor(lulc)]
+nrow(mapbiomas)
+
+
+
+
+natural <- c(1, 3, 4, 5, 10, 49, 11, 12, 32, 29, 50, 13)
+agriculture <- c(14, 15, 18, 19, 39, 20, 40, 62, 41, 36, 46, 47, 48, 9, 21)
+mapbiomas[, LULCnatural := 0]
+mapbiomas[LULC %in% natural, LULCnatural := 1]
+mapbiomas[, LULCagriculture := 0]
+mapbiomas[LULC %in% agriculture, LULCagriculture := 1]
+
+
 sf_febr_data <- cbind(sf_febr_data, SoilGrids)
 
 # Merge data
