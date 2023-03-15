@@ -12,8 +12,11 @@
 # * sampling date recovered: between 1957 and 2007
 # * only 2657 event remain without sampling date
 # * using the average date, only 1790 event remain without sampling date
-# * after processing the RADAM volumes, 1015 event miss the sampling date
-# KEY RESULTS. We recovered or inferred the sampling date of 4249 - 1015 = 3234 events.
+# * after processing the RADAM volumes, 837 event miss the sampling date
+# * Santa Catarina - year 1995 - 762 remaining without year
+# * Canchim: 1995
+# * all others: 1985
+# KEY RESULTS. We recovered or inferred the sampling date of 4249 events.
 rm(list = ls())
 
 # Install and load required packages
@@ -108,12 +111,30 @@ missing_time <- is.na(febr_data[["data_coleta_ano"]])
 hist(febr_data[["data_coleta_ano"]], sub = paste0("n = ", sum(!missing_time)))
 rug(febr_data[["data_coleta_ano"]])
 
-# Para dados do RADAM, volumes 1 a 19
-# after processing the RADAM volumes, 1015 event miss the sampling date
-idx_radam <- grepl("RADAMBRASIL", febr_data[, dataset_titulo]) &
-  !grepl("Volume 2", febr_data[, dataset_titulo]) &
-  !grepl("Volume 3", febr_data[, dataset_titulo])
-febr_data[idx_radam, data_coleta_ano := 1970]
+# RADAMBRASIL: set sampling year to 1985
+# after processing the RADAM volumes, 837 event miss the sampling date
+febr_data[
+  grepl("RADAMBRASIL", dataset_titulo, ignore.case = TRUE) & is.na(data_coleta_ano),
+  data_coleta_ano := 1985
+]
+# idx_radam <- grepl("RADAMBRASIL", febr_data[, dataset_titulo]) &
+#   !grepl("Volume 2", febr_data[, dataset_titulo]) &
+#   !grepl("Volume 3", febr_data[, dataset_titulo])
+# febr_data[idx_radam, data_coleta_ano := 1970]
+nrow(febr_data[is.na(data_coleta_ano) & profund_sup == 0, ])
+
+# Inventário das terras em microbacias hidrográficas, Santa Catarina
+# year: 1995
+# 762 remaining without year
+febr_data[
+  grepl("Inventário das terras em microbacias hidrográficas", dataset_titulo, ignore.case = TRUE) & is.na(data_coleta_ano),
+  data_coleta_ano := 1995
+]
+nrow(febr_data[is.na(data_coleta_ano) & profund_sup == 0, ])
+
+# All other
+febr_data[dataset_id == "ctb0815" & is.na(data_coleta_ano), data_coleta_ano := 1995]
+febr_data[is.na(data_coleta_ano), data_coleta_ano := 1985]
 nrow(febr_data[is.na(data_coleta_ano) & profund_sup == 0, ])
 
 # Distribuição temporal das amostras com data de coleta após resgate
@@ -121,11 +142,6 @@ nrow(febr_data[is.na(data_coleta_ano) & profund_sup == 0, ])
 missing_time <- is.na(febr_data[["data_coleta_ano"]])
 hist(febr_data[["data_coleta_ano"]], sub = paste0("n = ", sum(!missing_time)))
 rug(febr_data[["data_coleta_ano"]])
-
-ctb <- febr_data[is.na(data_coleta_ano), unique(dataset_id)]
-ctb <- febr::identification(data.set = ctb)
-ctb <- sapply(ctb, function(x) x[2, 2])
-View(ctb)
 
 # Escrever dados em disco
 data.table::fwrite(febr_data, "mapbiomas-solos/data/01-febr-data.txt", sep = "\t", dec = ",")
