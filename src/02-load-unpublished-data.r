@@ -93,8 +93,12 @@ if (!"camada_nome" %in% colnames(febr_data01)) {
 }
 
 # Ler dados do disco
+# Corrigir amostras com terrafina = 0
+# Assume-se que se tratam de amostras com dado faltante e que, quando faltante, o valor de terra
+# fina é 1000 g/kg
 febr_data02 <- data.table::fread("mapbiomas-solos/data/01-febr-data.txt", dec = ",", sep = "\t")
 febr_data02[, coord_datum_epsg := 4326]
+febr_data02[terrafina == 0, terrafina := 1000]
 
 # Juntar dados
 febr_data01[, id := paste0(dataset_id, "-", id)]
