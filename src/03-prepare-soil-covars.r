@@ -1,4 +1,4 @@
-# PREPARE SOIL COVARIATES ##########################################################################
+# 03. PREPARE SOIL COVARIATES ######################################################################
 # SUMMARY
 # Soil covariates are predictor variables created using data on soil properties (clay content, soil
 # classification and so on). These covariates will be necessary later on to train a random forest
