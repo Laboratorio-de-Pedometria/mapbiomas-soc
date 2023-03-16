@@ -1,17 +1,44 @@
-# COMPUTE SOIL COVARIATES ##########################################################################
-# SUMMARY. Soil covariates are predictor variables created using soil variables. This covariates
-# will be necessary later on to train a random forest regression model. That regression model will
-# be used to estimate the bulk density of soil samples that are missing data on such variable. The
-# bulk density is a key soil property to compute SOC stocks. Soil covariates include categorical and
-# continuous variables. A key feature of the process of creating soil covariates is the handling of
-# missing data. For categorical variables, a new category named UNKNOWN is created. For continuous
-# variables, three variables are created: (1) a continuous variable with the missing data replaced
-# with +Inf, (2) a continuous variable with the missing data replaced with -Inf, and (3) a
-# categorical variable with two levels, ISNA and ISNOTNA, indicating if the data was or not missing.
-# This approach is based on the idea of incorporating the missingness in attributes (MIA). We also
-# create bivariate categorical variables to record the presence/absence of particular features in
-# the soil such as concretions and nodules.
-# KEY RESULTS. 
+# PREPARE SOIL COVARIATES ##########################################################################
+# SUMMARY
+# Soil covariates are predictor variables created using data on soil properties (clay content, soil
+# classification and so on). These covariates will be necessary later on to train a random forest
+# regression model. That regression model will be used to estimate the bulk density of soil samples
+# that are missing data on such variable. The bulk density is a key soil property to compute SOC
+# stocks.
+# Soil covariates prepared in this script include categorical and continuous variables. A key
+# feature of the process of creating soil covariates is the handling of missing data. For
+# categorical variables, a new category named UNKNOWN is created to replace the NAs. For continuous
+# variables, three new variables are created to replace the original:
+# 1. A continuous variable with the NAs replaced with +Inf,
+# 2. A continuous variable with the NAs replaced with -Inf, and
+# 3. A categorical variable with two levels, ISNA and ISNOTNA, indicating if the data for a
+#    particular sample was missing or not.
+# This approach of handling missing data is based on the idea of incorporating the missingness in
+# attributes (MIA, [1]). Our implementation differs from the original MIA in that MIA was designed
+# to operate inside the decision/regression trees, that is, in each partition node. We are not aware
+# of the impacts that this difference has on the prediction results.
+# We also create bivariate categorical variables to record the presence/absence of particular
+# features in the soil such as concretions and nodules.
+# [1] B. E. T. H. Twala, M. C. Jones, and D. J. Hand, “Good methods for coping with missing data
+#    in decision trees,” Pattern Recognition Letters, vol. 29, no. 7, pp. 950–956, May 2008, doi:
+#    10.1016/j.patrec.2008.01.010. 
+# KEY RESULTS
+# The following soil covariates were created:
+# * ORDER, SUBORDER, GREATGROUP, and SUBGROUP: Soil classification (multivariate; MIA)
+# * STONESOL: Soil classes known for having a skeleton (bivariate)
+# * STONES: Soil layers known for having concretions, nodules, rock fragments, rock-like pedogenic
+#   layers, and human artifacts (bivariate)
+# * AHRZN: A horizon (bivariate)
+# * BHRZN: B horizon (bivariate)
+# * DEPTH: Layer average depth (continuous; MIA)
+# * CLAY: Clay content (continuous; MIA)
+# * SAND: Sand content (continuous; MIA)
+# * SILT: Silt content (continuous; MIA)
+# * CARBON: Carbon content (continuous; group imputation + MIA)
+# * CEC: Cation exchange capacity (continuous; MIA)
+# * PH: pH (continuous; MIA)
+# * LONG: Geographic coordinates - Longitude (continuous; MIA)
+# * LAT: Geographic coordinates - Latitude (continuous; MIA)
 rm(list = ls())
 
 # Install and load required packages
@@ -38,7 +65,7 @@ febr_data[esqueleto > 800, terrafina := esqueleto]
 febr_data[esqueleto > 800, esqueleto := 1000 - terrafina]
 
 # PREPARE PREDICTOR VARIABLES
-# Soil classes
+# Soil classification: ORDER, SUBORDER, GREATGROUP, SUBGROUP (multivariate)
 febr_data[taxon_sibcs == "", taxon_sibcs := "NA NA NA NA"]
 sibcs <- strsplit(febr_data[["taxon_sibcs"]], " ")
 sibcs <- lapply(sibcs, function(x) {
@@ -64,7 +91,7 @@ febr_data[, SUBORDER := as.factor(SUBORDER)]
 febr_data[, GREATGROUP := as.factor(GREATGROUP)]
 febr_data[, SUBGROUP := as.factor(SUBGROUP)]
 
-# Soil classes known for having a skeleton
+# Soil classes known for having a skeleton (STONESOL) (bivariate)
 febr_data[, STONESOL := "UNKNOWN"]
 febr_data[ORDER != "UNKNOWN" | SUBORDER != "UNKNOWN", STONESOL := "FALSE"]
 febr_data[ORDER == "NEOSSOLO", STONESOL := "TRUE"]
@@ -117,7 +144,8 @@ febr_data[grepl("AREIA", camada_nome, ignore.case = TRUE), camada_nome := "SAND"
 febr_data[grepl("Leito", camada_nome, ignore.case = TRUE), camada_nome := "SAND"]
 unique(febr_data[, camada_nome])
 
-# Concretions, nodules, rock fragments, rock-like pedogenic layers, and human artifacts
+# STONES: Soil layers known for having concretions, nodules, rock fragments, rock-like pedogenic
+# layers, and human artifacts (bivariate)
 febr_data[, STONES := "UNKNOWN"]
 febr_data[camada_nome != "UNKNOWN", STONES := "FALSE"]
 febr_data[grepl("c", camada_nome, ignore.case = FALSE), STONES := "TRUE"]
@@ -127,21 +155,21 @@ febr_data[grepl("R", camada_nome, ignore.case = TRUE), STONES := "TRUE"]
 febr_data[grepl("u", camada_nome, ignore.case = FALSE), STONES := "TRUE"]
 febr_data[, STONES := as.factor(STONES)]
 
-# A horizon
+# AHRZN: A horizon (bivariate)
 febr_data[, AHRZN := "UNKNOWN"]
 febr_data[camada_nome != "UNKNOWN", AHRZN := "FALSE"]
 febr_data[grepl("^A", camada_nome, ignore.case = FALSE), AHRZN := "TRUE"]
 febr_data[, AHRZN := as.factor(AHRZN)]
 summary(febr_data[, AHRZN])
 
-# B horizon
+# BHRZN: B horizon (bivariate)
 febr_data[, BHRZN := "UNKNOWN"]
 febr_data[camada_nome != "UNKNOWN", BHRZN := "FALSE"]
 febr_data[grepl("^B", camada_nome, ignore.case = FALSE), BHRZN := "TRUE"]
 febr_data[, BHRZN := as.factor(BHRZN)]
 summary(febr_data[, BHRZN])
 
-# Layer thickness and average depth
+# DEPTH: Layer average depth (continuous)
 febr_data[, espessura := profund_inf - profund_sup]
 febr_data[, DEPTH := profund_sup + (espessura / 2)]
 febr_data[is.na(DEPTH) & esqueleto == 1000, DEPTH := 2000]
@@ -165,7 +193,7 @@ febr_data[psd != 1000, silte := round(silte / psd * 1000)]
 febr_data[psd != 1000, areia := round(areia / psd * 1000)]
 febr_data[, psd := NULL]
 
-# Clay content
+# CLAY: Clay content (continuous)
 febr_data[, CLAY := as.numeric(argila)]
 febr_data[is.na(CLAY) & esqueleto == 1000, CLAY := 0]
 febr_data[, CLAYplus := CLAY]
@@ -178,7 +206,7 @@ febr_data[, CLAYna := as.factor(CLAYna)]
 febr_data[is.na(CLAY), c("CLAY", "CLAYplus", "CLAYminus", "CLAYna")]
 febr_data[, CLAY := NULL]
 
-# Sand content
+# SAND: Sand content (continuous)
 febr_data[, SAND := as.numeric(areia)]
 febr_data[is.na(SAND) & esqueleto == 1000, SAND := 0]
 febr_data[, SANDplus := SAND]
@@ -191,7 +219,7 @@ febr_data[, SANDna := as.factor(SANDna)]
 febr_data[is.na(SAND), c("SAND", "SANDplus", "SANDminus", "SANDna")]
 febr_data[, SAND := NULL]
 
-# Silt content
+# SILT: Silt content (continuous)
 febr_data[, SILT := as.numeric(silte)]
 febr_data[is.na(SILT) & esqueleto == 1000, SILT := 0]
 febr_data[, SILTplus := SILT]
@@ -204,7 +232,7 @@ febr_data[, SILTna := as.factor(SILTna)]
 febr_data[is.na(SILT), c("SILT", "SILTplus", "SILTminus", "SILTna")]
 febr_data[, SILT := NULL]
 
-# Carbon content
+# CARBON: Carbon content (continuous; layer-type average + MIA)
 febr_data[, CARBON := as.numeric(carbono)]
 febr_data[is.na(CARBON) & esqueleto == 1000, CARBON := 0]
 febr_data[is.na(CARBON) & grepl("O", camada_nome, ignore.case = TRUE), CARBON := 100]
@@ -300,7 +328,7 @@ febr_data[, CARBON := NULL]
 # febr_data[, DENSITYna := as.factor(DENSITYna)]
 # febr_data[is.na(DENSITY), c("DENSITY", "DENSITYplus", "DENSITYminus", "DENSITYna")]
 
-# Cation exchange capacity
+# CEC: Cation exchange capacity (continuous; MIA)
 febr_data[, CEC := as.numeric(ctc)]
 febr_data[is.na(CEC) & esqueleto == 1000, CEC := 0]
 febr_data[, CECplus := CEC]
@@ -313,7 +341,7 @@ febr_data[, CECna := as.factor(CECna)]
 febr_data[is.na(CEC), c("CEC", "CECplus", "CECminus", "CECna")]
 febr_data[, CEC := NULL]
 
-# pH
+# PH: pH (continuous; MIA)
 febr_data[, PH := as.numeric(ph)]
 febr_data[is.na(PH) & esqueleto == 1000, PH := 0]
 febr_data[, PHplus := PH]
@@ -326,7 +354,7 @@ febr_data[, PHna := as.factor(PHna)]
 febr_data[is.na(PH), c("PH", "PHplus", "PHminus", "PHna")]
 febr_data[, PH := NULL]
 
-# Geographic coordinates - Longitude
+# LONG: Geographic coordinates - Longitude (continuous; MIA)
 febr_data[, LONG := as.numeric(coord_x)]
 febr_data[, LONGplus := LONG]
 febr_data[, LONGminus := LONG]
@@ -338,7 +366,7 @@ febr_data[, LONGna := as.factor(LONGna)]
 febr_data[is.na(LONG), c("LONG", "LONGplus", "LONGminus", "LONGna")]
 febr_data[, LONG := NULL]
 
-# Geographic coordinates - Latitude
+# LAT: Geographic coordinates - Latitude (continuous; MIA)
 febr_data[, LAT := as.numeric(coord_y)]
 febr_data[, LATplus := LAT]
 febr_data[, LATminus := LAT]
