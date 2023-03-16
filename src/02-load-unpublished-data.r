@@ -1,16 +1,23 @@
 # LOAD UNPUBLISHED DATA ############################################################################
-# SUMMARY. Several data sets were selected to enter the FEBR during the last months. However, these
-# data sets have not been modelled according to the data model used in the FEBR. The reason for this
-# is that we were looking for data that could be readily used to model the spatio-temporal variation
-# of soil organic carbon stocks in Brazil. In other words, our focus was on simply gathering data
-# that could help improve the predictions, thus focusing on key variables. The main data source
-# in these phase was the National Forest Inventory, available at
-# https://snif.florestal.gov.br/pt-br/inventario-florestal-nacional-ifn/ifn-dados-abertos. We also
-# ingested data from a private natural reserve in the Pantanal biome (SESC Pantanal). Differences
-# in laboratory methods were ignored during data processing and the new data was merged with the
-# existing data -- the exception is the coordinate reference system, with EPSG:4326 set as target.
-# KEY RESULTS. We had 14043 events (50470 layers) and added another 1079 events (2419) layers to
-# the data base.
+# SUMMARY
+# Several data sets were selected to enter the FEBR during the last months. However, these data sets
+# have not been modelled according to the data model used in the FEBR. The reason for this is that
+# we were looking for data that could be readily used to model the spatio-temporal variation of soil
+# organic carbon stocks in Brazil. In other words, our focus was on simply gathering data that could
+# help improve the predictions, thus focusing on key soil variables. The main data source in these
+# phase was the National Forest Inventory (NFI) (see URL below). We also ingested data from a
+# private natural reserve in the Pantanal biome (SESC Pantanal). Due to limitations of resources,
+# any differences in laboratory methods were ignored during data processing and the new data was
+# merged with the existing data as is. The only exception is the standardization of the coordinate
+# reference system, with EPSG:4326 used as target. During data processing, we noticed that 32
+# samples coming from the latest (2021) FEBR snapshot we missing data on the concentration of the
+# fine earth fraction. After checking the horizon/layer designation, we attributed a concentration
+# of fine earth of 1000 g/kg.
+# NFI: https://snif.florestal.gov.br/pt-br/inventario-florestal-nacional-ifn/ifn-dados-abertos
+# KEY RESULTS
+# We started with 14 043 events (50 470 layers) in the data base and added another 1079 events
+# (2419) layers to the data base. All of these 1079 events contain the spatial and temporal
+# coordinates.
 rm(list = ls())
 
 # Install and load required packages
@@ -103,8 +110,7 @@ if (!"camada_nome" %in% colnames(febr_data01)) {
 febr_data02 <- data.table::fread("mapbiomas-solos/data/01-febr-data.txt", dec = ",", sep = "\t")
 febr_data02[, coord_datum_epsg := 4326]
 febr_data02[terrafina == 0, terrafina := 1000]
-length(unique(febr_data02[, id]))
-nrow(febr_data02)
+nrow(unique(febr_data02[, c("dataset_id", "observacao_id")]))
 
 # Juntar dados
 febr_data01[, id := paste0(dataset_id, "-", id)]
