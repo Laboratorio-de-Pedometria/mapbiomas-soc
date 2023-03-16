@@ -17,8 +17,16 @@
 # attributes (MIA, [1]). Our implementation differs from the original MIA in that MIA was designed
 # to operate inside the decision/regression trees, that is, in each partition node. We are not aware
 # of the impacts that this difference has on the prediction results.
+# The exception to the process described above is the data on the concentration of soil organic
+# carbon (SOC). For this soil property, we first performed a data imputation step using the average
+# (mean) concentration of SOC of particular types of soil horizons and layers (organic layers, Ap,
+# Bt, E and so on). The quasi-MIA approach was applied after the group imputation step.
 # We also create bivariate categorical variables to record the presence/absence of particular
 # features in the soil such as concretions and nodules.
+# We noticed that, in some soil samples coming from the latest (2021) FEBR snapshot, the fine earth
+# and skeleton concentration data are inverted. This is quite common in cases where the skeleton
+# concentration is greater than 800 g/kg. The solution used here is to swap the values between the
+# two variables for soil horizons such as A, Ap, Bt, and Bw.
 # [1] B. E. T. H. Twala, M. C. Jones, and D. J. Hand, “Good methods for coping with missing data
 #    in decision trees,” Pattern Recognition Letters, vol. 29, no. 7, pp. 950–956, May 2008, doi:
 #    10.1016/j.patrec.2008.01.010. 
@@ -56,13 +64,17 @@ state_table <- sort(table(febr_data[, estado_id]), decreasing = TRUE)
 barplot(state_table, xlab = "Unidade da federação", ylab = "Frequência")
 
 # Soil skeleton
-# Em algumas amostras de solos, os dados da concentração de terra fina e esqueleto estão invertidos.
-# Isso é bastante comum nos casos em que a concentração do esqueleto é maior do que 800.
-# The default solution used here is to swap the values between the two variables. A better solution
-# must be implemented and it involves going back to the source of the data.
+# In some soil samples, the fine earth and skeleton concentration data are inverted. This is quite
+# common in cases where the skeleton concentration is greater than 800. The solution used here is
+# to swap the values between the two variables. A better solution must be implemented and it
+# involves going back to the source of the data.
 febr_data[, esqueleto := 1000 - terrafina]
-febr_data[esqueleto > 800, terrafina := esqueleto]
-febr_data[esqueleto > 800, esqueleto := 1000 - terrafina]
+febr_data[
+  esqueleto > 800 & camada_nome %in% c("A", "A1", "B", "Bt". "B21", "B22", "Bw", "AB", "Ap"),
+  terrafina := esqueleto]
+febr_data[
+  esqueleto > 800 & camada_nome %in% c("A", "A1", "B", "Bt". "B21", "B22", "Bw", "AB", "Ap"),
+  esqueleto := 1000 - terrafina]
 
 # PREPARE PREDICTOR VARIABLES
 # Soil classification: ORDER, SUBORDER, GREATGROUP, SUBGROUP (multivariate)
@@ -317,17 +329,6 @@ febr_data[, CARBONna := as.factor(CARBONna)]
 febr_data[is.na(CARBON), c("CARBON", "CARBONplus", "CARBONminus", "CARBONna")]
 febr_data[, CARBON := NULL]
 
-# Whole soil bulk density
-# febr_data[, DENSITY := as.numeric(dsi)]
-# febr_data[, DENSITYplus := DENSITY]
-# febr_data[, DENSITYminus := DENSITY]
-# febr_data[, DENSITYna := "NOTNA"]
-# febr_data[is.na(DENSITY), DENSITYplus := +Inf]
-# febr_data[is.na(DENSITY), DENSITYminus := -Inf]
-# febr_data[is.na(DENSITY), DENSITYna := "NA"]
-# febr_data[, DENSITYna := as.factor(DENSITYna)]
-# febr_data[is.na(DENSITY), c("DENSITY", "DENSITYplus", "DENSITYminus", "DENSITYna")]
-
 # CEC: Cation exchange capacity (continuous; MIA)
 febr_data[, CEC := as.numeric(ctc)]
 febr_data[is.na(CEC) & esqueleto == 1000, CEC := 0]
@@ -380,43 +381,3 @@ febr_data[, LAT := NULL]
 
 # Write data to disk
 data.table::fwrite(febr_data, "mapbiomas-solos/data/03-febr-data.txt", sep = "\t", dec = ",")
-
-# hist(febr_data[grepl("C", camada_nome, ignore.case = TRUE), CARBON])
-# sort(unique(febr_data[is.na(CARBON), camada_nome]))
-# colnames(febr_data)  
-# unique(febr_data[STONES == 1, camada_nome])
-# febr_data[grepl("^R$", camada_nome, ignore.case = FALSE, perl = TRUE), c("camada_nome", "esqueleto")]
-# unique(febr_data[STONES == 1, camada_nome])
-# table(febr_data[, camada_nome])
-# boxplot(esqueleto ~ STONES, febr_data)
-
-# is_na_skeleton <- is.na(febr_data[, esqueleto])
-# is_rock <- febr_data[, esqueleto] == 1000
-# model_formula <- esqueleto ~ STONESOL + STONES + AHRZN + BHRZN +
-#   DEPTHplus + DEPTHminus + DEPTHna +
-#   CLAYplus + CLAYminus + CLAYna +
-#   SILTplus + SILTminus + SILTna +
-#   SANDplus + SANDminus + SANDna +
-#   CARBONplus + CARBONminus + CARBONna +
-#   DENSITYplus + DENSITYminus + DENSITYna +
-#   CECplus + CECminus + CECna +
-#   PHplus + PHminus + PHna +
-#   LONGplus + LONGminus + LONGna +
-#   LATplus + LATminus + LATna
-# # MODEL
-# fit_ranger <- ranger::ranger(model_formula, febr_data[!is_na_skeleton & !is_rock, ],
-#   importance = "impurity", num.trees = 500
-# )
-# print(fit_ranger)
-# fit_importance <- ranger::importance(fit_ranger)
-# fit_importance <- sort(fit_importance / max(fit_importance))
-# par(mar = c(5, 7, 4, 2) + 0.1)
-# barplot(fit_importance, horiz = TRUE, las = 1, col = "white", border = "white", axes = FALSE)
-# grid(nx = NULL, ny = FALSE)
-# barplot(fit_importance, horiz = TRUE, las = 1, add = TRUE)
-# plot(
-#   x = fit_ranger$predictions, y = febr_data[!is_na_skeleton & !is_rock, esqueleto],
-#   panel.first = grid(),
-#   ylab = "Observed", xlab = "Predicted"
-# )
-# abline(a = 0, b = 1)
