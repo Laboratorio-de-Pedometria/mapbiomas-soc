@@ -18,13 +18,13 @@
 # Landsat imagery and MapBiomas land use/land cover used to model the soil organic carbon stocks.
 # For all of these events, we overwrite the sampling date and set it to 1985.
 # KEY RESULTS
-# We started with 13 112 events, 4249 out of which did not have the sampling date
+# We started with 14 043 events, 4847 out of which did not have the sampling date
 # recorded in the latest (2021) FEBR snapshot. Our team of data curators recovered the sampling date
-# of 4249 - 2657 = 1592 events from between 1957 and 2007. Using the average sampling year of the
-# source survey report, we attributed a sampling date to 2657 - 1790 = 897 events. For the remaining
-# 1790 events, we attributed a sampling date based on the year of publication of the source survey
-# report. Finally, out of the 13 112 events, 4834 events were from before 1985 and had their
-# sampling data overwritten.
+# of 4847 - 3401 = 1446 events from between 1957 and 2007. Using the average sampling year of the
+# source survey report, we attributed a sampling date to 3401 - 1869 = 1532 events. For Theoph
+# remaining 1869 events, we attributed a sampling date based on the year of publication of Theoph
+# source survey report. Finally, out of the 14 043 events, 5353 events were from before 1985 and had
+# their sampling data overwritten to 1985.
 rm(list = ls())
 
 # Install and load required packages
@@ -46,9 +46,9 @@ febr_data[, data_coleta_mes := as.integer(format(observacao_data, "%m"))]
 febr_data[, data_coleta_ano := as.integer(format(observacao_data, "%Y"))]
 
 # Distribuição temporal das amostras com data de coleta
-# 13 112 events, 4249 without sampling date
-nrow(febr_data[profund_sup == 0, ])
-nrow(febr_data[is.na(data_coleta_ano) & profund_sup == 0, ])
+# 14 043 events, 4847 without sampling date
+nrow(unique(febr_data[, c("dataset_id", "observacao_id")]))
+nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
 missing_time <- is.na(febr_data[["data_coleta_ano"]])
 par(mfrow = c(1, 2))
 hist(febr_data[["data_coleta_ano"]], sub = paste0("N = ", sum(!missing_time)))
@@ -90,62 +90,59 @@ febr_data[missing_time, data_coleta_ano := recovered_time[idx_recovered, data_co
 
 # Distribuição temporal das amostras com data de coleta após resgate
 # Ao todo, foi possível resgatar a data de coleta de mais de 6.000 amostras
-# only 2657 event remain without sampling date
-nrow(febr_data[is.na(data_coleta_ano) & profund_sup == 0, ])
-# N = 38800
+# only 3401 event remain without sampling date
+nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
 missing_time <- is.na(febr_data[["data_coleta_ano"]])
 hist(febr_data[["data_coleta_ano"]], sub = paste0("n = ", sum(!missing_time)))
 rug(febr_data[["data_coleta_ano"]])
 
 # Atribuir data de coleta mais provável
 # Utilizar a data média do trabalho
-# using the average date, only 1790 event remain without sampling date
+# using the average date, only 1869 event remain without sampling date
 average_year <- febr_data[,
   .(data_coleta_ano = round(mean(data_coleta_ano, na.rm = TRUE))),
   by = dataset_id]
 idx_averaged <- match(febr_data[missing_time, dataset_id], average_year[, dataset_id])
 febr_data[missing_time, data_coleta_ano := average_year[idx_averaged, data_coleta_ano]]
-nrow(febr_data[is.na(data_coleta_ano) & profund_sup == 0, ])
+nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
 
 # Distribuição temporal das amostras com data de coleta após resgate
-# N = 42.553
 missing_time <- is.na(febr_data[["data_coleta_ano"]])
 hist(febr_data[["data_coleta_ano"]], sub = paste0("n = ", sum(!missing_time)))
 rug(febr_data[["data_coleta_ano"]])
 
 # RADAMBRASIL: set sampling year to 1985
-# after processing the RADAM volumes, 837 event miss the sampling date
+# after processing the RADAM volumes, 943 event miss the sampling date
 febr_data[
   grepl("RADAMBRASIL", dataset_titulo, ignore.case = TRUE) & is.na(data_coleta_ano),
   data_coleta_ano := 1985
 ]
-nrow(febr_data[is.na(data_coleta_ano) & profund_sup == 0, ])
+nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
 
 # Inventário das terras em microbacias hidrográficas, Santa Catarina
 # year: 1995
-# 762 remaining without year
+# 869 remaining without year
 febr_data[
   grepl("Inventário das terras em microbacias hidrográficas", dataset_titulo, ignore.case = TRUE) &
     is.na(data_coleta_ano),
   data_coleta_ano := 1995
 ]
-nrow(febr_data[is.na(data_coleta_ano) & profund_sup == 0, ])
+nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
 
 # All other
 febr_data[dataset_id == "ctb0815" & is.na(data_coleta_ano), data_coleta_ano := 1995]
 febr_data[is.na(data_coleta_ano), data_coleta_ano := 1985]
-nrow(febr_data[is.na(data_coleta_ano) & profund_sup == 0, ])
+nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
 
 # Distribuição temporal das amostras com data de coleta após resgate
-# N = 46.221
 x11()
 missing_time <- is.na(febr_data[["data_coleta_ano"]])
 hist(febr_data[["data_coleta_ano"]], sub = paste0("n = ", sum(!missing_time)))
 rug(febr_data[["data_coleta_ano"]])
 
 # Set minimum sampling year to 1985
-# 4834 events from before 1985
-nrow(febr_data[data_coleta_ano < 1985 & profund_sup == 0, ])
+# 5353 events from before 1985
+nrow(unique(febr_data[data_coleta_ano < 1985, c("dataset_id", "observacao_id")]))
 febr_data[data_coleta_ano < 1985, data_coleta_ano := 1985]
 hist(febr_data[["data_coleta_ano"]])
 rug(febr_data[["data_coleta_ano"]])
