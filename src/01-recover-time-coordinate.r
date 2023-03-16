@@ -119,17 +119,14 @@ febr_data[
   grepl("RADAMBRASIL", dataset_titulo, ignore.case = TRUE) & is.na(data_coleta_ano),
   data_coleta_ano := 1985
 ]
-# idx_radam <- grepl("RADAMBRASIL", febr_data[, dataset_titulo]) &
-#   !grepl("Volume 2", febr_data[, dataset_titulo]) &
-#   !grepl("Volume 3", febr_data[, dataset_titulo])
-# febr_data[idx_radam, data_coleta_ano := 1970]
 nrow(febr_data[is.na(data_coleta_ano) & profund_sup == 0, ])
 
 # Inventário das terras em microbacias hidrográficas, Santa Catarina
 # year: 1995
 # 762 remaining without year
 febr_data[
-  grepl("Inventário das terras em microbacias hidrográficas", dataset_titulo, ignore.case = TRUE) & is.na(data_coleta_ano),
+  grepl("Inventário das terras em microbacias hidrográficas", dataset_titulo, ignore.case = TRUE) &
+    is.na(data_coleta_ano),
   data_coleta_ano := 1995
 ]
 nrow(febr_data[is.na(data_coleta_ano) & profund_sup == 0, ])
