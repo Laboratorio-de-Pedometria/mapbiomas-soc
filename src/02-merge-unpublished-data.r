@@ -9,20 +9,20 @@
 # private natural reserve in the Pantanal biome (SESC Pantanal). Due to limitations of resources,
 # any differences in laboratory methods were ignored during data processing and the new data was
 # merged with the existing data as is. The only exception is the standardization of the coordinate
-# reference system, with EPSG:4326 used as target. During data processing, we noticed that 32
-# samples coming from the latest (2021) FEBR snapshot we missing data on the concentration of the
-# fine earth fraction. After checking the horizon/layer designation, we attributed a concentration
-# of fine earth of 1000 g/kg.
+# reference system, with EPSG:4326 used as target.
+# During data processing, we noticed that 32 samples coming from the latest (2021) FEBR snapshot we
+# missing data on the concentration of the fine earth fraction. After checking the horizon/layer
+# designation, we attributed a concentration of fine earth of 1000 g/kg.
+# We also noticed that some events were duplicated. These were events with the same ID but different
+# spatial or temporal coordinates. We identify them computing the standard deviation of the
+# coordinates of each event: for non-duplicated events, the standard deviation should be zero.
 # NFI: https://snif.florestal.gov.br/pt-br/inventario-florestal-nacional-ifn/ifn-dados-abertos
 # KEY RESULTS
 # We started with 14 043 events (50 470 layers) in the data base and added another 1098 events
 # (2226 layers) to the data base. All of these 1098 events contain the spatial and temporal
-# coordinates. In total, we end we 15 141 events (52 696 layers)
+# coordinates. After removing 12 duplicated events (130 layers), we ended with 15 129 events
+# (52 566 layers).
 rm(list = ls())
-
-nrow(febr_data01)
-# 2226 (not all layers of the National Forest Inventory have events - there must be some error in
-# their database)
 
 # Install and load required packages
 if (!require("data.table")) {
@@ -139,6 +139,28 @@ nrow(unique(febr_data[, c("dataset_id", "observacao_id")]))
 # 15141
 nrow(febr_data)
 # 52696
+
+# Check if we have replicated sample points
+# There are events with the same ID but different spatial or temporal coordinates. We identify them
+# computing the standard deviation of the coordinates of each event: for non-duplicated events, the
+# standard deviation should be zero.
+nrow(unique(febr_data[, c("dataset_id", "observacao_id", "data_coleta_ano", "coord_x", "coord_y")]))
+# 15 182 (there are events with the same ID but different coordinates)
+febr_data[, std_x := sd(coord_x), by = c("dataset_id", "observacao_id")]
+febr_data[is.na(std_x), std_x := 0]
+febr_data[, std_y := sd(coord_y), by = c("dataset_id", "observacao_id")]
+febr_data[is.na(std_y), std_y := 0]
+febr_data[, std_t := sd(data_coleta_ano), by = c("dataset_id", "observacao_id")]
+febr_data[is.na(std_t), std_t := 0]
+febr_data[, std_xyt := (std_x + std_y + std_t)]
+nrow(unique(febr_data[std_xyt > 0, c("dataset_id", "observacao_id")]))
+# 12 duplicated events (130 layers)
+febr_data <- febr_data[std_xyt == 0, ]
+nrow(unique(febr_data[, c("dataset_id", "observacao_id")]))
+# 15 129
+nrow(febr_data)
+# 52 566
+febr_data[, c("std_x", "std_y", "std_t", "std_xyt") := NULL]
 
 # Escrever dados em disco
 data.table::fwrite(febr_data, "mapbiomas-solos/data/02-febr-data.txt", sep = "\t", dec = ",")
