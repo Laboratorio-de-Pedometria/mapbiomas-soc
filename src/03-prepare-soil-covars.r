@@ -56,8 +56,8 @@ if (!require("data.table")) {
 
 # Ler dados do disco
 febr_data <- data.table::fread("mapbiomas-solos/data/02-febr-data.txt", dec = ",", sep = "\t")
-nrow(unique(febr_data[, "id"])) # 15 141
-nrow(febr_data) # 52 696
+nrow(unique(febr_data[, "id"])) # 15 129
+nrow(febr_data) # 52 566
 colnames(febr_data)
 
 # Set categorical variables as factors
