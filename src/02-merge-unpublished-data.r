@@ -15,10 +15,14 @@
 # of fine earth of 1000 g/kg.
 # NFI: https://snif.florestal.gov.br/pt-br/inventario-florestal-nacional-ifn/ifn-dados-abertos
 # KEY RESULTS
-# We started with 14 043 events (50 470 layers) in the data base and added another 1079 events
-# (2419) layers to the data base. All of these 1079 events contain the spatial and temporal
-# coordinates.
+# We started with 14 043 events (50 470 layers) in the data base and added another 1098 events
+# (2226 layers) to the data base. All of these 1098 events contain the spatial and temporal
+# coordinates. In total, we end we 15 141 events (52 696 layers)
 rm(list = ls())
+
+nrow(febr_data01)
+# 2226 (not all layers of the National Forest Inventory have events - there must be some error in
+# their database)
 
 # Install and load required packages
 if (!require("data.table")) {
@@ -60,6 +64,8 @@ for (i in seq_along(files_event)) {
   data.table::setnames(data_event[[i]], old = rename[, 1], new = rename[, 2], skip_absent = TRUE)
 }
 data_event <- data.table::rbindlist(data_event, fill = TRUE)
+nrow(data_event)
+# 1709 (not all events have layers)
 
 # Standardize coordinate reference system
 data_event[, coord_datum_epsg := as.integer(gsub("EPSG:", "", coord_datum_epsg))]
@@ -76,7 +82,9 @@ data_event <- cbind(sf::st_coordinates(data_event), as.data.frame(data_event))
 data_event <- data.table::as.data.table(data_event)
 data_event[coord_datum_epsg != 4326 & !is.na(coord_datum_epsg), coord_datum_epsg := 4326]
 data.table::setnames(data_event, old = c("X", "Y"), new = c("coord_x", "coord_y"))
+data_event[, geometry := NULL]
 nrow(data_event)
+# 1709 (not all events have layers)
 
 # Camadas
 files_layer <- list.files(
@@ -92,9 +100,11 @@ for (i in seq_along(files_layer)) {
 }
 data_layer <- data.table::rbindlist(data_layer, fill = TRUE)
 nrow(data_layer)
+# 2419 (not all layers of the National Forest Inventory have events - there must be some error in
+# their database)
 
 # Juntar dados de eventos e camadas
-febr_data01 <- merge(data_event, data_layer)
+febr_data01 <- merge(data_event, data_layer, by = c("dataset_id", "id"))
 colnames(febr_data01)
 if (!"terrafina" %in% colnames(febr_data01)) {
   febr_data01[, terrafina := NA_real_]
@@ -102,8 +112,13 @@ if (!"terrafina" %in% colnames(febr_data01)) {
 if (!"camada_nome" %in% colnames(febr_data01)) {
   febr_data01[, camada_nome := NA_character_]
 }
+nrow(unique(febr_data01[, c("dataset_id", "id")]))
+# 1099 (not all events have layers)
+nrow(febr_data01)
+# 2226 (not all layers of the National Forest Inventory have events - there must be some error in
+# their database)
 
-# Ler dados do disco
+# Read data processed in the previous script
 # Corrigir amostras com terrafina = 0
 # Assume-se que se tratam de amostras com dado faltante e que, quando faltante, o valor de terra
 # fina é 1000 g/kg
@@ -111,13 +126,19 @@ febr_data02 <- data.table::fread("mapbiomas-solos/data/01-febr-data.txt", dec = 
 febr_data02[, coord_datum_epsg := 4326]
 febr_data02[terrafina == 0, terrafina := 1000]
 nrow(unique(febr_data02[, c("dataset_id", "observacao_id")]))
+# 14043
 
 # Juntar dados
+febr_data01[, observacao_id := id]
 febr_data01[, id := paste0(dataset_id, "-", id)]
 idx <- match(colnames(febr_data02), colnames(febr_data01))
 idx01 <- na.exclude(idx)
 idx02 <- which(!is.na(idx))
 febr_data <- rbind(febr_data01[, ..idx01], febr_data02[, ..idx02])
+nrow(unique(febr_data[, c("dataset_id", "observacao_id")]))
+# 15141
+nrow(febr_data)
+# 52696
 
 # Escrever dados em disco
 data.table::fwrite(febr_data, "mapbiomas-solos/data/02-febr-data.txt", sep = "\t", dec = ",")
