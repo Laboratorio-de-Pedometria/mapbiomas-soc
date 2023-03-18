@@ -1,63 +1,74 @@
+# 05. ESTIMATE SOIL BULK DENSITY ###################################################################
+# SUMMARY
+# The bulk density is a key soil property to compute SOC stocks. However, data on this soil property
+# is missing for various soil layers. We deal with this issue by training a random forest regression
+# model to estimate the bulk density of soil samples that are missing data on such variable. We use
+# soil and environmental covariates as predictor variables.
+# 
+# KEY RESULTS
+# 
 rm(list = ls())
 
 # Install and load required packages
 if (!require("ranger")) {
   install.packages("ranger")
 }
+if (!require("caret")) {
+  install.packages("caret")
+}
 
 # Ler dados do disco
-febr_data <- data.table::fread("mapbiomas-solos/data/04-febr-data.txt", dec = ",", sep = "\t")
+febr_data <- data.table::fread("mapbiomas-solos/data/04-febr-data.txt", dec = ",", sep = "\t",
+  stringsAsFactors = TRUE)
+nrow(unique(febr_data[, c("dataset_id", "observacao_id")])) # 15 129
+nrow(febr_data) # 52 566
 colnames(febr_data)
 
-# We work with data from the first 30 cm and ignore organic layers
+# We work only with data from the first 30 cm and deeper layers that start at or before 30 cm.
+# We also ignore organic layers (negative depth) in mineral soils.
+# * four layers with negative depth
+# * 26 351 layers with superior depth equal to or larger than 30 cm
+# * 17 743 layers missing SOC and bulk density data
+nrow(febr_data[profund_sup < 0, ])
+nrow(febr_data[profund_sup >= 30, ])
+nrow(febr_data[is.na(dsi) & is.na(carbono), ])
 febr_data <- febr_data[profund_sup >= 0 & profund_sup < 30, ]
-nrow(febr_data)
+febr_data <- febr_data[!is.na(dsi) | !is.na(carbono), ]
+nrow(unique(febr_data[, c("dataset_id", "observacao_id")])) # 9669
+nrow(febr_data) # 16 596
 
-# Compute carbon related covariates
-# febr_data[, log_carbono := log1p(carbono)]
-# febr_data[, argila_carbono := argila * carbono]
-# summary(febr_data[, c("log_carbono", "argila_carbono")])
-
-# Identify layers not missing soil density data
+# Identify layers missing soil bulk density data
+# We noticed that very high values (> 2.3 g/cm^3) were recorded for a few layers (n = 12). There
+# also were two B horizons and one A horizon with too low density values (< 0.5). Checking their
+# source soil surveys, we identified that these data were erroneous. The data was then deleted.
+# There are 3582 layers with data on soil bulk density. Predictions need to be made for 13 014
+# layers.
+nrow(febr_data[dsi > 2.3, ])
+febr_data[dsi > 2.3, dsi := NA_real_]
+febr_data[dsi < 0.5 & grepl("B", camada_nome), dsi := NA_real_]
+febr_data[dataset_id == "ctb0654" & observacao_id == "11-V-RCC" & camada_nome == "A",
+  dsi := NA_real_]
 dsi_isna <- is.na(febr_data[["dsi"]])
 sum(!dsi_isna); sum(dsi_isna)
-x11()
-hist(febr_data[!dsi_isna, dsi],
-  xlab = expression("Densidade, g cm"^-3), ylab = "Frequência", main = "")
-rug(febr_data[!dsi_isna, dsi])
-
-# Exploratory data analysis
-# r_vars <- c(
-#   "argila", "areia", "carbono", "log_carbono", "argila_carbono", "silte", "profund", "terrafina")
-# r_matrix <- cor(febr_data[dsi_notna_idx, ..r_vars], use = "complete", method = "spearman")
-# pedometrics::plotCor(round(r_matrix, 2))
-
-# Set categorical variables as factors
-# febr_data[, estado_id := as.factor(estado_id)]
-# state_table <- sort(table(febr_data[dsi_notna_idx, estado_id]), decreasing = TRUE)
-# barplot(state_table, xlab = "Unidade da federação", ylab = "Frequência")
-
-# Imputar valores faltantes
-# colnames(febr_data)
-# febr_data[, areia := randomForest::na.roughfix(areia)]
-# febr_data[, argila := randomForest::na.roughfix(argila)]
-# febr_data[, carbono := randomForest::na.roughfix(carbono)]
-# febr_data[, argila_carbono := randomForest::na.roughfix(argila_carbono)]
-# febr_data[, profund := randomForest::na.roughfix(profund)]
-# febr_data[, sibcs_ordem := randomForest::na.roughfix(sibcs_ordem)]
-# febr_data[, sibcs_subordem := randomForest::na.roughfix(sibcs_subordem)]
-# febr_data[, coord_x := randomForest::na.roughfix(coord_x)]
-# febr_data[, coord_y := randomForest::na.roughfix(coord_y)]
+dev.off()
+png("mapbiomas-solos/res/fig/bulk-density-training-data.png",
+  width = 480 * 3, height = 480 * 3, res = 72 * 3)
+hist(febr_data[["dsi"]],
+  panel.first = grid(), 
+  xlab = expression("Densidade do solo, g cm"^-3),
+  ylab = paste0("Frequência absoluta (n = ", sum(!dsi_isna), ")"),
+  main = "")
+rug(febr_data[["dsi"]])
+dev.off()
 
 # Estimate random forest model
 colnames(febr_data)
-febr_data[, psd := NULL]
 febr_data[, GREATGROUP := NULL]
 febr_data[, SUBGROUP := NULL]
 covars <- colnames(febr_data)
 idx <- which(covars == "ORDER")
 covars <- covars[idx:length(covars)]
-dsi_formula <- paste0("dsi ~ ", paste0(covars, collapse = " + "))
+dsi_formula <- as.formula(paste0("dsi ~ ", paste0(covars, collapse = " + ")))
 
 t0 <- proc.time()
 dsi_model <- ranger::ranger(
@@ -72,24 +83,60 @@ proc.time() - t0
 print(dsi_model)
 
 # Variable importance
-x11()
-par(mar = c(5, 10, 4, 2) + 0.1)
-barplot(sort(dsi_model$variable.importance), horiz = TRUE, las = 1)
+dev.off()
+png("mapbiomas-solos/res/fig/bulk-density-variable-importance.png",
+  width = 480 * 3, height = 480 * 4, res = 72 * 3)
+par(mar = c(4, 6, 1, 1) + 0.1)
+barplot(sort(dsi_model$variable.importance) / max(dsi_model$variable.importance),
+  horiz = TRUE, las = 1, col = "white", border = "white", axes = FALSE,
+  xlab = "Importância relativa", cex.names = 0.5)
+grid(nx = NULL, ny = FALSE)
+barplot(sort(dsi_model$variable.importance) / max(dsi_model$variable.importance),
+  horiz = TRUE, las = 1, add = TRUE, cex.names = 0.5)
+dev.off()
 
-# Predicted versus observed
-x11()
+# Fitted versus observed
+dev.off()
+png("mapbiomas-solos/res/fig/bulk-density-fitted-versus-observed.png",
+  width = 480 * 3, height = 480 * 3, res = 72 * 3)
 plot(y = febr_data[!dsi_isna, dsi], x = dsi_model$predictions, xlim = c(0, 3), ylim = c(0, 3), 
-  panel.first = grid()
+  panel.first = grid(),
+  ylab = expression("Densidade do solo observada, g cm"^-3),
+  xlab = expression("Densidade do solo ajustada, g cm"^-3)
 )
 abline(0, 1)
+dev.off()
 
 # OOB RMSE
 round(sqrt(dsi_model$prediction.error), 2)
 
-# dsi_model_imp <- randomForest::importance(dsi_model)
-# dsi_model_imp <- dsi_model_imp[order(dsi_model_imp[, 1]), ]
-# par(mar = c(4, 7, 4, 4))
-# barplot(dsi_model_imp[, 1], horiz = TRUE, las = 1)
+validationMetrics <-
+  function(data) {
+    error <- data$pred - data$obs
+    residual <- mean(data$obs) - data$obs
+    me <- mean(error)
+    mae <- mean(abs(error))
+    mse <- mean(error^2)
+    rmse <- sqrt(mse)
+    nse <- round(1 - mse/mean(residual^2), 2)
+    slope <- coef(lm(data$obs ~ data$pred))[2]
+    return(data.frame(me, mae, rmse, nse, slope))
+}
+
+t0 <- proc.time()
+loocv_dsi_model <- caret::train(
+  form = dsi_formula,
+  method = "ranger",
+  trControl = caret::trainControl(method = "cv", number = 20, savePredictions = TRUE),
+  tuneGrid = data.frame(mtry = 8, min.node.size = 5, splitrule = "variance"),
+  data = febr_data[!dsi_isna, ]
+)
+proc.time() - t0
+print(loocv_dsi_model)
+round(validationMetrics(loocv_dsi_model$pred), 2)
+
+plot(loocv_dsi_model$pred[, 2] ~ loocv_dsi_model$pred[, 1])
+
 
 # Predict soil bulk density
 tmp <- predict(dsi_model, data = febr_data[dsi_isna, ])
