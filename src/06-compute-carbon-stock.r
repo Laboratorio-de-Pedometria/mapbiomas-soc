@@ -1,3 +1,8 @@
+# 06. COMPUTE ORGANIC CARBON STOCK #################################################################
+# SUMMARY
+# 
+# KEY RESULTS
+# 
 rm(list = ls())
 
 # Install and load required packages
@@ -32,7 +37,7 @@ rug(febr_data[["espessura"]])
 
 # Corrigir conteúdo de carbono estimado usando combustão úmida
 # Considerar todas as amostras do século XX
-febr_data[data_coleta_ano < 2000, carbono := carbono * 1.1]
+# febr_data[data_coleta_ano < 2000, carbono := carbono * 1.1]
 
 # Corrigir dados de esqueleto de camada R
 febr_data[camada_nome == "R", terrafina := 0]
