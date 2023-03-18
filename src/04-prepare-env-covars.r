@@ -46,15 +46,21 @@ if (!require("geobr")) {
 mia <-
   function(x) {
     is_na <- is.na(x)
-    Xplus <- as.numeric(x)
-    Xplus[is_na] <- as.numeric(+Inf)
-    Xminus <- as.numeric(x)
-    Xminus[is_na] <- as.numeric(-Inf)
-    Xna <- rep("ISNOTNA", length(x))
-    Xna[is_na] <- as.character("ISNA")
-    out <- data.frame(Xplus = Xplus, Xminus = Xminus, Xna = Xna)
+    if (is.numeric(x)) {
+      Xplus <- as.numeric(x)
+      Xplus[is_na] <- as.numeric(+Inf)
+      Xminus <- as.numeric(x)
+      Xminus[is_na] <- as.numeric(-Inf)
+      Xna <- rep("ISNOTNA", length(x))
+      Xna[is_na] <- as.character("ISNA")
+      out <- data.frame(Xplus = Xplus, Xminus = Xminus, Xna = Xna)
+    } else {
+      Xunknown <- as.character(x)
+      Xunknown[is_na] <- "UNKNOWN"
+      out <- data.frame(Xunknown = Xunknown)
+    }
     return(out)
-}
+  }
 
 # Initialize Google Earth Engine
 rgee::ee_Initialize()
@@ -188,17 +194,29 @@ colnames(mapbiomas) <- gsub("classification_", "", colnames(mapbiomas))
 lulc_idx <- match(mapbiomas[, data_coleta_ano], colnames(mapbiomas))
 lulc <- as.matrix(mapbiomas)
 lulc <- lulc[cbind(1:nrow(lulc), lulc_idx)]
-mapbiomas[, lulc := as.factor(lulc)]
+mapbiomas[, lulc := as.character(lulc)]
 nrow(mapbiomas)
 # 12 099
 
 # Create bivariate covariates indicating natural land covers and agricultural land uses
-natural <- c(1, 3, 4, 5, 10, 49, 11, 12, 32, 29, 50, 13)
-agriculture <- c(14, 15, 18, 19, 39, 20, 40, 62, 41, 36, 46, 47, 48, 9, 21)
-mapbiomas[, natural := 0]
-mapbiomas[lulc %in% natural, natural := 1]
-mapbiomas[, agriculture := 0]
-mapbiomas[lulc %in% agriculture, agriculture := 1]
+forest <- as.character(c(1, 3, 4, 5, 49))
+nonforest <- as.character(c(10, 11, 12, 32, 29, 50, 13))
+pasture <- as.character(15)
+agriculture <- as.character(c(18, 19, 39, 20, 40, 62, 41, 36, 46, 47, 48, 21))
+forestry <- as.character(9)
+nonvegetation <- as.character(c(22, 23, 24, 30, 25, 26, 33, 31, 27))
+mapbiomas[, forest := "FALSE"]
+mapbiomas[, nonforest := "FALSE"]
+mapbiomas[, pasture := "FALSE"]
+mapbiomas[, agriculture := "FALSE"]
+mapbiomas[, forestry := "FALSE"]
+mapbiomas[, nonvegetation := "FALSE"]
+mapbiomas[lulc %in% forest, forest := "TRUE"]
+mapbiomas[lulc %in% nonforest, nonforest := "TRUE"]
+mapbiomas[lulc %in% pasture, pasture := "TRUE"]
+mapbiomas[lulc %in% agriculture, agriculture := "TRUE"]
+mapbiomas[lulc %in% forestry, forestry := "TRUE"]
+mapbiomas[lulc %in% nonvegetation, nonvegetation := "TRUE"]
 mapbiomas[, as.character(1985:2021) := NULL]
 nrow(mapbiomas)
 # 12 099
@@ -229,7 +247,7 @@ nrow(febr_data)
 
 # Impute missing data
 which_cols <- union(colnames(SoilGrids), colnames(mapbiomas))
-which_cols <- which_cols[!which_cols %in% c("dataset_id", "observacao_id", "data_coleta_ano")]
+which_cols <- which_cols[!which_cols %in% c("dataset_id", "observacao_id", "data_coleta_ano", "lulc")]
 which_cols <- match(which_cols, colnames(febr_data))
 for (i in which_cols) {
   y <- mia(febr_data[[i]])
@@ -237,24 +255,25 @@ for (i in which_cols) {
   febr_data <- cbind(febr_data, y)
 }
 febr_data[, colnames(febr_data)[which_cols] := NULL]
+colnames(febr_data) <- gsub("unknown", "", colnames(febr_data))
 
 # SoilGrids and MapBiomas
 # 359 geolocalized events are missing values for SoilGrids data
 # 6 geolocalized events are missing values for MapBiomas data
 n_na_soilgrids <- nrow(unique(febr_data[SOC_0.5CMna == "ISNA" & !is.na(coord_x),
   c("dataset_id", "observacao_id", "data_coleta_ano")]))
-n_na_mapbiomas <- nrow(unique(febr_data[LULCna == "ISNA" & !is.na(coord_x),
-  c("dataset_id", "observacao_id", "data_coleta_ano")]))
+n_na_mapbiomas <- nrow(unique(febr_data[
+  is.na(lulc) & !is.na(coord_x),
+  c("dataset_id", "observacao_id", "data_coleta_ano")
+]))
 biomas <- geobr::read_biomes()[-7, "name_biome"]
 dev.off()
 png("mapbiomas-solos/res/fig/environmental-covariates-missing-data.png",
   width = 480 * 3, height = 480 * 3, res = 72 * 3)
 plot(biomas, reset = FALSE, graticule = TRUE, axes = TRUE, ylab = "Longitude", xlab = "Latitude",
   main = "", key.pos = NULL)
-points(febr_data[SOC_0.5CMna == "ISNA" & !is.na(coord_x), c("coord_x", "coord_y")],
-  col = "red")
-points(febr_data[LULCna == "ISNA" & !is.na(coord_x), c("coord_x", "coord_y")],
-  col = "blue")
+points(febr_data[SOC_0.5CMna == "ISNA" & !is.na(coord_x), c("coord_x", "coord_y")], col = "red")
+points(febr_data[is.na(lulc) & !is.na(coord_x), c("coord_x", "coord_y")], col = "blue")
 legend(x = -45, y = 6.5,
   legend = c(paste0("NA SoilGrids (n = ", n_na_soilgrids, ")"),
             paste0("NA MapBiomas (n = ", n_na_mapbiomas, ")")),
