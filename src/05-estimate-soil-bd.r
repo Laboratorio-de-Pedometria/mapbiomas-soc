@@ -18,8 +18,11 @@ if (!require("caret")) {
 }
 
 # Ler dados do disco
-febr_data <- data.table::fread("mapbiomas-solos/data/04-febr-data.txt", dec = ",", sep = "\t",
-  stringsAsFactors = TRUE)
+febr_data <- data.table::fread("mapbiomas-solos/data/04-febr-data.txt",
+  dec = ",", sep = "\t",
+  stringsAsFactors = TRUE
+)
+str(febr_data)
 nrow(unique(febr_data[, c("dataset_id", "observacao_id")])) # 15 129
 nrow(febr_data) # 52 566
 colnames(febr_data)
@@ -65,6 +68,7 @@ dev.off()
 colnames(febr_data)
 febr_data[, GREATGROUP := NULL]
 febr_data[, SUBGROUP := NULL]
+febr_data[, lulc := NULL]
 covars <- colnames(febr_data)
 idx <- which(covars == "ORDER")
 covars <- covars[idx:length(covars)]
@@ -74,13 +78,26 @@ t0 <- proc.time()
 dsi_model <- ranger::ranger(
   formula = dsi_formula,
   data = febr_data[!dsi_isna, ],
-  num.trees = 500,
+  num.trees = ceiling(nrow(febr_data[!dsi_isna, ]) * 0.25),
   importance = "impurity"
 )
 proc.time() - t0
 
 # Compute model statistics
+errosStatistics <-
+  function(observed, predicted) {
+    error <- predicted - observed
+    residual <- mean(observed) - observed
+    me <- mean(error)
+    mae <- mean(abs(error))
+    mse <- mean(error^2)
+    rmse <- sqrt(mse)
+    nse <- 1 - mse/mean(residual^2)
+    slope <- coef(lm(observed ~ predicted))[2]
+    return(data.frame(me, mae, mse, rmse, nse, slope))
+}
 print(dsi_model)
+round(errosStatistics(febr_data[!dsi_isna, dsi], dsi_model$predictions), 4)
 
 # Variable importance
 dev.off()
@@ -97,98 +114,49 @@ dev.off()
 
 # Fitted versus observed
 dev.off()
-png("mapbiomas-solos/res/fig/bulk-density-fitted-versus-observed.png",
+png("mapbiomas-solos/res/fig/bulk-density-observed-versus-oob.png",
   width = 480 * 3, height = 480 * 3, res = 72 * 3)
-plot(y = febr_data[!dsi_isna, dsi], x = dsi_model$predictions, xlim = c(0, 3), ylim = c(0, 3), 
+plot(y = febr_data[!dsi_isna, dsi], x = dsi_model$predictions, xlim = c(0, 2.5), ylim = c(0, 2.5), 
   panel.first = grid(),
   ylab = expression("Densidade do solo observada, g cm"^-3),
-  xlab = expression("Densidade do solo ajustada, g cm"^-3)
+  xlab = expression("Densidade do solo predita (OOB), g cm"^-3)
 )
 abline(0, 1)
 dev.off()
 
-# OOB RMSE
-round(sqrt(dsi_model$prediction.error), 2)
-
-validationMetrics <-
-  function(data) {
-    error <- data$pred - data$obs
-    residual <- mean(data$obs) - data$obs
-    me <- mean(error)
-    mae <- mean(abs(error))
-    mse <- mean(error^2)
-    rmse <- sqrt(mse)
-    nse <- round(1 - mse/mean(residual^2), 2)
-    slope <- coef(lm(data$obs ~ data$pred))[2]
-    return(data.frame(me, mae, rmse, nse, slope))
-}
-
+# k-fold cross-validation with k = 10
 t0 <- proc.time()
 loocv_dsi_model <- caret::train(
   form = dsi_formula,
   method = "ranger",
-  trControl = caret::trainControl(method = "cv", number = 20, savePredictions = TRUE),
-  tuneGrid = data.frame(mtry = 8, min.node.size = 5, splitrule = "variance"),
+  num.trees = dsi_model$num.trees,
+  trControl = caret::trainControl(method = "cv", number = 10, savePredictions = TRUE),
+  tuneGrid = data.frame(
+    mtry = dsi_model$mtry,
+    min.node.size = dsi_model$min.node.size,
+    splitrule = dsi_model$splitrule),
   data = febr_data[!dsi_isna, ]
 )
 proc.time() - t0
 print(loocv_dsi_model)
-round(validationMetrics(loocv_dsi_model$pred), 2)
+round(errosStatistics(loocv_dsi_model$pred$obs, loocv_dsi_model$pred$pred), 4)
 
-plot(loocv_dsi_model$pred[, 2] ~ loocv_dsi_model$pred[, 1])
-
+dev.off()
+png("mapbiomas-solos/res/fig/bulk-density-observed-versus-10cv.png",
+  width = 480 * 3, height = 480 * 3, res = 72 * 3)
+plot(y = loocv_dsi_model$pred$obs, x = loocv_dsi_model$pred$pred, xlim = c(0, 2.5), ylim = c(0, 2.5), 
+  panel.first = grid(),
+  ylab = expression("Densidade do solo observada, g cm"^-3),
+  xlab = expression("Densidade do solo predita (CV), g cm"^-3)
+)
+abline(0, 1)
+dev.off()
 
 # Predict soil bulk density
 tmp <- predict(dsi_model, data = febr_data[dsi_isna, ])
 febr_data[dsi_isna, dsi := round(tmp$predictions, 2)]
+nrow(unique(febr_data[, c("dataset_id", "observacao_id")])) # 9969
+nrow(febr_data) # 16 596
 
 # Escrever dados em disco
-data.table::fwrite(
-  febr_data[!is.na(carbono) | !is.na(dsi), ],
-  "mapbiomas-solos/data/05-febr-data.txt", sep = "\t", dec = ",")
-
-# Estimate recursive partitioning regression model #################################################
-# dsi_formula <- dsi ~ argila + silte + carbono + log1p(carbono) + I(argila * carbono) | profund + terrafina + areia
-# t0 <- proc.time()
-# dsi_model <- partykit::glmtree(formula = dsi_formula, data = febr_data[dsi_notna_idx, ],
-#   family = gaussian(link = "identity"), alpha = 0.10, prune = "AIC",
-#   verbose = TRUE, restart = TRUE, cores = 3)
-# proc.time() - t0
-
-# Model statistics
-# print(dsi_model)
-# plot(dsi_model, panel.first = {
-#   grid()
-# })
-# plot(residuals(dsi_model), panel.first = {
-#     grid()
-#     abline(h = 0, col = "red", lty = "dashed")
-#   },
-#   ylab = expression("Densidade residual, g cm"^-3), xlab = "Índice da amostra"
-# )
-# summary(dsi_model)
-# round(sqrt(mean(residuals(dsi_model)^2)), 2)
-# round(1 - (sum(residuals(dsi_model)^2) / sum((dsi_model$data[["dsi"]] - mean(dsi_model$data[["dsi"]]))^2)), 2)
-
-# dev.off()
-# png("ptf-density/res/fig/mob-fit-left-branch.png", width = 480 * 2, height = 480 * 2, res = 72)
-# plot(dsi_model[[2]])
-# dev.off()
-
-# dev.off()
-# png("ptf-density/res/fig/mob-fit-right-branch.png", width = 480 * 2, height = 480 * 2, res = 72)
-# plot(dsi_model[[23]])
-# dev.off()
-
-# Predict soil density
-# febr_data[!dsi_notna_idx, "dsi"] <- predict(dsi_model, newdata = febr_data[!dsi_notna_idx, ])
-# dsi_minmax <- range(febr_data[dsi_notna_idx, dsi])
-# outsider_idx <-
-#   febr_data[!dsi_notna_idx, dsi] < dsi_minmax[1] | febr_data[!dsi_notna_idx, dsi] > dsi_minmax[2]
-# febr_data[!dsi_notna_idx, "dsi"][outsider_idx] <- NA_real_
-
-# Plot resulting data
-# hist(febr_data[["dsi"]])
-
-# Write data on disk
-# data.table::fwrite(febr_data, "mapbiomas-solos/data/febr-data.txt", sep = "\t", dec = ",")
+data.table::fwrite(febr_data, "mapbiomas-solos/data/05-febr-data.txt", sep = "\t", dec = ",")
