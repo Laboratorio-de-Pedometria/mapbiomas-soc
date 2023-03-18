@@ -1,4 +1,4 @@
-# 04. PREPARE ENVIRONMENTAL  COVARIATES ############################################################
+# 04. PREPARE ENVIRONMENTAL COVARIATES #############################################################
 # SUMMARY
 # Environmental covariates are predictor variables extracted from maps of soil properties and other
 # spatial information. Like the soil variables, the environmental covariates will be used to train
