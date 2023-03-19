@@ -148,4 +148,5 @@ plot(febr_data_sf["carbono_estoque_g.m2"], add = TRUE, pch = 20, cex = cex)
 dev.off()
 
 # Escrever dados em disco
+febr_data[, espessura := NULL]
 data.table::fwrite(febr_data, "mapbiomas-solos/res/pontos-estoque.csv")
