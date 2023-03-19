@@ -60,10 +60,29 @@ nrow(unique(febr_data[, "id"])) # 15 129
 nrow(febr_data) # 52 566
 colnames(febr_data)
 
-# Set categorical variables as factors
-febr_data[, estado_id := as.factor(estado_id)]
-state_table <- sort(table(febr_data[, estado_id]), decreasing = TRUE)
-barplot(state_table, xlab = "Unidade da federação", ylab = "Frequência")
+# Correct layer depth
+febr_data[dataset_id == "ctb0829" & observacao_id == "P92", profund_inf := 8]
+
+# Filter out soil layers with thickness > 50 cm
+febr_data[, espessura := profund_inf - profund_sup]
+nrow(febr_data[espessura > 50, ]) # 5232 layers
+febr_data <- febr_data[espessura <= 50, ]
+febr_data[, espessura := NULL]
+nrow(unique(febr_data[, "id"])) # 14 195 events
+nrow(febr_data) # 46 207 layers
+
+# Filter out soil layers starting above 30 cm depth
+# We work only with data from the first 30 cm and deeper layers that start at or before 30 cm.
+# We also ignore organic layers (negative depth) in mineral soils.
+# * four layers with negative depth
+# * 26 351 layers with superior depth equal to or larger than 30 cm
+nrow(febr_data[profund_sup < 0, ]) # 4
+nrow(febr_data[profund_sup >= 30, ]) # 21 740
+# nrow(febr_data[is.na(dsi) & is.na(carbono), ])
+febr_data <- febr_data[profund_sup >= 0 & profund_sup < 30, ]
+# febr_data <- febr_data[!is.na(dsi) | !is.na(carbono), ]
+nrow(unique(febr_data[, "id"])) # 13 886 events
+nrow(febr_data) # 24 463 layers
 
 # Soil skeleton
 # In some soil samples, the fine earth and skeleton concentration data are inverted. This is quite
@@ -72,10 +91,10 @@ barplot(state_table, xlab = "Unidade da federação", ylab = "Frequência")
 # involves going back to the source of the data.
 febr_data[, esqueleto := 1000 - terrafina]
 febr_data[
-  esqueleto > 800 & camada_nome %in% c("A", "A1", "B", "Bt". "B21", "B22", "Bw", "AB", "Ap"),
+  esqueleto > 800 & camada_nome %in% c("A", "A1", "B", "Bt", "B21", "B22", "Bw", "AB", "Ap"),
   terrafina := esqueleto]
 febr_data[
-  esqueleto > 800 & camada_nome %in% c("A", "A1", "B", "Bt". "B21", "B22", "Bw", "AB", "Ap"),
+  esqueleto > 800 & camada_nome %in% c("A", "A1", "B", "Bt", "B21", "B22", "Bw", "AB", "Ap"),
   esqueleto := 1000 - terrafina]
 
 # PREPARE PREDICTOR VARIABLES
@@ -184,19 +203,19 @@ febr_data[, BHRZN := as.factor(BHRZN)]
 summary(febr_data[, BHRZN])
 
 # DEPTH: Layer average depth (continuous)
-febr_data[, espessura := profund_inf - profund_sup]
-febr_data[, DEPTH := profund_sup + (espessura / 2)]
-febr_data[is.na(DEPTH) & esqueleto == 1000, DEPTH := 2000]
-febr_data[, DEPTHplus := DEPTH]
-febr_data[, DEPTHminus := DEPTH]
-febr_data[, DEPTHna := "ISNOTNA"]
-febr_data[is.na(DEPTH), DEPTHplus := +Inf]
-febr_data[is.na(DEPTH), DEPTHminus := -Inf]
-febr_data[is.na(DEPTH), DEPTHna := "ISNA"]
-febr_data[, DEPTHna := as.factor(DEPTHna)]
-febr_data[is.na(DEPTH), c("DEPTH", "DEPTHplus", "DEPTHminus", "DEPTHna")]
-febr_data[, DEPTH := NULL]
-febr_data[, espessura := NULL]
+# febr_data[, espessura := profund_inf - profund_sup]
+# febr_data[, DEPTH := profund_sup + (espessura / 2)]
+# febr_data[is.na(DEPTH) & esqueleto == 1000, DEPTH := 2000]
+# febr_data[, DEPTHplus := DEPTH]
+# febr_data[, DEPTHminus := DEPTH]
+# febr_data[, DEPTHna := "ISNOTNA"]
+# febr_data[is.na(DEPTH), DEPTHplus := +Inf]
+# febr_data[is.na(DEPTH), DEPTHminus := -Inf]
+# febr_data[is.na(DEPTH), DEPTHna := "ISNA"]
+# febr_data[, DEPTHna := as.factor(DEPTHna)]
+# febr_data[is.na(DEPTH), c("DEPTH", "DEPTHplus", "DEPTHminus", "DEPTHna")]
+# febr_data[, DEPTH := NULL]
+# febr_data[, espessura := NULL]
 
 # Particle size distribution
 # Start by checking if all three fractions are present and, if so, check if their sum is 100%

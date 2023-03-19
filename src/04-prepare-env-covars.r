@@ -67,29 +67,28 @@ rgee::ee_Initialize()
 
 # Read data processed in the previous script
 febr_data <- data.table::fread("mapbiomas-solos/data/03-febr-data.txt", dec = ",", sep = "\t")
-nrow(unique(febr_data[, "id"])) # 15 129
-nrow(febr_data) # 52 566
-colnames(febr_data)
+nrow(unique(febr_data[, "id"])) # 13 886 events
+nrow(febr_data) # 24 463 layers
 
 # Create spatial object
 # First filter out those samples without coordinates
 # Also keep a single sample per soil profile
 is_na_coordinates <- is.na(febr_data[, coord_x]) | is.na(febr_data[, coord_y])
 sp_febr_data <- febr_data[!is_na_coordinates, ]
-nrow(unique(sp_febr_data[, c("dataset_id", "observacao_id")]))
-# 12 099
+nrow(unique(sp_febr_data[, "id"])) # 11 603
 first <- function(x) x[1, ]
 sf_febr_data <- 
   sp_febr_data[, first(id),
   by = c("dataset_id", "observacao_id", "coord_x", "coord_y", "data_coleta_ano")]
 sf_febr_data[, V1 := NULL]
-nrow(sf_febr_data)
-# 12 099
+nrow(sf_febr_data) # 11 603
 sf_febr_data <- sf::st_as_sf(sf_febr_data, coords = c("coord_x", "coord_y"), crs = 4326)
-brazil <- geobr::read_country()
-x11()
-plot(brazil, reset = FALSE)
-plot(sf_febr_data, add = TRUE, col = "black", cex = 0.5)
+if (FALSE) {
+  brazil <- geobr::read_country()
+  x11()
+  plot(brazil, reset = FALSE)
+  plot(sf_febr_data, add = TRUE, col = "black", cex = 0.5)
+}
 
 # Prepare for sampling on GEE
 n_max <- 5000
@@ -111,8 +110,7 @@ for (i in 1:n_lags) {
 bdod_mean <- data.table::rbindlist(bdod_mean)
 bdod_mean[, c("bdod_30.60cm_mean", "bdod_60.100cm_mean", "bdod_100.200cm_mean") := NULL]
 # bdod_mean[, c("dataset_id", "observacao_id", "data_coleta_ano") := NULL]
-nrow(bdod_mean)
-# 12 099
+nrow(bdod_mean) # 11 603
 
 # Soil Grids 250m v2.0: clay_mean
 clay_mean <- list()
@@ -126,8 +124,7 @@ for (i in 1:n_lags) {
 clay_mean <- data.table::rbindlist(clay_mean)
 clay_mean[, c("clay_30.60cm_mean", "clay_60.100cm_mean", "clay_100.200cm_mean") := NULL]
 # clay_mean[, c("dataset_id", "observacao_id", "data_coleta_ano") := NULL]
-nrow(clay_mean)
-# 12 099
+nrow(clay_mean) # 11 603
 
 # Soil Grids 250m v2.0: sand_mean
 sand_mean <- list()
@@ -141,8 +138,7 @@ for (i in 1:n_lags) {
 sand_mean <- data.table::rbindlist(sand_mean)
 sand_mean[, c("sand_30.60cm_mean", "sand_60.100cm_mean", "sand_100.200cm_mean") := NULL]
 # sand_mean[, c("dataset_id", "observacao_id", "data_coleta_ano") := NULL]
-nrow(sand_mean)
-# 12 099
+nrow(sand_mean) # 11 603
 
 # Soil Grids 250m v2.0: soc_mean
 soc_mean <- list()
@@ -155,16 +151,28 @@ for (i in 1:n_lags) {
 soc_mean <- data.table::rbindlist(soc_mean)
 soc_mean[, c("soc_30.60cm_mean", "soc_60.100cm_mean", "soc_100.200cm_mean") := NULL]
 # soc_mean[, c("dataset_id", "observacao_id", "data_coleta_ano") := NULL]
-nrow(soc_mean)
-# 12 099
+nrow(soc_mean) # 11 603
+
+# Soil Grids 250m v2.0: cfvo_mean
+cfvo_mean <- list()
+for (i in 1:n_lags) {
+  cfvo_mean[[i]] <- rgee::ee_extract(
+    x = rgee::ee$Image("projects/soilgrids-isric/cfvo_mean"),
+    y = sf_febr_data[lags == i, ], scale = 250
+  )
+}
+cfvo_mean <- data.table::rbindlist(cfvo_mean)
+cfvo_mean[, c("cfvo_30.60cm_mean", "cfvo_60.100cm_mean", "cfvo_100.200cm_mean") := NULL]
+# cfvo_mean[, c("dataset_id", "observacao_id", "data_coleta_ano") := NULL]
+nrow(cfvo_mean) # 11 603
 
 # Collate data from SoilGrids
 SoilGrids <- merge(bdod_mean, clay_mean)
 SoilGrids <- merge(SoilGrids, sand_mean)
 SoilGrids <- merge(SoilGrids, soc_mean)
+SoilGrids <- merge(SoilGrids, cfvo_mean)
 colnames(SoilGrids) <- gsub("_mean", "", colnames(SoilGrids), fixed = TRUE)
-nrow(SoilGrids)
-# 12 099
+nrow(SoilGrids) # 11 603
 
 # Prepare to sample MapBiomas on GEE
 n_max <- 1000
@@ -186,8 +194,7 @@ for (i in 1:n_lags) {
   )
 }
 mapbiomas <- data.table::rbindlist(mapbiomas)
-nrow(mapbiomas)
-# 12 099
+nrow(mapbiomas) # 11 603
 
 # Get LULC class at the year of sampling
 colnames(mapbiomas) <- gsub("classification_", "", colnames(mapbiomas))
@@ -195,8 +202,7 @@ lulc_idx <- match(mapbiomas[, data_coleta_ano], colnames(mapbiomas))
 lulc <- as.matrix(mapbiomas)
 lulc <- lulc[cbind(1:nrow(lulc), lulc_idx)]
 mapbiomas[, lulc := as.character(lulc)]
-nrow(mapbiomas)
-# 12 099
+nrow(mapbiomas) # 11 603
 
 # Create bivariate covariates indicating natural land covers and agricultural land uses
 forest <- as.character(c(1, 3, 4, 5, 49))
@@ -218,32 +224,26 @@ mapbiomas[lulc %in% agriculture, agriculture := "TRUE"]
 mapbiomas[lulc %in% forestry, forestry := "TRUE"]
 mapbiomas[lulc %in% nonvegetation, nonvegetation := "TRUE"]
 mapbiomas[, as.character(1985:2021) := NULL]
-nrow(mapbiomas)
-# 12 099
+nrow(mapbiomas) # 11 603
 
 # Merge data sampled from Google Earth Engine
 sf_febr_data <- merge(sf_febr_data, SoilGrids)
 sf_febr_data <- merge(sf_febr_data, mapbiomas)
-nrow(sf_febr_data)
-# 12 099
+nrow(sf_febr_data) # 11 603
 
 # Merge geolocalized events and layers
 sf_febr_data <- data.table::as.data.table(sf_febr_data)
 sf_febr_data[, geometry := NULL]
 sp_febr_data <- merge(sp_febr_data, sf_febr_data,
   by = c("dataset_id", "observacao_id", "data_coleta_ano"))
-nrow(unique(sp_febr_data[, c("dataset_id", "observacao_id", "data_coleta_ano")]))
-# 12 099
-nrow(sp_febr_data)
-# 41 563
+nrow(unique(sp_febr_data[, c("dataset_id", "observacao_id", "data_coleta_ano")])) # 11 603
+nrow(sp_febr_data) # 19 919
 
 # Merge geolocalized and non-geolocalized events and layers
 febr_data <- data.table::rbindlist(list(sp_febr_data, febr_data[is_na_coordinates, ]),
   use.names = TRUE, fill = TRUE)
-nrow(unique(febr_data[, c("dataset_id", "observacao_id", "data_coleta_ano")]))
-# 15 129
-nrow(febr_data)
-# 52 566
+nrow(unique(febr_data[, c("id", "data_coleta_ano")])) # 13 886
+nrow(febr_data) # 24 463
 
 # Impute missing data
 which_cols <- union(colnames(SoilGrids), colnames(mapbiomas))
@@ -258,7 +258,7 @@ febr_data[, colnames(febr_data)[which_cols] := NULL]
 colnames(febr_data) <- gsub("unknown", "", colnames(febr_data))
 
 # SoilGrids and MapBiomas
-# 359 geolocalized events are missing values for SoilGrids data
+# 329 geolocalized events are missing values for SoilGrids data
 # 6 geolocalized events are missing values for MapBiomas data
 n_na_soilgrids <- nrow(unique(febr_data[SOC_0.5CMna == "ISNA" & !is.na(coord_x),
   c("dataset_id", "observacao_id", "data_coleta_ano")]))
