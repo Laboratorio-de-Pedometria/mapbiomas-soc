@@ -34,9 +34,11 @@ if (!require("sf")) {
   install.packages("sf")
 }
 if (!require("rgee")) {
-  install.packages("rgee", dependencies = TRUE)
-  rgee::ee_install()
   # snap install google-cloud-cli --classic
+  install.packages("rgee", dependencies = TRUE)
+  # rgee::ee_clean_pyenv()
+  rgee::ee_install()
+  
 }
 if (!require("geobr")) {
   install.packages("geobr")
@@ -63,7 +65,9 @@ mia <-
   }
 
 # Initialize Google Earth Engine
-rgee::ee_Initialize()
+local_user <- Sys.info()["user"]
+gee_user <- ifelse(grepl("alessandro", local_user), "alessandrosamuelrosa", NULL)
+rgee::ee_Initialize(user = gee_user)
 
 # Read data processed in the previous script
 febr_data <- data.table::fread("mapbiomas-solos/data/03-febr-data.txt", dec = ",", sep = "\t")
