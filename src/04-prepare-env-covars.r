@@ -65,7 +65,7 @@ mia <-
   }
 
 # Initialize Google Earth Engine
-local_user <- Sys.info()["user"]
+local_user <- Sys.getenv("USER")
 gee_user <- ifelse(grepl("alessandro", local_user), "alessandrosamuelrosa", NULL)
 rgee::ee_Initialize(user = gee_user)
 
