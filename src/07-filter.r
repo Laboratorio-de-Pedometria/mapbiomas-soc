@@ -19,9 +19,6 @@ rgee::ee_Initialize()
 febr_data <- data.table::fread("mapbiomas-solos/data/06-febr-data.txt", dec = ",", sep = "\t")
 colnames(febr_data)
 
-# Set date = 1985 for samples collected before 1995
-febr_data[data_coleta_ano < 1985, data_coleta_ano := 1985]
-
 # Check if we have replicated sample points
 dupl <- dist(febr_data[, c("data_coleta_ano", "coord_x", "coord_y", "carbono_estoque_g.m2")])
 dupl <- as.matrix(dupl)
