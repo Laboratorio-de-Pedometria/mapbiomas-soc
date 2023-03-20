@@ -22,14 +22,6 @@ colnames(febr_data)
 nrow(unique(febr_data[, "id"])) # 13 886 events
 nrow(febr_data) # 24 463 layers
 
-# MOVED TO 03
-# Filter out soil layers with thickness > 50 cm 
-# febr_data[dataset_id == "ctb0829" & observacao_id == "P92", profund_inf := 8]
-# febr_data[, espessura := profund_inf - profund_sup]
-# nrow(unique(febr_data[espessura > 50, c("dataset_id", "observacao_id")])) # 342
-# nrow(febr_data[espessura > 50, c("dataset_id", "observacao_id")]) # 351
-# febr_data <- febr_data[espessura <= 50, ]
-
 # Filter out soil layers missing data on soil organic carbon
 nrow(febr_data[is.na(carbono), ]) # 8 235 layers
 nrow(febr_data[is.na(carbono), "id"]) # 8 235 events
