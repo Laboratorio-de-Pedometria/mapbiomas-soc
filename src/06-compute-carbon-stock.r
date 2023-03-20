@@ -87,6 +87,10 @@ hist(febr_data[, carbono_estoque_g.m2]/1000)
 rug(febr_data[, carbono_estoque_g.m2]/1000)
 nrow(febr_data) # 6398 events/layers
 
+# Check if we have replicated sample points
+double <- duplicated(febr_data[, c("data_coleta_ano", "coord_x", "coord_y", "carbono_estoque_g.m2")])
+febr_data <- febr_data[!double, ]
+
 # Avaliar distribuição de frequência dos dados de estoque de carbono
 dev.off()
 png("mapbiomas-solos/res/fig/carbon-stock-histogram.png",
