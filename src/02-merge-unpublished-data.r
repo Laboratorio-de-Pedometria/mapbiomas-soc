@@ -53,7 +53,8 @@ rename <- matrix(rename, ncol = 2, byrow = TRUE)
 # Carregar dados de conjuntos de dados ainda não disponíveis no FEBR
 # Eventos
 files_event <- list.files(
-  path = "/home/alessandro/ownCloud/febr-repo/processamento", pattern = "-evento.txt$",
+  path = path.expand("~/ownCloud/febr-repo/processamento"),
+  pattern = "-evento.txt$",
   full.names = TRUE, recursive = TRUE)
 data_event <- list()
 for (i in seq_along(files_event)) {
@@ -64,18 +65,26 @@ for (i in seq_along(files_event)) {
   data.table::setnames(data_event[[i]], old = rename[, 1], new = rename[, 2], skip_absent = TRUE)
 }
 data_event <- data.table::rbindlist(data_event, fill = TRUE)
-nrow(data_event)
 # 1709 (not all events have layers)
 
 # Standardize coordinate reference system
 data_event[, coord_datum_epsg := as.integer(gsub("EPSG:", "", coord_datum_epsg))]
 sf_data_event <- split(data_event, data_event[, coord_datum_epsg])
 idx_transform <- which(names(sf_data_event) != 4326)
-for (i in idx_transform) {
-  crs <- as.integer(names(sf_data_event[i]))
-  sf_data_event[[i]] <- sf::st_as_sf(
-    sf_data_event[[i]], coords = c("coord_x", "coord_y"), crs = crs)
+for (i in seq_along(sf_data_event)) {
+  if (i %in% idx_transform) {
+    crs <- as.integer(names(sf_data_event[i]))
+    sf_data_event[[i]] <- sf::st_as_sf(
+      sf_data_event[[i]],
+      coords = c("coord_x", "coord_y"), crs = crs
+    )
   sf_data_event[[i]] <- sf::st_transform(sf_data_event[[i]], crs = 4326)
+  } else {
+    sf_data_event[[i]] <- sf::st_as_sf(sf_data_event[[i]],
+      coords = c("coord_x", "coord_y"),
+      crs = 4326
+    )
+  }
 }
 data_event <- do.call(rbind, sf_data_event)
 data_event <- cbind(sf::st_coordinates(data_event), as.data.frame(data_event))
@@ -88,7 +97,8 @@ nrow(data_event)
 
 # Camadas
 files_layer <- list.files(
-  path = "/home/alessandro/ownCloud/febr-repo/processamento", pattern = "-camada.txt$",
+  path = path.expand("~/ownCloud/febr-repo/processamento"),
+  pattern = "-camada.txt$",
   full.names = TRUE, recursive = TRUE)
 data_layer <- list()
 for (i in seq_along(files_layer)) {
@@ -117,13 +127,18 @@ nrow(unique(febr_data01[, c("dataset_id", "id")]))
 nrow(febr_data01)
 # 2226 (not all layers of the National Forest Inventory have events - there must be some error in
 # their database)
+febr_data01[, data_coleta_ano := as.integer(data_coleta_ano)]
+febr_data01 <- febr_data01[!is.na(data_coleta_ano), ]
+nrow(unique(febr_data01[, c("dataset_id", "id")])) # 1099 events
+nrow(febr_data01) # ____ layers
 
-# Read data processed in the previous script
+# Read data processed in the previous scripts
+febr_data02 <- data.table::fread("mapbiomas-solos/data/01-febr-data.txt", dec = ",", sep = "\t")
+febr_data02[, coord_datum_epsg := 4326]
+
 # Corrigir amostras com terrafina = 0
 # Assume-se que se tratam de amostras com dado faltante e que, quando faltante, o valor de terra
 # fina é 1000 g/kg
-febr_data02 <- data.table::fread("mapbiomas-solos/data/01-febr-data.txt", dec = ",", sep = "\t")
-febr_data02[, coord_datum_epsg := 4326]
 febr_data02[terrafina == 0, terrafina := 1000]
 nrow(unique(febr_data02[, c("dataset_id", "observacao_id")]))
 # 14043
@@ -134,7 +149,7 @@ febr_data01[, id := paste0(dataset_id, "-", id)]
 idx <- match(colnames(febr_data02), colnames(febr_data01))
 idx01 <- na.exclude(idx)
 idx02 <- which(!is.na(idx))
-febr_data <- rbind(febr_data01[, ..idx01], febr_data02[, ..idx02])
+febr_data <- rbind(febr_data02[, ..idx02], febr_data01[, ..idx01])
 nrow(unique(febr_data[, c("dataset_id", "observacao_id")]))
 # 15141
 nrow(febr_data)
@@ -161,6 +176,13 @@ nrow(unique(febr_data[, c("dataset_id", "observacao_id")]))
 nrow(febr_data)
 # 52 566
 febr_data[, c("std_x", "std_y", "std_t", "std_xyt") := NULL]
+
+first <- function(x) x[1, ]
+tmp <- febr_data[, first(id), by = c("dataset_id", "observacao_id", "coord_x", "coord_y", "data_coleta_ano")]
+duplo <- duplicated(tmp[, c("coord_x", "coord_y", "data_coleta_ano")])
+duplo <- tmp[duplo, V1]
+febr_data <- febr_data[!(id %in% duplo), ]
+nrow(unique(febr_data[, "id"]))
 
 # Escrever dados em disco
 data.table::fwrite(febr_data, "mapbiomas-solos/data/02-febr-data.txt", sep = "\t", dec = ",")
