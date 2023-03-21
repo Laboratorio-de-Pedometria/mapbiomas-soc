@@ -72,8 +72,36 @@ if (FALSE) {
   hist(febr_data[, carbono_estoque_kgm2])
   rug(febr_data[, carbono_estoque_kgm2])
 }
+# Remove data from constructed soil
+febr_data <- febr_data[dataset_id != "ctb0036", ]
+
+# tmp <- febr_data[NONVEGETATION == "TRUE", sum(carbono_estoque_kgm2, na.rm = TRUE), by = id]
+# table(febr_data[NONVEGETATION == "TRUE", estado_id])
+# hist(tmp[["V1"]], main = "NONVEGETATION", xlab = "Estoque de COS")
+# rug(tmp[["V1"]])
+
+# Avaliar distribuição de frequência dos dados pontuais ao entre os usos e coberturas da terra
+lulc <- febr_data[
+  !duplicated(id) & !is.na(coord_x),
+  c("FOREST", "NONFOREST", "PASTURE", "AGRICULTURE", "FORESTRY", "NONVEGETATION")
+]
+lulc_n <- sapply(lulc, function(x) sum(x == "TRUE"))
+lulc_n <- c(lulc_n, UNKNOWN = nrow(lulc) - sum(lulc_n))
+# dev.off()
+# png("mapbiomas-solos/res/fig/land-use-land-cover-distribution.png",
+#   width = 480 * 3, height = 480 * 3, res = 72 * 3)
+# par(mar = c(4, 8, 1, 1) + 0.1)
+# barplot(sort(lulc_n),
+#   horiz = TRUE,
+#   las = 1,
+#   main = "",
+#   ylab = "",
+#   xlab = paste0("Frequência absoluta (n = ", sum(lulc_n), ")")
+# )
+# dev.off()
 
 # Agregar estoque de carbono na camada superficial (0 até 30 cm) de cada evento
+first <- function(x) x[1, ]
 febr_data <- febr_data[
   !is.na(carbono_estoque_kgm2) &
     espessura > 0 &
