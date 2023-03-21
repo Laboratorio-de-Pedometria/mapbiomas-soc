@@ -135,7 +135,8 @@ round(errosStatistics(loocv_dsi_model$pred$obs, loocv_dsi_model$pred$pred), 4)
 dev.off()
 png("mapbiomas-solos/res/fig/bulk-density-observed-versus-10cv.png",
   width = 480 * 3, height = 480 * 3, res = 72 * 3)
-plot(y = loocv_dsi_model$pred$obs, x = loocv_dsi_model$pred$pred, xlim = c(0, 2.5), ylim = c(0, 2.5), 
+plot(y = loocv_dsi_model$pred$obs, x = loocv_dsi_model$pred$pred, xlim = c(0, 2.5),
+  ylim = c(0, 2.5),
   panel.first = grid(),
   ylab = expression("Densidade do solo observada, g cm"^-3),
   xlab = expression("Densidade do solo predita (CV), g cm"^-3)
@@ -153,6 +154,3 @@ nrow(febr_data)
 
 # Escrever dados em disco
 data.table::fwrite(febr_data, "mapbiomas-solos/data/05-febr-data.txt", sep = "\t", dec = ",")
-
-
-# teste
