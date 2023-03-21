@@ -56,8 +56,10 @@ if (!require("data.table")) {
 
 # Ler dados do disco
 febr_data <- data.table::fread("mapbiomas-solos/data/02-febr-data.txt", dec = ",", sep = "\t")
-nrow(unique(febr_data[, "id"])) # 15 129
-nrow(febr_data) # 52 566
+nrow(unique(febr_data[, "id"]))
+# FEBR: 11 739 events; PronaSolos: 12 469
+nrow(febr_data)
+# FEBR: 40 260 layers; PronaSolos: 43 441
 colnames(febr_data)
 
 # Correct layer depth
@@ -65,24 +67,31 @@ febr_data[dataset_id == "ctb0829" & observacao_id == "P92", profund_inf := 8]
 
 # Filter out soil layers with thickness > 50 cm
 febr_data[, espessura := profund_inf - profund_sup]
-nrow(febr_data[espessura > 50, ]) # 5232 layers
+nrow(febr_data[espessura > 50, ])
+# FEBR: 3638 layers; PronaSolos ____
 febr_data <- febr_data[espessura <= 50, ]
 febr_data[, espessura := NULL]
-nrow(unique(febr_data[, "id"])) # 14 195 events
-nrow(febr_data) # 46 207 layers
+nrow(unique(febr_data[, "id"]))
+# FEBR: 11 482; PronaSolos: 12 200 events
+nrow(febr_data)
+# FEBR: 36 288; PronaSolos: 39 006 events
 
 # Filter out soil layers starting above 30 cm depth
 # We work only with data from the first 30 cm and deeper layers that start at or before 30 cm.
 # We also ignore organic layers (negative depth) in mineral soils.
 # * four layers with negative depth
 # * 26 351 layers with superior depth equal to or larger than 30 cm
-nrow(febr_data[profund_sup < 0, ]) # 4
-nrow(febr_data[profund_sup >= 30, ]) # 21 740
+nrow(febr_data[profund_sup < 0, ])
+# FEBR: 04; PronaSolos: 04
+nrow(febr_data[profund_sup >= 30, ])
+# FEBR: 16 970; PronaSolos: 18 302
 # nrow(febr_data[is.na(dsi) & is.na(carbono), ])
 febr_data <- febr_data[profund_sup >= 0 & profund_sup < 30, ]
 # febr_data <- febr_data[!is.na(dsi) | !is.na(carbono), ]
-nrow(unique(febr_data[, "id"])) # 13 886 events
-nrow(febr_data) # 24 463 layers
+nrow(unique(febr_data[, "id"]))
+# FEBR: 11 256 events; PronaSolos: 11 946
+nrow(febr_data)
+# FEBR: 19 314 layers; PronaSolos: 20 700
 
 # Soil skeleton
 # In some soil samples, the fine earth and skeleton concentration data are inverted. This is quite

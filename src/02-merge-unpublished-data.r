@@ -24,12 +24,17 @@
 # (52 566 layers).
 rm(list = ls())
 
+pronasolos <- TRUE # ctb0064
+
 # Install and load required packages
 if (!require("data.table")) {
   install.packages("data.table")
 }
 if (!require("sf")) {
   install.packages("sf")
+}
+if (!require("geobr")) {
+  install.packages("geobr")
 }
 
 # Renomear colunas de acordo com padrão antigo
@@ -65,7 +70,7 @@ for (i in seq_along(files_event)) {
   data.table::setnames(data_event[[i]], old = rename[, 1], new = rename[, 2], skip_absent = TRUE)
 }
 data_event <- data.table::rbindlist(data_event, fill = TRUE)
-# 1709 (not all events have layers)
+nrow(data_event) # 10 098 (not all events have layers)
 
 # Standardize coordinate reference system
 data_event[, coord_datum_epsg := as.integer(gsub("EPSG:", "", coord_datum_epsg))]
@@ -92,8 +97,21 @@ data_event <- data.table::as.data.table(data_event)
 data_event[coord_datum_epsg != 4326 & !is.na(coord_datum_epsg), coord_datum_epsg := 4326]
 data.table::setnames(data_event, old = c("X", "Y"), new = c("coord_x", "coord_y"))
 data_event[, geometry := NULL]
-nrow(data_event)
-# 1709 (not all events have layers)
+
+# Clean sampling date
+data_event[data_coleta_ano < 1900, data_coleta_ano := NA_integer_]
+data_event[data_coleta_ano < 1985, data_coleta_ano := 1985]
+nrow(data_event) # 10 098 (not all events have layers)
+
+if (FALSE) {
+  x11()
+  brazil <- geobr::read_country()
+  plot(brazil, reset = FALSE, main = "PronaSolos")
+  points(data_event[dataset_id == "ctb0064", coord_x],
+    data_event[dataset_id == "ctb0064", coord_y],
+    cex = 0.5, pch = 20
+  )
+}
 
 # Camadas
 files_layer <- list.files(
@@ -109,9 +127,9 @@ for (i in seq_along(files_layer)) {
   data.table::setnames(data_layer[[i]], old = rename[, 1], new = rename[, 2], skip_absent = TRUE)
 }
 data_layer <- data.table::rbindlist(data_layer, fill = TRUE)
-nrow(data_layer)
-# 2419 (not all layers of the National Forest Inventory have events - there must be some error in
-# their database)
+nrow(data_layer) # 36 883
+# (not all layers of the National Forest Inventory have events - there must be some error in their
+# database)
 
 # Juntar dados de eventos e camadas
 febr_data01 <- merge(data_event, data_layer, by = c("dataset_id", "id"))
@@ -122,26 +140,33 @@ if (!"terrafina" %in% colnames(febr_data01)) {
 if (!"camada_nome" %in% colnames(febr_data01)) {
   febr_data01[, camada_nome := NA_character_]
 }
-nrow(unique(febr_data01[, c("dataset_id", "id")]))
-# 1099 (not all events have layers)
-nrow(febr_data01)
-# 2226 (not all layers of the National Forest Inventory have events - there must be some error in
-# their database)
-febr_data01[, data_coleta_ano := as.integer(data_coleta_ano)]
+nrow(unique(febr_data01[, c("dataset_id", "id")])) # 9487 events (not all events have layers)
+nrow(febr_data01) # 36 690
+# (not all layers of the National Forest Inventory have events - there must be some error in their
+# database)
 febr_data01 <- febr_data01[!is.na(data_coleta_ano), ]
-nrow(unique(febr_data01[, c("dataset_id", "id")])) # 1099 events
-nrow(febr_data01) # ____ layers
+nrow(unique(febr_data01[, c("dataset_id", "id")])) # 7699 events
+nrow(febr_data01) # 28 495 layers
+
+if (!pronasolos) {
+  febr_data01 <- febr_data01[dataset_id != "ctb0064", ]
+}
 
 # Read data processed in the previous scripts
 febr_data02 <- data.table::fread("mapbiomas-solos/data/01-febr-data.txt", dec = ",", sep = "\t")
 febr_data02[, coord_datum_epsg := 4326]
 
+if (FALSE) {
+  x11()
+  plot(brazil, reset = FALSE, main = "FEBR")
+  points(febr_data02[, coord_x], febr_data02[, coord_y], cex = 0.5, pch = 20)
+}
+
 # Corrigir amostras com terrafina = 0
 # Assume-se que se tratam de amostras com dado faltante e que, quando faltante, o valor de terra
 # fina é 1000 g/kg
 febr_data02[terrafina == 0, terrafina := 1000]
-nrow(unique(febr_data02[, c("dataset_id", "observacao_id")]))
-# 14043
+nrow(unique(febr_data02[, "id"])) # 14043 events
 
 # Juntar dados
 febr_data01[, observacao_id := id]
@@ -150,17 +175,17 @@ idx <- match(colnames(febr_data02), colnames(febr_data01))
 idx01 <- na.exclude(idx)
 idx02 <- which(!is.na(idx))
 febr_data <- rbind(febr_data02[, ..idx02], febr_data01[, ..idx01])
-nrow(unique(febr_data[, c("dataset_id", "observacao_id")]))
-# 15141
+nrow(unique(febr_data[, "id"]))
+# FEBR: 15 141; PronaSolos: 21 726
 nrow(febr_data)
-# 52696
+# FEBR: 52 696; PronaSolos: 78 892
 
 # Check if we have replicated sample points
 # There are events with the same ID but different spatial or temporal coordinates. We identify them
 # computing the standard deviation of the coordinates of each event: for non-duplicated events, the
 # standard deviation should be zero.
-nrow(unique(febr_data[, c("dataset_id", "observacao_id", "data_coleta_ano", "coord_x", "coord_y")]))
-# 15 182 (there are events with the same ID but different coordinates)
+nrow(unique(febr_data[, c("id", "data_coleta_ano", "coord_x", "coord_y")])) # 21 783
+# (there are events with the same ID but different coordinates)
 febr_data[, std_x := sd(coord_x), by = c("dataset_id", "observacao_id")]
 febr_data[is.na(std_x), std_x := 0]
 febr_data[, std_y := sd(coord_y), by = c("dataset_id", "observacao_id")]
@@ -169,20 +194,25 @@ febr_data[, std_t := sd(data_coleta_ano), by = c("dataset_id", "observacao_id")]
 febr_data[is.na(std_t), std_t := 0]
 febr_data[, std_xyt := (std_x + std_y + std_t)]
 nrow(unique(febr_data[std_xyt > 0, c("dataset_id", "observacao_id")]))
-# 12 duplicated events (130 layers)
+# FEBR: 12 duplicated events; PronaSolos: 12
 febr_data <- febr_data[std_xyt == 0, ]
-nrow(unique(febr_data[, c("dataset_id", "observacao_id")]))
-# 15 129
+nrow(unique(febr_data[, "id"]))
+# FEBR: 15 129; PronaSolos: 21 714
 nrow(febr_data)
-# 52 566
+# FEBR: 52 566; PronaSolos: 78 762
 febr_data[, c("std_x", "std_y", "std_t", "std_xyt") := NULL]
 
 first <- function(x) x[1, ]
-tmp <- febr_data[, first(id), by = c("dataset_id", "observacao_id", "coord_x", "coord_y", "data_coleta_ano")]
+tmp <- febr_data[, first(id),
+  by = c("dataset_id", "observacao_id", "coord_x", "coord_y", "data_coleta_ano")
+]
 duplo <- duplicated(tmp[, c("coord_x", "coord_y", "data_coleta_ano")])
 duplo <- tmp[duplo, V1]
 febr_data <- febr_data[!(id %in% duplo), ]
 nrow(unique(febr_data[, "id"]))
+# FEBR: 11 739 events; PronaSolos: 12 469
+nrow(febr_data)
+# FEBR: 40 260 layers; PronaSolos: 43 441
 
 # Escrever dados em disco
 data.table::fwrite(febr_data, "mapbiomas-solos/data/02-febr-data.txt", sep = "\t", dec = ",")

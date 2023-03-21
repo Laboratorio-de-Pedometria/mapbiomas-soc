@@ -19,12 +19,16 @@ if (!require("mapview")) {
 # Ler dados do disco
 febr_data <- data.table::fread("mapbiomas-solos/data/05-febr-data.txt", dec = ",", sep = "\t")
 colnames(febr_data)
-nrow(unique(febr_data[, "id"])) # 13 886 events
-nrow(febr_data) # 24 463 layers
+nrow(unique(febr_data[, "id"]))
+# FEBR: 11 256 events; PronaSolos: 11 946
+nrow(febr_data)
+# FEB: 19 314 layers; PronaSolos: 20 700
 
 # Filter out soil layers missing data on soil organic carbon
-nrow(febr_data[is.na(carbono), ]) # 8 235 layers
-nrow(febr_data[is.na(carbono), "id"]) # 8 235 events
+nrow(febr_data[is.na(carbono), ])
+# FEBR: ???8 235 layers; PronaSolos: 7767 layers
+nrow(unique(febr_data[is.na(carbono), "id"]))
+# FEBR: ???8 235 events; PronaSolos: 4477 layers
 febr_data <- febr_data[!is.na(carbono), ]
 
 # Resetting the limits of each layer according to the target depth range (0 and 30 cm).
@@ -39,8 +43,10 @@ febr_data[profund_sup > target_layer[2], profund_sup := target_layer[2]]
 febr_data[profund_inf > target_layer[2], profund_inf := target_layer[2]]
 febr_data[, espessura := profund_inf - profund_sup]
 febr_data[, thickness := sum(espessura), by = c("dataset_id", "observacao_id")]
-length(febr_data[thickness > 30, id]) # 663 layers
-length(unique(febr_data[thickness > 30, id])) # 149 events
+length(febr_data[thickness > 30, id])
+# FEBR: ???663 layers; PronaSolos: 126 layers
+length(unique(febr_data[thickness > 30, id]))
+# FEB: ???149 events; PronaSolos: 42 events
 febr_data <- febr_data[thickness <= 30, ]
 febr_data[, thickness := NULL]
 
@@ -61,9 +67,11 @@ febr_data[dataset_id == "ctb0054", fragmentos := 0]
 # 4) fragmentos: 1
 febr_data[,
   carbono_estoque_kgm2 := (carbono / 1000) * (espessura / 100) * (dsi * 1000) * (1 - fragmentos)]
-x11()
-hist(febr_data[, carbono_estoque_kgm2])
-rug(febr_data[, carbono_estoque_kgm2])
+if (FALSE) {
+  x11()
+  hist(febr_data[, carbono_estoque_kgm2])
+  rug(febr_data[, carbono_estoque_kgm2])
+}
 
 # Agregar estoque de carbono na camada superficial (0 até 30 cm) de cada evento
 febr_data <- febr_data[
@@ -81,11 +89,13 @@ febr_data <- febr_data[
   ),
   by = id
 ]
-
-x11()
-hist(febr_data[, carbono_estoque_g.m2]/1000)
-rug(febr_data[, carbono_estoque_g.m2]/1000)
-nrow(febr_data) # 6398 events/layers
+nrow(febr_data)
+# FEBR: 6398 events/layers; PronaSolos: 6723
+if (FALSE) {
+  x11()
+  hist(febr_data[, carbono_estoque_g.m2] / 1000)
+  rug(febr_data[, carbono_estoque_g.m2] / 1000)
+}
 
 # Check if we have replicated sample points
 double <- duplicated(febr_data[, c("data_coleta_ano", "coord_x", "coord_y", "carbono_estoque_g.m2")])
@@ -137,7 +147,7 @@ febr_data_sf <- sf::st_as_sf(febr_data, coords = c("coord_x", "coord_y"), crs = 
 dev.off()
 png("mapbiomas-solos/res/fig/carbon-stock-spatial-distribution.png",
   width = 480 * 3, height = 480 * 3, res = 72 * 3)
-plot(brazil["name_biome"], reset = FALSE,
+plot(biomes["name_biome"], reset = FALSE,
   main = "", axes = TRUE,
   key.pos = NULL, graticule = TRUE)
 cex <- febr_data_sf[["carbono_estoque_g.m2"]] / (max(febr_data_sf[["carbono_estoque_g.m2"]]) * 0.3)

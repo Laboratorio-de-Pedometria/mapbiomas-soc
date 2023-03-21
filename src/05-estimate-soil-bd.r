@@ -23,21 +23,10 @@ febr_data <- data.table::fread("mapbiomas-solos/data/04-febr-data.txt",
   stringsAsFactors = TRUE
 )
 str(febr_data)
-nrow(unique(febr_data[, c("dataset_id", "observacao_id")])) # 13 886 events
-nrow(febr_data) # 24 463 layers
-
-# We work only with data from the first 30 cm and deeper layers that start at or before 30 cm.
-# We also ignore organic layers (negative depth) in mineral soils.
-# * four layers with negative depth
-# * 26 351 layers with superior depth equal to or larger than 30 cm
-# * 17 743 layers missing SOC and bulk density data
-# nrow(febr_data[profund_sup < 0, ])
-# nrow(febr_data[profund_sup >= 30, ])
-# nrow(febr_data[!is.na(dsi) | !is.na(carbono), ])
-# febr_data <- febr_data[profund_sup >= 0 & profund_sup < 30, ]
-# febr_data <- febr_data[!is.na(dsi) | !is.na(carbono), ]
-# nrow(unique(febr_data[, c("dataset_id", "observacao_id")])) # 9669
-# nrow(febr_data) # 16 596
+nrow(unique(febr_data[, "id"]))
+# FEBR: 11 256 events; PronaSolos: 11 946
+nrow(febr_data)
+# FEB: 19 314 layers; PronaSolos: 20 700
 
 # Identify layers missing soil bulk density data
 # We noticed that very high values (> 2.3 g/cm^3) were recorded for a few layers (n = 12). There
@@ -48,10 +37,13 @@ nrow(febr_data) # 24 463 layers
 nrow(febr_data[dsi > 2.3, ])
 febr_data[dsi > 2.3, dsi := NA_real_]
 febr_data[dsi < 0.5 & grepl("B", camada_nome), dsi := NA_real_]
-febr_data[dataset_id == "ctb0654" & observacao_id == "11-V-RCC" & camada_nome == "A",
-  dsi := NA_real_]
+febr_data[
+  dataset_id == "ctb0654" & observacao_id == "11-V-RCC" & camada_nome == "A",
+  dsi := NA_real_
+]
 dsi_isna <- is.na(febr_data[["dsi"]])
-sum(!dsi_isna); sum(dsi_isna) # 3533 and 20 930
+sum(!dsi_isna); sum(dsi_isna)
+# FEBR: 3533 and 20 930; PronaSolos: 2822 and 17 878
 dev.off()
 png("mapbiomas-solos/res/fig/bulk-density-training-data.png",
   width = 480 * 3, height = 480 * 3, res = 72 * 3)
@@ -154,8 +146,10 @@ dev.off()
 # Predict soil bulk density
 tmp <- predict(dsi_model, data = febr_data[dsi_isna, ])
 febr_data[dsi_isna, dsi := round(tmp$predictions, 2)]
-nrow(unique(febr_data[, "id"])) # 13 886 events
-nrow(febr_data) # 24 463 layers
+nrow(unique(febr_data[, "id"]))
+# FEBR: 11 256 events; PronaSolos: 11 946
+nrow(febr_data)
+# FEB: 19 314 layers; PronaSolos: 20 700
 
 # Escrever dados em disco
 data.table::fwrite(febr_data, "mapbiomas-solos/data/05-febr-data.txt", sep = "\t", dec = ",")
