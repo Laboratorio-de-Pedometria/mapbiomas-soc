@@ -228,18 +228,18 @@ pasture <- as.character(15)
 agriculture <- as.character(c(18, 19, 39, 20, 40, 62, 41, 36, 46, 47, 48, 21))
 forestry <- as.character(9)
 nonvegetation <- as.character(c(22, 23, 24, 30, 25, 26, 33, 31, 27))
-mapbiomas[, forest := "FALSE"]
-mapbiomas[, nonforest := "FALSE"]
-mapbiomas[, pasture := "FALSE"]
-mapbiomas[, agriculture := "FALSE"]
-mapbiomas[, forestry := "FALSE"]
-mapbiomas[, nonvegetation := "FALSE"]
-mapbiomas[lulc %in% forest, forest := "TRUE"]
-mapbiomas[lulc %in% nonforest, nonforest := "TRUE"]
-mapbiomas[lulc %in% pasture, pasture := "TRUE"]
-mapbiomas[lulc %in% agriculture, agriculture := "TRUE"]
-mapbiomas[lulc %in% forestry, forestry := "TRUE"]
-mapbiomas[lulc %in% nonvegetation, nonvegetation := "TRUE"]
+mapbiomas[, FOREST := "FALSE"]
+mapbiomas[, NONFOREST := "FALSE"]
+mapbiomas[, PASTURE := "FALSE"]
+mapbiomas[, AGRICULTURE := "FALSE"]
+mapbiomas[, FORESTRY := "FALSE"]
+mapbiomas[, NONVEGETATION := "FALSE"]
+mapbiomas[lulc %in% forest, FOREST := "TRUE"]
+mapbiomas[lulc %in% nonforest, NONFOREST := "TRUE"]
+mapbiomas[lulc %in% pasture, PASTURE := "TRUE"]
+mapbiomas[lulc %in% agriculture, AGRICULTURE := "TRUE"]
+mapbiomas[lulc %in% forestry, FORESTRY := "TRUE"]
+mapbiomas[lulc %in% nonvegetation, NONVEGETATION := "TRUE"]
 mapbiomas[, as.character(1985:2021) := NULL]
 nrow(mapbiomas)
 # FEBR: 11 233 events; PronaSolos: 11 923
