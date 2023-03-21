@@ -90,7 +90,7 @@ febr_data <- febr_data[
   by = id
 ]
 nrow(febr_data)
-# FEBR: 6398 events/layers; PronaSolos: 6723
+# FEBR: 6398 events/layers; PronaSolos: 6723 events/layers
 if (FALSE) {
   x11()
   hist(febr_data[, carbono_estoque_g.m2] / 1000)
