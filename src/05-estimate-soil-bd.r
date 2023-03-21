@@ -155,3 +155,4 @@ nrow(febr_data)
 data.table::fwrite(febr_data, "mapbiomas-solos/data/05-febr-data.txt", sep = "\t", dec = ",")
 
 
+# teste
