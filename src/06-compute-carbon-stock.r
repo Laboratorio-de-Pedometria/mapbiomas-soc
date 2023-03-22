@@ -77,19 +77,11 @@ if (FALSE) {
 febr_data <- febr_data[dataset_id != "ctb0036", ]
 # Projeto Parque Frei Veloso - Levantamento Detalhado dos Solos do Campus da Ilha do Fundão UFRJ
 febr_data <- febr_data[dataset_id != "ctb0599", ]
+nrow(unique(febr_data[, "id"]))
+# FEBR: ____ events; PronaSolos: 7826 layers
+nrow(febr_data)
+# FEBR: ____ events; PronaSolos: 12 807 layers
 
-# tmp <- febr_data[NONVEGETATION == "TRUE", sum(carbono_estoque_kgm2, na.rm = TRUE), by = id]
-# table(febr_data[NONVEGETATION == "TRUE", estado_id])
-# hist(tmp[["V1"]], main = "NONVEGETATION", xlab = "Estoque de COS")
-# rug(tmp[["V1"]])
-
-# Avaliar distribuição de frequência dos dados pontuais ao entre os usos e coberturas da terra
-lulc <- febr_data[
-  !duplicated(id) & !is.na(coord_x),
-  c("FOREST", "NONFOREST", "PASTURE", "AGRICULTURE", "FORESTRY", "NONVEGETATION")
-]
-lulc_n <- sapply(lulc, function(x) sum(x == "TRUE"))
-lulc_n <- c(lulc_n, UNKNOWN = nrow(lulc) - sum(lulc_n))
 # dev.off()
 # png("mapbiomas-solos/res/fig/land-use-land-cover-distribution.png",
 #   width = 480 * 3, height = 480 * 3, res = 72 * 3)
@@ -104,7 +96,6 @@ lulc_n <- c(lulc_n, UNKNOWN = nrow(lulc) - sum(lulc_n))
 # dev.off()
 
 # Agregar estoque de carbono na camada superficial (0 até 30 cm) de cada evento
-first <- function(x) x[1, ]
 febr_data <- febr_data[
   !is.na(carbono_estoque_kgm2) &
     espessura > 0 &
@@ -116,12 +107,23 @@ febr_data <- febr_data[
     data_coleta_ano = as.integer(round(mean(data_coleta_ano, na.rm = TRUE))),
     coord_x = mean(coord_x, na.rm = TRUE),
     coord_y = mean(coord_y, na.rm = TRUE),
-    espessura = sum(espessura)
+    espessura = sum(espessura),
+    FOREST = unique(FOREST),
+    NONFOREST = unique(NONFOREST),
+    PASTURE = unique(PASTURE),
+    AGRICULTURE = unique(AGRICULTURE),
+    FORESTRY = unique(FORESTRY),
+    NONVEGETATION = unique(NONVEGETATION)
   ),
   by = id
 ]
 nrow(febr_data)
-# FEBR: 6398 events/layers; PronaSolos: 6723 events/layers
+# FEBR: ???6398 events/layers; PronaSolos: 6602 events/layers
+
+# table(febr_data[FOREST == "FALSE" & NONFOREST == "FALSE", AGRICULTURE == "FALSE" & PASTURE == "FALSE" & FORESTRY == "FALSE" & NONVEGETATION == "FALSE", data_coleta_ano])
+# lulc <- c("FOREST", "NONFOREST", "PASTURE", "AGRICULTURE", "FORESTRY", "NONVEGETATION")
+# sum(sapply(febr_data[, ..lulc], function(x) sum(x == "TRUE")))
+
 if (FALSE) {
   x11()
   hist(febr_data[, carbono_estoque_g.m2] / 1000)
