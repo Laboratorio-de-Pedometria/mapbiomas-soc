@@ -72,8 +72,11 @@ if (FALSE) {
   hist(febr_data[, carbono_estoque_kgm2])
   rug(febr_data[, carbono_estoque_kgm2])
 }
-# Remove data from constructed soil
+# Remove data from Technosols and Anthrosols
+# Solo construído no aterro encerrado da Caturrita, Santa Maria (RS)
 febr_data <- febr_data[dataset_id != "ctb0036", ]
+# Projeto Parque Frei Veloso - Levantamento Detalhado dos Solos do Campus da Ilha do Fundão UFRJ
+febr_data <- febr_data[dataset_id != "ctb0599", ]
 
 # tmp <- febr_data[NONVEGETATION == "TRUE", sum(carbono_estoque_kgm2, na.rm = TRUE), by = id]
 # table(febr_data[NONVEGETATION == "TRUE", estado_id])
