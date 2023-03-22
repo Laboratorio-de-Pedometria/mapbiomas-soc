@@ -222,10 +222,11 @@ nrow(mapbiomas)
 # FEBR: 11 233 events; PronaSolos: 11 923
 
 # Create bivariate covariates indicating natural land covers and agricultural land uses
+# https://mapbiomas-br-site.s3.amazonaws.com/downloads/_EN__C%C3%B3digos_da_legenda_Cole%C3%A7%C3%A3o_7.pdf
 forest <- as.character(c(1, 3, 4, 5, 49))
 nonforest <- as.character(c(10, 11, 12, 32, 29, 50, 13))
 pasture <- as.character(15)
-agriculture <- as.character(c(18, 19, 39, 20, 40, 62, 41, 36, 46, 47, 48, 21))
+agriculture <- as.character(c(14, 18, 19, 39, 20, 40, 62, 41, 36, 46, 47, 48, 21))
 forestry <- as.character(9)
 nonvegetation <- as.character(c(22, 23, 24, 30, 25, 26, 33, 31, 27))
 mapbiomas[, FOREST := "FALSE"]
