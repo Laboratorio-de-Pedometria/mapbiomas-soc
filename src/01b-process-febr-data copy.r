@@ -16,6 +16,7 @@ if (!require("data.table")) {
 # event32 <- data.table::as.data.table(event32)
 # event32[1, data_coleta := "1996-09-11"]
 # event32[grepl("^2006", data_coleta), data_coleta := "1996-09-17"]
+# ctb0033
 event33 <- febr::observation("ctb0033", "all")
 event33 <- data.table::as.data.table(event33)
 event33[, data_coleta := as.Date(data_coleta, origin = "1899-12-30")]
@@ -42,6 +43,10 @@ data.table::setnames(eventRO, old = names(new_names), new = new_names, skip_abse
 eventRO[, estado_id := "RO"]
 cols <- intersect(names(eventRO), tolower(names(eventRO)))
 eventRO <- eventRO[, ..cols]
+if (FALSE) {
+  x11()
+  plot(eventRO[, c("coord_x", "coord_y")])
+}
 
 # Download current version from FEBR: events
 # layer32 <- febr::layer("ctb0032", "all")
@@ -98,15 +103,18 @@ rondonia[, terrafina := terrafina * 10]
 rondonia[, carbono := carbono * 10]
 rondonia[, id := paste0(dataset_id, "-", observacao_id)]
 
-# Read data processed in the previous scripts
+# Read data processed in the previous script
 febr_data <- data.table::fread("mapbiomas-solos/data/01a-febr-data.txt", dec = ",", sep = "\t")
 febr_data[, coord_datum_epsg := 4326]
 
-# Merge data with the FEBR snapshot
-
+# Merge data from Rondônia with the FEBR snapshot
+# First remove existing data from Rondônia (morphological descriptions)
+length(unique(febr_data[, id])) # 14 043
 febr_data <- febr_data[dataset_id != "ctb0032", ]
+length(unique(febr_data[, id])) # 11 129
 col_ro <- intersect(names(febr_data), names(rondonia))
 febr_data <- data.table::rbindlist(list(febr_data, rondonia[, ..col_ro]), fill = TRUE)
+length(unique(febr_data[, id])) # 14 127
 colnames(febr_data)
 
 # Escrever dados em disco
