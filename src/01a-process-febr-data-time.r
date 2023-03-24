@@ -153,5 +153,6 @@ if (FALSE) {
   hist(febr_data[["data_coleta_ano"]], sub = paste0("n = ", sum(!missing_time)))
   rug(febr_data[["data_coleta_ano"]])
 }
-# Escrever dados em disco
+
+# Write data to disk
 data.table::fwrite(febr_data, "mapbiomas-solos/data/01a-febr-data.txt", sep = "\t", dec = ",")
