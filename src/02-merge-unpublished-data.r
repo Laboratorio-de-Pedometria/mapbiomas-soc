@@ -153,7 +153,7 @@ if (!pronasolos) {
 }
 
 # Read data processed in the previous scripts
-febr_data02 <- data.table::fread("mapbiomas-solos/data/01-febr-data.txt", dec = ",", sep = "\t")
+febr_data02 <- data.table::fread("mapbiomas-solos/data/01b-febr-data.txt", dec = ",", sep = "\t")
 febr_data02[, coord_datum_epsg := 4326]
 
 if (FALSE) {
