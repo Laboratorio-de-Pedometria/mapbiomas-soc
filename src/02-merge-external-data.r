@@ -1,4 +1,4 @@
-# 02. MERGE UNPUBLISHED DATA SETS ##################################################################
+# 02. MERGE EXTERNAL DATA SETS #####################################################################
 # SUMMARY
 # Several data sets were selected to enter the FEBR during the last months. However, these data sets
 # have not been modelled according to the data model used in the FEBR. The reason for this is that
