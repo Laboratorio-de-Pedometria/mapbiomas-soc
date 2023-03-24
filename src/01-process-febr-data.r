@@ -1,4 +1,4 @@
-# 01. RECOVER THE TIME COORDINATE ##################################################################
+# 01. PROCESS FEBR DATA ############################################################################
 # SUMMARY
 # Various events in the latest (2021) FEBR snapshot are missing the time coordinate (sampling year).
 # These events were identified and written to disk in a file named
@@ -39,13 +39,13 @@ download.file(url = url, destfile = temp)
 febr_data <- data.table::fread(unzip(temp), sep = ";", dec = ",")
 colnames(febr_data)
 
-# Prepare time coordinate
+# Process time coordinate (sampling year)
 febr_data[, observacao_data := as.Date(observacao_data, format = "%Y-%m-%d")]
 febr_data[, data_coleta_dia := as.integer(format(observacao_data, "%d"))]
 febr_data[, data_coleta_mes := as.integer(format(observacao_data, "%m"))]
 febr_data[, data_coleta_ano := as.integer(format(observacao_data, "%Y"))]
 
-# Distribuição temporal das amostras com data de coleta
+# Temporal distribution of samples with known sampling date
 nrow(unique(febr_data[, c("dataset_id", "observacao_id")]))
 nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
 # FEBR: 14 043 events, 4847 without sampling date
@@ -57,9 +57,10 @@ if (FALSE) {
 }
 
 # Write table to disk with events missing date
-# Apenas a camada superficial (profund_sup == 0) de cada evento é exportada.
-# O campo dataset_id é redefinido como uma URL para facilitar o acesso à respectiva página no FEBR.
-# O resgate da data de coleta será feito coletivamente usando planilha Google Sheets.
+# Only the surface layer (profund_sup == 0) of each event is exported.
+# The field dataset_id is reset as a URL to facilita the access to the respective webpage on FEBR.
+# The recovery of the sampling date will be done collectively by our team of data curators using a
+# Google Sheets spreadsheet to register the data.
 no_time_coord <- febr_data[missing_time & profund_sup == 0,
   c("dataset_id", "dataset_titulo", "estado_id", "municipio_id", "observacao_id",
     "data_coleta_dia", "data_coleta_mes", "data_coleta_ano")]
@@ -69,20 +70,20 @@ write.table(
   file = "mapbiomas-solos/data/no-time-coord.csv",
   sep = "\t", row.names = FALSE)
 
-# Ler planilha do Google Sheets contendo datas de coleta resgatadas
-# Não é preciso definir a aba pois há apenas uma delas na planilha
+# Read Google Sheets spreadsheet containing the recovered sampling dates
+# It is not necessary to set the table because the spreadsheet contains only one.
 key <- "1UbuI_oMzFmclztmhZQYsuU0mn_Lx3NhSeBoFw0m4lv0"
 file <- paste0("http://docs.google.com/spreadsheets/d/", key, "/pub?output=csv")
 recovered_time <- data.table::fread(file, header = TRUE, na.strings = c("-", ""), sep = ",")
 recovered_time[, data_coleta_ano := as.integer(data_coleta_ano)]
 head(recovered_time)
 
-# Verificar intervalo de valores
-# Qualquer erro presente nos dados descarregados são corrigidos na planilha do Google Sheets
-# Sampling date recovered: between 1957 and 2007
+# Check the range of values
+# Any error present in the downloaded data is corrected in the Google Sheets spreadsheet
+# Result: between 1957 and 2007
 range(recovered_time[["data_coleta_ano"]], na.rm = TRUE)
 
-# Preencher tabela de dados original usando dados resgatados
+# Fill up the original table using the data recovered by our team of data curators
 recovered_time[, dados_id := gsub("https://www.pedometria.org/febr/", "", dados_id)]
 recovered_time[, dados_id := gsub("/", "", dados_id)]
 recovered_time[, id := paste0(dados_id, "-", evento_id_febr)]
@@ -90,9 +91,9 @@ febr_data[, id := paste0(dataset_id, "-", observacao_id)]
 idx_recovered <- match(febr_data[missing_time, id], recovered_time[["id"]])
 febr_data[missing_time, data_coleta_ano := recovered_time[idx_recovered, data_coleta_ano]]
 
-# Distribuição temporal das amostras com data de coleta após resgate
-# Ao todo, foi possível resgatar a data de coleta de mais de 6.000 amostras
-# only 3401 event remain without sampling date
+# Temporal distribution of samples with known sampling date after data rescue
+# In sum, we were able to recover the sampling date of more than 6000 samples
+# Result: 3401 events remain without a known sampling date
 nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
 missing_time <- is.na(febr_data[["data_coleta_ano"]])
 if (FALSE) {
@@ -100,9 +101,9 @@ if (FALSE) {
   rug(febr_data[["data_coleta_ano"]])
 }
 
-# Atribuir data de coleta mais provável
-# Utilizar a data média do trabalho
-# using the average date, only 1869 event remain without sampling date
+# Attribute the most likely temporal coordinate
+# Use the mean of the source soil survey
+# Result: Using the average date, only 1869 event remain without sampling date
 average_year <- febr_data[,
   .(data_coleta_ano = round(mean(data_coleta_ano, na.rm = TRUE))),
   by = dataset_id]
@@ -110,67 +111,68 @@ idx_averaged <- match(febr_data[missing_time, dataset_id], average_year[, datase
 febr_data[missing_time, data_coleta_ano := average_year[idx_averaged, data_coleta_ano]]
 nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
 
-# Distribuição temporal das amostras com data de coleta após resgate
+# Temporal distribution of samples with known sampling date after data rescue
 missing_time <- is.na(febr_data[["data_coleta_ano"]])
-hist(febr_data[["data_coleta_ano"]], sub = paste0("n = ", sum(!missing_time)))
-rug(febr_data[["data_coleta_ano"]])
+if (FALSE) {
+  hist(febr_data[["data_coleta_ano"]], sub = paste0("n = ", sum(!missing_time)))
+  rug(febr_data[["data_coleta_ano"]])
+}
 
-# RADAMBRASIL: set sampling year to sample(1970:1984, 1)
-
+# RADAMBRASIL: set sampling year to any moment between 1970 and 1984
+# Result: 943 events still miss the sampling date
 febr_data[
   grepl("RADAMBRASIL", dataset_titulo, ignore.case = TRUE) & is.na(data_coleta_ano),
   data_coleta_ano := sample(1970:1984, 1)
 ]
 nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
-# 943 event miss the sampling date
 
 # Inventário das terras em microbacias hidrográficas, Santa Catarina
-# year: 1995
+# Target year: 1995
+# Result: 869 event remaining without year
 febr_data[
   grepl("Inventário das terras em microbacias hidrográficas", dataset_titulo, ignore.case = TRUE) &
     is.na(data_coleta_ano),
   data_coleta_ano := 1995
 ]
 nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
-# 869 remaining without year
+
+# LEVANTAMENTO SEMIDETALHADO DOS SOLOS DA FAZENDA CANCHIM SÃO CARLOS - SP.
+# Target year: 1995
+# Result: 786 events remain without sampling year
+febr_data[dataset_id == "ctb0815" & is.na(data_coleta_ano), data_coleta_ano := 1995]
+nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
 
 # All other
-febr_data[dataset_id == "ctb0815" & is.na(data_coleta_ano), data_coleta_ano := 1995]
+# Set a random year between 1960 and 1984
 febr_data[is.na(data_coleta_ano), data_coleta_ano := sample(1960:1984, 1)]
 nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
 
-# Distribuição temporal das amostras com data de coleta após resgate
-x11()
+# Temporal distribution of samples with known sampling date after data rescue
 missing_time <- is.na(febr_data[["data_coleta_ano"]])
-hist(febr_data[["data_coleta_ano"]], sub = paste0("n = ", sum(!missing_time)))
-rug(febr_data[["data_coleta_ano"]])
+if (FALSE) {
+  hist(febr_data[["data_coleta_ano"]], sub = paste0("n = ", sum(!missing_time)))
+  rug(febr_data[["data_coleta_ano"]])
+}
 
-# Set minimum sampling year to 1985
-# 5353 events from before 1985
-# nrow(unique(febr_data[data_coleta_ano < 1985, c("dataset_id", "observacao_id")]))
-# febr_data[data_coleta_ano < 1985, data_coleta_ano := 1985]
-# hist(febr_data[["data_coleta_ano"]])
-# rug(febr_data[["data_coleta_ano"]])
-
-event32 <- febr::observation("ctb0032", "all")
+# Zoneamento Socioeconômico-Ecológico do Estado de Rondônia (ctb0032, ctb0033, and ctb0034)
+# Download current version from FEBR: events
+# event32 <- febr::observation("ctb0032", "all")
+# event32 <- data.table::as.data.table(event32)
+# event32[1, data_coleta := "1996-09-11"]
+# event32[grepl("^2006", data_coleta), data_coleta := "1996-09-17"]
 event33 <- febr::observation("ctb0033", "all")
-event34 <- febr::observation("ctb0034", "all")
-event32 <- data.table::as.data.table(event32)
 event33 <- data.table::as.data.table(event33)
+event33[, data_coleta := as.Date(data_coleta, origin = "1899-12-30")]
+# ctb0034
+event34 <- febr::observation("ctb0034", "all")
 event34 <- data.table::as.data.table(event34)
-event33[, dataset_id := NULL]
+event34[, dataset_id34 := dataset_id]
 event34[, dataset_id := NULL]
-event32[1, data_coleta := "1996-09-11"]
-event32[grepl("^2006", data_coleta), data_coleta := "1996-09-17"]
-event33[, data_coleta := NULL]
-event34[, data_coleta := NULL]
-sapply(list(event32 = event32, event33 = event33, event34 = event34), nrow)
-eventRO <- merge(event32, event33, all = TRUE)
-eventRO[, dataset_id := "ctb0032"]
-nrow(eventRO)
-eventRO <- merge(eventRO, event34, all = TRUE)
-eventRO[, dataset_id := "ctb0032"]
-nrow(eventRO)
+event34[, data_coleta := as.Date(data_coleta, origin = "1899-12-30")]
+# event34[, data_coleta := NULL]
+sapply(list(event33 = event33, event34 = event34), nrow)
+eventRO <- merge(event33, event34, all = TRUE)
+eventRO[, dataset_id := "ctb0033"]
 eventRO[, coord_datum_epsg := NULL]
 eventRO[, coord_datum_epsg := "EPSG:4326"]
 new_names <- c(
@@ -181,26 +183,38 @@ new_names <- c(
   coord_estado_sigla = "estado_id"
 )
 data.table::setnames(eventRO, old = names(new_names), new = new_names, skip_absent = TRUE)
-eventRO <- eventRO[, c(1:14, 56)]
+eventRO[, estado_id := "RO"]
+cols <- intersect(names(eventRO), tolower(names(eventRO)))
+eventRO <- eventRO[, ..cols]
 
-# Read layers
-layer32 <- febr::layer("ctb0032", "all")
+# Download current version from FEBR: events
+# layer32 <- febr::layer("ctb0032", "all")
+# layer32 <- data.table::as.data.table(layer32)
+# layer32[, profund_inf := as.integer(profund_inf)]
+# data.table::setnames(layer32, old = "camada_id_alt", new = "camada_nome")
+# data.table::setnames(layer32, old = "camada_id_febr", new = "camada_id")
+# layer32[, camada_id := as.character(camada_id)]
+# layer32[, camada_id := NULL]
+# layer32[, camada_id_sisb := NULL]
+# ctb0033
 layer33 <- febr::layer("ctb0033", "all")
-layer34 <- febr::layer("ctb0034", "all")
-layer32 <- data.table::as.data.table(layer32)
 layer33 <- data.table::as.data.table(layer33)
+layer33[, camada_id_sisb := NULL]
+
+# ctb0034
+layer34 <- febr::layer("ctb0034", "all")
 layer34 <- data.table::as.data.table(layer34)
-layer33[, dataset_id := NULL]
+layer34[, dataset_id34 := dataset_id]
 layer34[, dataset_id := NULL]
-data.table::setnames(layer32, old = "camada_id_alt", new = "camada_nome")
-data.table::setnames(layer33, old = "camada_id_febr", new = "camada_nome")
-data.table::setnames(layer34, old = "camada_id_alt", new = "camada_nome")
-layer32[, profund_inf := as.integer(profund_inf)]
-layerRO <- merge(layer32, layer33, all = TRUE)
-layerRO[, dataset_id := "ctb0032"]
-layer34[, camada_id_febr := NULL]
-layerRO <- merge(layerRO, layer34, all = TRUE)
-layerRO[, dataset_id := "ctb0032"]
+layer34[, camada_id_febr := camada_id_alt]
+
+# Merge layers from ctb0033 and ctb0034
+layerRO <- merge(layer33, layer34,
+  by = c("evento_id_febr", "camada_id_febr"),
+  suffixes = c("", ".IGNORE"),
+  all = TRUE
+)
+layerRO[, dataset_id := "ctb0033"]
 colnames(layerRO)
 new_names <- c(
   evento_id_febr = "observacao_id",
@@ -214,18 +228,25 @@ new_names <- c(
   densidade_solo_xxx = "dsi"
 )
 data.table::setnames(layerRO, old = names(new_names), new = new_names)
+cols <- intersect(names(layerRO), tolower(names(layerRO)))
+layerRO <- layerRO[, ..cols]
+layerRO[, dataset_id := NULL]
+layerRO[, dataset_id34 := NULL]
 
+# Merge events and layers
 rondonia <- merge(eventRO, layerRO, all = TRUE)
 rondonia[, areia := areia * 10]
 rondonia[, argila := argila * 10]
 rondonia[, silte := silte * 10]
 rondonia[, terrafina := terrafina * 10]
 rondonia[, carbono := carbono * 10]
+rondonia[, id := paste0(dataset_id, "-", observacao_id)]
+
+# Merge data with the FEBR snapshot
 febr_data <- febr_data[dataset_id != "ctb0032", ]
 col_ro <- intersect(names(febr_data), names(rondonia))
 febr_data <- data.table::rbindlist(list(febr_data, rondonia[, ..col_ro]), fill = TRUE)
-
-rondonia[, dataset_id]
+colnames(febr_data)
 
 # Escrever dados em disco
 data.table::fwrite(febr_data, "mapbiomas-solos/data/01-febr-data.txt", sep = "\t", dec = ",")
