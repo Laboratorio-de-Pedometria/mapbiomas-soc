@@ -36,6 +36,7 @@ if (!require("sf")) {
 if (!require("geobr")) {
   install.packages("geobr")
 }
+brazil <- geobr::read_country()
 
 # Rename columns following previous standards
 rename <- c(
@@ -101,12 +102,10 @@ data_event[, geometry := NULL]
 
 # Clean sampling date
 data_event[data_coleta_ano < 1900, data_coleta_ano := NA_integer_]
-# data_event[data_coleta_ano < 1985, data_coleta_ano := 1985]
 nrow(data_event) # 10 098 (not all events have layers)
 
 if (FALSE) {
   x11()
-  brazil <- geobr::read_country()
   plot(brazil, reset = FALSE, main = "PronaSolos")
   points(data_event[dataset_id == "ctb0064", coord_x],
     data_event[dataset_id == "ctb0064", coord_y],
@@ -142,9 +141,12 @@ if (!"camada_nome" %in% colnames(febr_data01)) {
   febr_data01[, camada_nome := NA_character_]
 }
 nrow(unique(febr_data01[, c("dataset_id", "id")])) # 9487 events (not all events have layers)
-nrow(febr_data01) # 36 690
+nrow(febr_data01) # 36 690 layers
 # (not all layers of the National Forest Inventory have events - there must be some error in their
 # database)
+
+# Remove events/layers missing sampling date
+# This step is necessary to discard unwanted data from PronaSolos
 febr_data01 <- febr_data01[!is.na(data_coleta_ano), ]
 nrow(unique(febr_data01[, "id"])) # 7683 events
 nrow(febr_data01) # 28 422 layers
@@ -153,7 +155,7 @@ if (!pronasolos) {
   febr_data01 <- febr_data01[dataset_id != "ctb0064", ]
 }
 
-# Read data processed in the previous scripts
+# Read FEBR data processed in the previous scripts
 febr_data02 <- data.table::fread("mapbiomas-solos/data/01b-febr-data.txt", dec = ",", sep = "\t")
 febr_data02[, coord_datum_epsg := 4326]
 
@@ -168,9 +170,9 @@ if (FALSE) {
 # fina é 1000 g/kg
 febr_data02[terrafina == 0, terrafina := 1000]
 nrow(unique(febr_data02[, "id"]))
-# 14 127 events
+# 14 190 events
 
-# Juntar dados
+# Merge FEBR data with external data
 febr_data01[, observacao_id := id]
 febr_data01[, id := paste0(dataset_id, "-", id)]
 idx <- match(colnames(febr_data02), colnames(febr_data01))
@@ -178,15 +180,17 @@ idx01 <- na.exclude(idx)
 idx02 <- which(!is.na(idx))
 febr_data <- rbind(febr_data02[, ..idx02], febr_data01[, ..idx01])
 nrow(unique(febr_data[, "id"]))
-# FEBR: ???15 141; PronaSolos: 21 810
+# FEBR: ???15 141; PronaSolos: 21 873
 nrow(febr_data)
 # FEBR: ???52 696; PronaSolos: 78 807
 
 # Check if we have replicated sample points
-# There are events with the same ID but different spatial or temporal coordinates. We identify them
-# computing the standard deviation of the coordinates of each event: for non-duplicated events, the
-# standard deviation should be zero.
-nrow(unique(febr_data[, c("id", "data_coleta_ano", "coord_x", "coord_y")])) # 21 851
+# There are events in the FEBR data with the same ID but different spatial or temporal coordinates.
+# This could also happen in the external data, but we have not checked it.
+# We identify problem events by computing the standard deviation of the coordinates of each event:
+# for non-duplicated events, the standard deviation should be zero.
+nrow(unique(febr_data[, c("id", "data_coleta_ano", "coord_x", "coord_y")]))
+# 21 914 --> should be equal to 21 873
 # (there are events with the same ID but different coordinates)
 febr_data[, std_x := sd(coord_x), by = c("dataset_id", "observacao_id")]
 febr_data[is.na(std_x), std_x := 0]
@@ -196,25 +200,28 @@ febr_data[, std_t := sd(data_coleta_ano), by = c("dataset_id", "observacao_id")]
 febr_data[is.na(std_t), std_t := 0]
 febr_data[, std_xyt := (std_x + std_y + std_t)]
 nrow(unique(febr_data[std_xyt > 0, c("dataset_id", "observacao_id")]))
-# FEBR: 12 duplicated events; PronaSolos: 32
-febr_data <- febr_data[std_xyt == 0, ]
+# Result: 32 duplicated events
+febr_data <- febr_data[std_xyt == 0, ] # remove duplicated events
 nrow(unique(febr_data[, "id"]))
-# FEBR: 15 129; PronaSolos: 21 778
+# Result: 21 841 events
 nrow(febr_data)
-# FEBR: 52 566; PronaSolos: 78 427
+# Result: 78 427 layers
 febr_data[, c("std_x", "std_y", "std_t", "std_xyt") := NULL]
 
+# Remove duplicated events: equal spatial and temporal coordinates
+# Events are commonly reused in more than one data set. Besides, FEBR and PronaSolos data have a 
+# large overlap.
 first <- function(x) x[1, ]
 tmp <- febr_data[, first(id),
   by = c("dataset_id", "observacao_id", "coord_x", "coord_y", "data_coleta_ano")
 ]
 duplo <- duplicated(tmp[, c("coord_x", "coord_y", "data_coleta_ano")])
 duplo <- tmp[duplo, V1]
-febr_data <- febr_data[!(id %in% duplo), ]
+febr_data <- febr_data[!(id %in% duplo), ] # remove duplicated events
 nrow(unique(febr_data[, "id"]))
-# FEBR: 11 739 events; PronaSolos: 12 680
+# Result: 12 731 events
 nrow(febr_data)
-# FEBR: 40 260 layers; PronaSolos: 44 166
+# Result: 44 166 layers
 
-# Escrever dados em disco
+# Write data to disk
 data.table::fwrite(febr_data, "mapbiomas-solos/data/02-febr-data.txt", sep = "\t", dec = ",")
