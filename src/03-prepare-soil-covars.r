@@ -54,44 +54,46 @@ if (!require("data.table")) {
   install.packages("data.table")
 }
 
-# Ler dados do disco
+# Read data processed in the previous script
 febr_data <- data.table::fread("mapbiomas-solos/data/02-febr-data.txt", dec = ",", sep = "\t")
 nrow(unique(febr_data[, "id"]))
-# FEBR: 11 739 events; PronaSolos: 12 469
+# Result: 12 731 events
 nrow(febr_data)
-# FEBR: 40 260 layers; PronaSolos: 43 441
+# Result: 44 166 layers
 colnames(febr_data)
 
-# Correct layer depth
+# Correct layer depth and name
 febr_data[dataset_id == "ctb0829" & observacao_id == "P92", profund_inf := 8]
+febr_data[
+  dataset_id == "ctb0636" & observacao_id == "Perfil-03" & profund_sup == 0,
+  camada_nome := "A1"
+]
 
 # Filter out soil layers with thickness > 50 cm
-febr_data[, espessura := profund_inf - profund_sup]
-nrow(febr_data[espessura > 50, ])
-# FEBR: 3638 layers; PronaSolos ____
-febr_data <- febr_data[espessura <= 50, ]
-febr_data[, espessura := NULL]
+febr_data[, thickness := profund_inf - profund_sup]
+nrow(febr_data[thickness > 50, ])
+# Result: 3729 layers with thickness > 50 cm
+febr_data <- febr_data[thickness <= 50, ]
+febr_data[, thickness := NULL]
 nrow(unique(febr_data[, "id"]))
-# FEBR: 11 482; PronaSolos: 12 200 events
+# Result: 12 458 events
 nrow(febr_data)
-# FEBR: 36 288; PronaSolos: 39 006 events
+# Result: 40 081 layers
 
-# Filter out soil layers starting above 30 cm depth
+# Filter out soil layers starting below 30 cm depth
 # We work only with data from the first 30 cm and deeper layers that start at or before 30 cm.
 # We also ignore organic layers (negative depth) in mineral soils.
 # * four layers with negative depth
 # * 26 351 layers with superior depth equal to or larger than 30 cm
 nrow(febr_data[profund_sup < 0, ])
-# FEBR: 04; PronaSolos: 04
+# Result: 04 layers with profund_sup < 0
 nrow(febr_data[profund_sup >= 30, ])
-# FEBR: 16 970; PronaSolos: 18 302
-# nrow(febr_data[is.na(dsi) & is.na(carbono), ])
+# Result: 20 817 layers with profund_sup >= 30
 febr_data <- febr_data[profund_sup >= 0 & profund_sup < 30, ]
-# febr_data <- febr_data[!is.na(dsi) | !is.na(carbono), ]
 nrow(unique(febr_data[, "id"]))
-# FEBR: 11 256 events; PronaSolos: 11 946
+# Result: 12 189 events
 nrow(febr_data)
-# FEBR: 19 314 layers; PronaSolos: 20 700
+# Result: 19 260 layers
 
 # Soil skeleton
 # In some soil samples, the fine earth and skeleton concentration data are inverted. This is quite
@@ -182,9 +184,18 @@ febr_data[grepl("SUPERF", camada_nome, ignore.case = TRUE), camada_nome := "UNKN
 febr_data[grepl("mudar", camada_nome, ignore.case = TRUE), camada_nome := "UNKNOWN"]
 febr_data[grepl("cam", camada_nome, ignore.case = TRUE), camada_nome := "UNKNOWN"]
 febr_data[grepl("Secçã", camada_nome, ignore.case = TRUE), camada_nome := "UNKNOWN"]
+febr_data[grepl("Crosta", camada_nome, ignore.case = TRUE), camada_nome := "UNKNOWN"]
 febr_data[grepl("AREIA", camada_nome, ignore.case = TRUE), camada_nome := "SAND"]
 febr_data[grepl("Leito", camada_nome, ignore.case = TRUE), camada_nome := "SAND"]
 unique(febr_data[, camada_nome])
+
+# ORGANIC: Organic layers
+febr_data[, ORGANIC := "UNKNOWN"]
+febr_data[carbono < 80, ORGANIC := "FALSE"]
+febr_data[carbono >= 80, ORGANIC := "TRUE"]
+febr_data[grepl("o", camada_nome), ORGANIC := "TRUE"]
+febr_data[, ORGANIC := as.factor(ORGANIC)]
+summary(febr_data[, ORGANIC])
 
 # STONES: Soil layers known for having concretions, nodules, rock fragments, rock-like pedogenic
 # layers, and human artifacts (bivariate)
