@@ -9,6 +9,15 @@ rm(list = ls())
 if (!require("data.table")) {
   install.packages("data.table")
 }
+if (!require("sf")) {
+  install.packages("sf")
+}
+if (!require("geobr")) {
+  install.packages("geobr")
+}
+if (!require("mapview")) {
+  install.packages("mapview")
+}
 
 # Zoneamento Socioeconômico-Ecológico do Estado de Rondônia (ctb0032, ctb0033, and ctb0034)
 # Download current version from FEBR: events
@@ -48,7 +57,9 @@ if (FALSE) {
   plot(eventRO[, c("coord_x", "coord_y")])
 }
 
-# Download current version from FEBR: events
+str(eventRO)
+
+# Download current version from FEBR: layers
 # layer32 <- febr::layer("ctb0032", "all")
 # layer32 <- data.table::as.data.table(layer32)
 # layer32[, profund_inf := as.integer(profund_inf)]
@@ -101,9 +112,27 @@ rondonia[, argila := argila * 10]
 rondonia[, silte := silte * 10]
 rondonia[, terrafina := terrafina * 10]
 rondonia[, carbono := carbono * 10]
+
+# Deal with the identification of events containing duplicated layers
+# These are extra samples for soil fertility assessment collected nearby the soil profile
+rondonia[, EXTRA := duplicated(profund_sup), by = observacao_id]
+rondonia[EXTRA == TRUE, observacao_id := paste0(observacao_id, camada_id_febr)]
 rondonia[, id := paste0(dataset_id, "-", observacao_id)]
 
-# Read data processed in the previous script
+# Add random perturbation to the coordinates of extra samples
+# Use sf::st_jitter() with amount = 200 m, where runif(1, -amount, amount)
+extra_coords <- rondonia[EXTRA == TRUE & !is.na(coord_x), c("id", "coord_x", "coord_y")]
+extra_coords <- sf::st_as_sf(extra_coords, coords = c("coord_x", "coord_y"), crs = 4326)
+extra_coords <- sf::st_transform(extra_coords, crs = 32720)
+set.seed(32720)
+extra_coords <- sf::st_jitter(extra_coords, amount = 200)
+extra_coords <- sf::st_transform(extra_coords, crs = 4326)
+extra_coords <- sf::st_coordinates(extra_coords)
+rondonia[EXTRA == TRUE & !is.na(coord_x), coord_x := extra_coords[, "X"]]
+rondonia[EXTRA == TRUE & !is.na(coord_x), coord_y := extra_coords[, "Y"]]
+rondonia[, EXTRA := NULL]
+
+# Read FEBR data processed in the previous script
 febr_data <- data.table::fread("mapbiomas-solos/data/01a-febr-data.txt", dec = ",", sep = "\t")
 febr_data[, coord_datum_epsg := 4326]
 
