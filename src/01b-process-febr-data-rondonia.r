@@ -143,8 +143,8 @@ febr_data <- febr_data[dataset_id != "ctb0032", ]
 length(unique(febr_data[, id])) # 11 129
 col_ro <- intersect(names(febr_data), names(rondonia))
 febr_data <- data.table::rbindlist(list(febr_data, rondonia[, ..col_ro]), fill = TRUE)
-length(unique(febr_data[, id])) # 14 127
+length(unique(febr_data[, id])) # 14 190
 colnames(febr_data)
 
-# Escrever dados em disco
+# Write data to disk
 data.table::fwrite(febr_data, "mapbiomas-solos/data/01b-febr-data.txt", sep = "\t", dec = ",")
