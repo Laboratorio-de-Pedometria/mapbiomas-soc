@@ -52,22 +52,15 @@ data.table::setnames(eventRO, old = names(new_names), new = new_names, skip_abse
 eventRO[, estado_id := "RO"]
 cols <- intersect(names(eventRO), tolower(names(eventRO)))
 eventRO <- eventRO[, ..cols]
+eventRO[, data_coleta_ano := as.integer(format(data_coleta, "%Y"))]
+eventRO[is.na(data_coleta_ano), data_coleta_ano := 1996]
 if (FALSE) {
   x11()
   plot(eventRO[, c("coord_x", "coord_y")])
 }
-
 str(eventRO)
 
 # Download current version from FEBR: layers
-# layer32 <- febr::layer("ctb0032", "all")
-# layer32 <- data.table::as.data.table(layer32)
-# layer32[, profund_inf := as.integer(profund_inf)]
-# data.table::setnames(layer32, old = "camada_id_alt", new = "camada_nome")
-# data.table::setnames(layer32, old = "camada_id_febr", new = "camada_id")
-# layer32[, camada_id := as.character(camada_id)]
-# layer32[, camada_id := NULL]
-# layer32[, camada_id_sisb := NULL]
 # ctb0033
 layer33 <- febr::layer("ctb0033", "all")
 layer33 <- data.table::as.data.table(layer33)
