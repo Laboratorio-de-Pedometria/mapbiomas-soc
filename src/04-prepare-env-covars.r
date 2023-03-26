@@ -332,4 +332,5 @@ legend(x = -45, y = 6.5,
 dev.off()
 
 # Write data to disk
+febr_data[, lulc := NULL]
 data.table::fwrite(febr_data, "mapbiomas-solos/data/04-febr-data.txt", sep = "\t", dec = ",")
