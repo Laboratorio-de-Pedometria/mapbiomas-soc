@@ -102,6 +102,7 @@ data_event[, geometry := NULL]
 
 # Clean sampling date
 data_event[data_coleta_ano < 1900, data_coleta_ano := NA_integer_]
+data_event[data_coleta_ano > as.integer(format(Sys.time(), "%Y")), data_coleta_ano := NA_integer_]
 nrow(data_event) # 10 098 (not all events have layers)
 
 if (FALSE) {
@@ -222,6 +223,9 @@ nrow(unique(febr_data[, "id"]))
 # Result: 12 731 events
 nrow(febr_data)
 # Result: 44 166 layers
+
+# Set a random year between 1960 and 1984
+febr_data[is.na(data_coleta_ano), data_coleta_ano := sample(1960:1984, 1)]
 
 # Write data to disk
 data.table::fwrite(febr_data, "mapbiomas-solos/data/02-febr-data.txt", sep = "\t", dec = ",")
