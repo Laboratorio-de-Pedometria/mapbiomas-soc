@@ -1,30 +1,7 @@
-# 01a. PROCESS FEBR DATA - TIME COORDINATE #########################################################
-# SUMMARY
-# Various events in the latest (2021) FEBR snapshot are missing the time coordinate (sampling year).
-# These events were identified and written to disk in a file named
-# no-time-coord.csv. Then our team of data curators searched for the sampling date of each of these
-# events in the source soil survey reports (PDFs). The recovered time coordinates were registered in
-# a Google Spreadsheet. The data stored in this spreadsheet is used in this script to update the
-# FEBR snapshot. However, for various events, the sampling date is not registered in the source soil
-# survey report. Two approaches are used to attribute a sampling date to these events.
-# 1. If the sampling year is known for at least a few events in a soil survey report, then we 
-# compute the average (mean sampling year) and use that estimate as the most likely sampling date
-# of any events missing the sampling year.
-# 2. If the sampling year is unknown for all events in a soil survey report, we check the year of 
-# publication of the report and of its latest references. Based on that time interval, we decide
-# select an intermediate year, generally about two years before the publication of the survey
-# report, and use that year as the most likely sampling date of all of the events.
-# The next step is to filter out the events from before 1985, the lower limit of the time series of
-# Landsat imagery and MapBiomas land use/land cover used to model the soil organic carbon stocks.
-# For all of these events, we overwrite the sampling date and set it to 1985.
-# KEY RESULTS
-# We started with 14 043 events, 4847 out of which did not have the sampling date
-# recorded in the latest (2021) FEBR snapshot. Our team of data curators recovered the sampling date
-# of 4847 - 3401 = 1446 events from between 1957 and 2007. Using the average sampling year of the
-# source survey report, we attributed a sampling date to 3401 - 1869 = 1532 events. For Theoph
-# remaining 1869 events, we attributed a sampling date based on the year of publication of Theoph
-# source survey report. Finally, out of the 14 043 events, 5353 events were from before 1985 and had
-# their sampling data overwritten to 1985.
+# # MapBiomas Soil (beta)
+# Script 01a. Process FEBR data - time coordinate
+# Alessandro Samuel-Rosa & Taciara Zborowski Horst
+# 2023 CC-BY
 rm(list = ls())
 
 # Install and load required packages
@@ -37,6 +14,8 @@ url <- "http://cloud.utfpr.edu.br/index.php/s/QpG6Tcr6x1NBOcI/download"
 temp <- tempfile(fileext = ".zip")
 download.file(url = url, destfile = temp)
 febr_data <- data.table::fread(unzip(temp), sep = ";", dec = ",")
+nrow(unique(febr_data[, c("dataset_id", "observacao_id")])) # 14 043 events
+nrow(febr_data) # 50 470 layers
 colnames(febr_data)
 
 # Process time coordinate (sampling year)
@@ -45,13 +24,16 @@ febr_data[, data_coleta_dia := as.integer(format(observacao_data, "%d"))]
 febr_data[, data_coleta_mes := as.integer(format(observacao_data, "%m"))]
 febr_data[, data_coleta_ano := as.integer(format(observacao_data, "%Y"))]
 
+# Clean odd sampling date
+febr_data[data_coleta_ano == 1939, data_coleta_ano := NA_integer_]
+
 # Temporal distribution of samples with known sampling date
 nrow(unique(febr_data[, c("dataset_id", "observacao_id")]))
 nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
-# FEBR: 14 043 events, 4847 without sampling date
+# FEBR: 14 043 events, 4848 without sampling date
 missing_time <- is.na(febr_data[["data_coleta_ano"]])
 if (FALSE) {
-  par(mfrow = c(1, 2))
+  x11()
   hist(febr_data[["data_coleta_ano"]], sub = paste0("N = ", sum(!missing_time)))
   rug(febr_data[["data_coleta_ano"]])
 }
@@ -93,10 +75,13 @@ febr_data[missing_time, data_coleta_ano := recovered_time[idx_recovered, data_co
 
 # Temporal distribution of samples with known sampling date after data rescue
 # In sum, we were able to recover the sampling date of more than 6000 samples
-# Result: 3401 events remain without a known sampling date
+# Result: 3402 events remain without a known sampling date
 nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
+febr_data[, na_year := FALSE]
+febr_data[is.na(data_coleta_ano), na_year := TRUE]
 missing_time <- is.na(febr_data[["data_coleta_ano"]])
 if (FALSE) {
+  x11()
   hist(febr_data[["data_coleta_ano"]], sub = paste0("n = ", sum(!missing_time)))
   rug(febr_data[["data_coleta_ano"]])
 }
@@ -114,21 +99,14 @@ nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")])
 # Temporal distribution of samples with known sampling date after data rescue
 missing_time <- is.na(febr_data[["data_coleta_ano"]])
 if (FALSE) {
+  x11()
   hist(febr_data[["data_coleta_ano"]], sub = paste0("n = ", sum(!missing_time)))
   rug(febr_data[["data_coleta_ano"]])
 }
 
-# RADAMBRASIL: set sampling year to any moment between 1970 and 1984
-# Result: 943 events still miss the sampling date
-febr_data[
-  grepl("RADAMBRASIL", dataset_titulo, ignore.case = TRUE) & is.na(data_coleta_ano),
-  data_coleta_ano := sample(1970:1984, 1)
-]
-nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
-
 # Inventário das terras em microbacias hidrográficas, Santa Catarina
 # Target year: 1995
-# Result: 869 event remaining without year
+# Result: 1795 event remaining without year
 febr_data[
   grepl("Inventário das terras em microbacias hidrográficas", dataset_titulo, ignore.case = TRUE) &
     is.na(data_coleta_ano),
@@ -138,18 +116,32 @@ nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")])
 
 # LEVANTAMENTO SEMIDETALHADO DOS SOLOS DA FAZENDA CANCHIM SÃO CARLOS - SP.
 # Target year: 1995
-# Result: 786 events remain without sampling year
+# Result: 1712 events remain without sampling year
 febr_data[dataset_id == "ctb0815" & is.na(data_coleta_ano), data_coleta_ano := 1995]
+nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
+
+# RADAMBRASIL: set sampling year to any moment between 1970 and 1984
+# Result: 786 events still miss the sampling date
+idx <- febr_data[
+  grepl("RADAMBRASIL", dataset_titulo, ignore.case = TRUE) & is.na(data_coleta_ano),
+  id
+]
+febr_data[
+  id %in% idx,
+  data_coleta_ano := round(runif(length(idx), min = 1970, max = 1984))
+]
 nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
 
 # All other
 # Set a random year between 1960 and 1984
-febr_data[is.na(data_coleta_ano), data_coleta_ano := sample(1960:1984, 1)]
+idx <- febr_data[is.na(data_coleta_ano), id]
+febr_data[id %in% idx, data_coleta_ano := round(runif(n = length(idx), min = 1960, max = 1984))]
 nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
 
 # Temporal distribution of samples with known sampling date after data rescue
 missing_time <- is.na(febr_data[["data_coleta_ano"]])
 if (FALSE) {
+  x11()
   hist(febr_data[["data_coleta_ano"]], sub = paste0("n = ", sum(!missing_time)))
   rug(febr_data[["data_coleta_ano"]])
 }
