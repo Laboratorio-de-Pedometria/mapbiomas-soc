@@ -23,10 +23,9 @@ febr_data <- data.table::fread("mapbiomas-solos/data/04-febr-data.txt",
   stringsAsFactors = TRUE
 )
 str(febr_data)
-nrow(unique(febr_data[, "id"]))
-# Result: 12 186
-nrow(febr_data)
-# Result: 19 254
+nrow(unique(febr_data[, "id"])) # Result: 12 455 events
+nrow(febr_data) # Result: 40 069 layers
+colnames(febr_data)
 
 # Identify layers missing soil bulk density data
 # We noticed that very high values (> 2.3 g/cm^3) were recorded for a few layers (n = 12). There
@@ -34,8 +33,7 @@ nrow(febr_data)
 # source soil surveys, we identified that these data were erroneous. The data was then deleted.
 # There are 3582 layers with data on soil bulk density. Predictions need to be made for 13 014
 # layers.
-nrow(febr_data[dsi > 2.3, ])
-# Result: 11 layers
+nrow(febr_data[dsi > 2.3, ]) # Result: 26 layers
 febr_data[dsi > 2.3, dsi := NA_real_]
 febr_data[dsi < 0.25, dsi := NA_real_]
 febr_data[dsi < 0.5 & grepl("B", camada_nome), dsi := NA_real_]
@@ -44,8 +42,7 @@ febr_data[
   dsi := NA_real_
 ]
 dsi_isna <- is.na(febr_data[["dsi"]])
-sum(!dsi_isna); sum(dsi_isna)
-# Result: 3015 and 16 238
+sum(!dsi_isna); sum(dsi_isna) # Result: 5480 and 34 589
 dev.off()
 png("mapbiomas-solos/res/fig/bulk-density-training-data.png",
   width = 480 * 3, height = 480 * 3, res = 72 * 3
@@ -147,6 +144,7 @@ dsi_model_stats <- rbind(
   round(errosStatistics(loocv_dsi_model$pred$obs, loocv_dsi_model$pred$pred), 4)
 )
 rownames(dsi_model_stats) <- c("out-of-bag", "10-fold cv")
+print(dsi_model_stats)
 
 # Write model statistics to disk
 write.table(dsi_model_stats,
@@ -170,10 +168,8 @@ dev.off()
 # Predict soil bulk density
 tmp <- predict(dsi_model, data = febr_data[dsi_isna, ])
 febr_data[dsi_isna, dsi := round(tmp$predictions, 2)]
-nrow(unique(febr_data[, "id"]))
-# Result: 12 186
-nrow(febr_data)
-# Result: 19 254
+nrow(unique(febr_data[, "id"])) # Result: 12 455
+nrow(febr_data) # Result: 40 069
 
 # Write data to disk
 data.table::fwrite(febr_data, "mapbiomas-solos/data/05-febr-data.txt", sep = "\t", dec = ",")

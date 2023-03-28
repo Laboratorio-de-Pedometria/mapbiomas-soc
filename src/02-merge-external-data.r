@@ -128,7 +128,7 @@ for (i in seq_along(files_layer)) {
   data.table::setnames(data_layer[[i]], old = rename[, 1], new = rename[, 2], skip_absent = TRUE)
 }
 data_layer <- data.table::rbindlist(data_layer, fill = TRUE)
-nrow(data_layer) # 36 883
+nrow(data_layer) # 36 883 layers
 # (not all layers of the National Forest Inventory have events - there must be some error in their
 # database)
 
@@ -149,8 +149,8 @@ nrow(febr_data01) # 36 690 layers
 # Remove events/layers missing sampling date
 # This step is necessary to discard unwanted data from PronaSolos
 febr_data01 <- febr_data01[!is.na(data_coleta_ano), ]
-nrow(unique(febr_data01[, "id"])) # 7683 events
-nrow(febr_data01) # 28 422 layers
+nrow(unique(febr_data01[, "id"])) # 7682 events
+nrow(febr_data01) # 28 416 layers
 
 if (!pronasolos) {
   febr_data01 <- febr_data01[dataset_id != "ctb0064", ]
@@ -181,9 +181,9 @@ idx01 <- na.exclude(idx)
 idx02 <- which(!is.na(idx))
 febr_data <- rbind(febr_data02[, ..idx02], febr_data01[, ..idx01])
 nrow(unique(febr_data[, "id"]))
-# FEBR: ???15 141; PronaSolos: 21 873
+# Results: 21 872 events
 nrow(febr_data)
-# FEBR: ???52 696; PronaSolos: 78 807
+# Results: 78 801 layers
 
 # Check if we have replicated sample points
 # There are events in the FEBR data with the same ID but different spatial or temporal coordinates.
@@ -191,7 +191,7 @@ nrow(febr_data)
 # We identify problem events by computing the standard deviation of the coordinates of each event:
 # for non-duplicated events, the standard deviation should be zero.
 nrow(unique(febr_data[, c("id", "data_coleta_ano", "coord_x", "coord_y")]))
-# 21 914 --> should be equal to 21 873
+# 21 913 --> should be equal to 21 872
 # (there are events with the same ID but different coordinates)
 febr_data[, std_x := sd(coord_x), by = c("dataset_id", "observacao_id")]
 febr_data[is.na(std_x), std_x := 0]
@@ -204,9 +204,9 @@ nrow(unique(febr_data[std_xyt > 0, c("dataset_id", "observacao_id")]))
 # Result: 32 duplicated events
 febr_data <- febr_data[std_xyt == 0, ] # remove duplicated events
 nrow(unique(febr_data[, "id"]))
-# Result: 21 841 events
+# Result: 21 840 events
 nrow(febr_data)
-# Result: 78 427 layers
+# Result: 78 421 layers
 febr_data[, c("std_x", "std_y", "std_t", "std_xyt") := NULL]
 
 # Remove duplicated events: equal spatial and temporal coordinates
@@ -220,12 +220,13 @@ duplo <- duplicated(tmp[, c("coord_x", "coord_y", "data_coleta_ano")])
 duplo <- tmp[duplo, V1]
 febr_data <- febr_data[!(id %in% duplo), ] # remove duplicated events
 nrow(unique(febr_data[, "id"]))
-# Result: 12 731 events
+# Result: 12 729 events
 nrow(febr_data)
-# Result: 44 166 layers
+# Result: 44 155 layers
 
 # Set a random year between 1960 and 1984
-febr_data[is.na(data_coleta_ano), data_coleta_ano := sample(1960:1984, 1)]
+# febr_data[is.na(data_coleta_ano), data_coleta_ano := sample(1960:1984, 1)]
+febr_data[is.na(data_coleta_ano), data_coleta_ano := 1985]
 
 # Write data to disk
 data.table::fwrite(febr_data, "mapbiomas-solos/data/02-febr-data.txt", sep = "\t", dec = ",")

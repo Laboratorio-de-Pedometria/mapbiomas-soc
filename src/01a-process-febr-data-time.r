@@ -1,5 +1,4 @@
-# # MapBiomas Soil (beta)
-# Script 01a. Process FEBR data - time coordinate
+# MapBiomas Soil (beta): Script 01a. Process FEBR data - time coordinate
 # Alessandro Samuel-Rosa & Taciara Zborowski Horst
 # 2023 CC-BY
 rm(list = ls())
@@ -128,14 +127,16 @@ idx <- febr_data[
 ]
 febr_data[
   id %in% idx,
-  data_coleta_ano := round(runif(length(idx), min = 1970, max = 1984))
+  # data_coleta_ano := round(runif(length(idx), min = 1970, max = 1984))
+  data_coleta_ano := 1984
 ]
 nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
 
 # All other
 # Set a random year between 1960 and 1984
 idx <- febr_data[is.na(data_coleta_ano), id]
-febr_data[id %in% idx, data_coleta_ano := round(runif(n = length(idx), min = 1960, max = 1984))]
+# febr_data[id %in% idx, data_coleta_ano := round(runif(n = length(idx), min = 1960, max = 1984))]
+febr_data[id %in% idx, data_coleta_ano := 1984]
 nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
 
 # Temporal distribution of samples with known sampling date after data rescue

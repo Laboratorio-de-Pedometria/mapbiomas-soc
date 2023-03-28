@@ -1,8 +1,6 @@
-# 01b. PROCESS FEBR DATA - RONDÔNIA ################################################################
-# SUMMARY
-
-# KEY RESULTS
-
+# MapBiomas Soil (beta): Script 01a. Process FEBR data - time coordinate
+# Alessandro Samuel-Rosa & Taciara Zborowski Horst
+# 2023 CC-BY
 rm(list = ls())
 
 # Install and load required packages
@@ -15,16 +13,9 @@ if (!require("sf")) {
 if (!require("geobr")) {
   install.packages("geobr")
 }
-if (!require("mapview")) {
-  install.packages("mapview")
-}
 
-# Zoneamento Socioeconômico-Ecológico do Estado de Rondônia (ctb0032, ctb0033, and ctb0034)
+# Zoneamento Socioeconômico-Ecológico do Estado de Rondônia (ctb0033 and ctb0034)
 # Download current version from FEBR: events
-# event32 <- febr::observation("ctb0032", "all")
-# event32 <- data.table::as.data.table(event32)
-# event32[1, data_coleta := "1996-09-11"]
-# event32[grepl("^2006", data_coleta), data_coleta := "1996-09-17"]
 # ctb0033
 event33 <- febr::observation("ctb0033", "all")
 event33 <- data.table::as.data.table(event33)
@@ -131,12 +122,12 @@ febr_data[, coord_datum_epsg := 4326]
 
 # Merge data from Rondônia with the FEBR snapshot
 # First remove existing data from Rondônia (morphological descriptions)
-length(unique(febr_data[, id])) # 14 043
+length(unique(febr_data[, id])) # 14 043 events
 febr_data <- febr_data[dataset_id != "ctb0032", ]
-length(unique(febr_data[, id])) # 11 129
+length(unique(febr_data[, id])) # 11 129 events
 col_ro <- intersect(names(febr_data), names(rondonia))
 febr_data <- data.table::rbindlist(list(febr_data, rondonia[, ..col_ro]), fill = TRUE)
-length(unique(febr_data[, id])) # 14 190
+length(unique(febr_data[, id])) # 14 190 events
 colnames(febr_data)
 
 # Write data to disk

@@ -57,9 +57,9 @@ if (!require("data.table")) {
 # Read data processed in the previous script
 febr_data <- data.table::fread("mapbiomas-solos/data/02-febr-data.txt", dec = ",", sep = "\t")
 nrow(unique(febr_data[, "id"]))
-# Result: 12 731 events
+# Result: 12 729 events
 nrow(febr_data)
-# Result: 44 166 layers
+# Result: 44 155 layers
 colnames(febr_data)
 
 # Correct layer depth and name
@@ -76,24 +76,20 @@ nrow(febr_data[thickness > 50, ])
 febr_data <- febr_data[thickness <= 50, ]
 febr_data[, thickness := NULL]
 nrow(unique(febr_data[, "id"]))
-# Result: 12 458 events
+# Result: 12 455 events
 nrow(febr_data)
-# Result: 40 081 layers
+# Result: 40 069 layers
 
 # Filter out soil layers starting below 30 cm depth
 # We work only with data from the first 30 cm and deeper layers that start at or before 30 cm.
 # We also ignore organic layers (negative depth) in mineral soils.
 # * four layers with negative depth
 # * 26 351 layers with superior depth equal to or larger than 30 cm
-nrow(febr_data[profund_sup < 0, ])
-# Result: 04 layers with profund_sup < 0
-nrow(febr_data[profund_sup >= 30, ])
-# Result: 20 817 layers with profund_sup >= 30
+nrow(febr_data[profund_sup < 0, ]) # Result: 04 layers with profund_sup < 0
+nrow(febr_data[profund_sup >= 30, ]) # Result: 20 811 layers with profund_sup >= 30
 febr_data <- febr_data[profund_sup >= 0 & profund_sup < 30, ]
-nrow(unique(febr_data[, "id"]))
-# Result: 12 189 events
-nrow(febr_data)
-# Result: 19 260 layers
+nrow(unique(febr_data[, "id"])) # Result: 12 455 events
+nrow(febr_data) # Result: 40 069 layers
 
 # Soil skeleton
 # In some soil samples, the fine earth and skeleton concentration data are inverted. This is quite
@@ -189,7 +185,7 @@ febr_data[grepl("AREIA", camada_nome, ignore.case = TRUE), camada_nome := "SAND"
 febr_data[grepl("Leito", camada_nome, ignore.case = TRUE), camada_nome := "SAND"]
 unique(febr_data[, camada_nome])
 
-# ORGANIC: Organic layers
+# ORGANIC: Organic layers (bivariate)
 febr_data[, ORGANIC := "UNKNOWN"]
 febr_data[carbono < 80, ORGANIC := "FALSE"]
 febr_data[carbono >= 80, ORGANIC := "TRUE"]

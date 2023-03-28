@@ -13,23 +13,16 @@ if (!require("geobr")) {
   install.packages("geobr")
 }
 biomes <- geobr::read_biomes()[-7, ]
-if (!require("mapview")) {
-  install.packages("mapview")
-}
 
 # Read data processed in the previous script
 febr_data <- data.table::fread("mapbiomas-solos/data/05-febr-data.txt", dec = ",", sep = "\t")
 colnames(febr_data)
-nrow(unique(febr_data[, "id"]))
-# Result: 12 186 events
-nrow(febr_data)
-# Result: 19 254 layers
+nrow(unique(febr_data[, "id"])) # Result: 12 455 events
+nrow(febr_data) # Result: 40 069 layers
 
 # Filter out soil layers missing data on soil organic carbon
-nrow(febr_data[is.na(carbono), ])
-# Result: 2275 layers
-nrow(unique(febr_data[is.na(carbono), "id"]))
-# Result: 1597 events
+nrow(febr_data[is.na(carbono), ]) # Result: 4251 layers
+nrow(unique(febr_data[is.na(carbono), "id"])) # Result: 2357 events
 febr_data <- febr_data[!is.na(carbono), ]
 
 # Resetting the limits of each layer according to the target depth range (0 and 30 cm).
@@ -46,10 +39,8 @@ febr_data[, espessura := profund_inf - profund_sup]
 nrow(febr_data[espessura < 0, ]) # 06 layers with thickness < 0 --> remove them
 febr_data <- febr_data[espessura > 0, ]
 febr_data[, thickness := sum(espessura), by = c("dataset_id", "observacao_id")]
-length(febr_data[thickness > 30, id])
-# Result: 152 layers with thickness > 30
-length(unique(febr_data[thickness > 30, id]))
-# Result: 42 events with layers with thickness > 30
+length(febr_data[thickness > 30, id]) # Result: 152 layers with thickness > 30
+length(unique(febr_data[thickness > 30, id])) # Result: 47 events with layers with thickness > 30
 febr_data <- febr_data[thickness <= 30, ] # remove layers
 febr_data[, thickness := NULL]
 
@@ -83,10 +74,8 @@ febr_data <- febr_data[dataset_id != "ctb0036", ]
 febr_data <- febr_data[dataset_id != "ctb0599", ]
 # Projeto Caldeirão: caracterização e gênese das Terras Pretas de Índio na Amazônia
 febr_data <- febr_data[dataset_id != "ctb0018", ]
-nrow(unique(febr_data[, "id"]))
-# Result: 10 758 events
-nrow(febr_data)
-# Result: 16 556 layers
+nrow(unique(febr_data[, "id"])) # Result: 10 758 events
+nrow(febr_data) # Result: 16 556 layers
 
 # Agregar estoque de carbono na camada superficial (0 até 30 cm) de cada evento
 colnames(febr_data)
@@ -97,7 +86,7 @@ febr_data <- febr_data[
     !is.na(coord_y) &
     !is.na(data_coleta_ano),
   .(
-    carbono_estoque_g.m2 = as.integer(round(sum(carbono_estoque_kgm2, na.rm = TRUE) * 1000)),
+    cos_estoque_gm2 = as.integer(round(sum(carbono_estoque_kgm2, na.rm = TRUE) * 1000)),
     data_coleta_ano = as.integer(round(mean(data_coleta_ano, na.rm = TRUE))),
     coord_x = mean(coord_x, na.rm = TRUE),
     coord_y = mean(coord_y, na.rm = TRUE),
@@ -107,27 +96,21 @@ febr_data <- febr_data[
     PASTURE = unique(PASTURE),
     AGRICULTURE = unique(AGRICULTURE),
     FORESTRY = unique(FORESTRY),
-    NONVEGETATION = unique(NONVEGETATION),
-    data_coleta_ano = mean(data_coleta_ano)
+    NONVEGETATION = unique(NONVEGETATION)
   ),
   by = id
 ]
-nrow(febr_data)
-# Result: 9650 events/layers
-
-# table(febr_data[FOREST == "FALSE" & NONFOREST == "FALSE", AGRICULTURE == "FALSE" & PASTURE == "FALSE" & FORESTRY == "FALSE" & NONVEGETATION == "FALSE", data_coleta_ano])
-# lulc <- c("FOREST", "NONFOREST", "PASTURE", "AGRICULTURE", "FORESTRY", "NONVEGETATION")
-# sum(sapply(febr_data[, ..lulc], function(x) sum(x == "TRUE")))
+nrow(febr_data) # Result: 9650 events/layers
 
 if (FALSE) {
   x11()
-  hist(febr_data[, carbono_estoque_g.m2] / 1000)
-  rug(febr_data[, carbono_estoque_g.m2] / 1000)
+  hist(febr_data[, cos_estoque_gm2] / 1000)
+  rug(febr_data[, cos_estoque_gm2] / 1000)
 }
 
 # Check if we have replicated sample points
-double <- duplicated(febr_data[, c("data_coleta_ano", "coord_x", "coord_y", "carbono_estoque_g.m2")])
-sum(double) # six duplicated events
+double <- duplicated(febr_data[, c("data_coleta_ano", "coord_x", "coord_y", "cos_estoque_gm2")])
+sum(double) # no duplicated events
 febr_data <- febr_data[!double, ]
 
 # Avaliar distribuição de frequência dos dados de estoque de carbono
@@ -136,7 +119,7 @@ png("mapbiomas-solos/res/fig/carbon-stock-histogram.png",
   width = 480 * 3, height = 480 * 3, res = 72 * 3
 )
 par(mar = c(5, 4, 2, 2) + 0.1)
-hist(febr_data[, carbono_estoque_g.m2] / 1000,
+hist(febr_data[, cos_estoque_gm2] / 1000,
   panel.first = grid(nx = FALSE, ny = NULL), 
   xlab = expression("Estoque de carbono orgânico, kg m"^-2),
   ylab = paste0("Frequência absoluta (n = ", nrow(febr_data), ")"),
@@ -144,7 +127,7 @@ hist(febr_data[, carbono_estoque_g.m2] / 1000,
   xlim = c(0, 120),
   main = ""
 )
-rug(febr_data[, carbono_estoque_g.m2] / 1000)
+rug(febr_data[, cos_estoque_gm2] / 1000)
 dev.off()
 
 # Avaliar distribuição de frequência da espessura da camada
@@ -165,7 +148,6 @@ rug(febr_data[, espessura])
 dev.off()
 
 # Avaliar distribuição de frequência dos dados pontuais ao longo do tempo
-febr_data[data_coleta_ano == 1938, data_coleta_ano := sample(1960:1984, 1)]
 dev.off()
 png("mapbiomas-solos/res/fig/carbon-stock-temporal-distribution.png",
   width = 480 * 3, height = 480 * 3, res = 72 * 3
@@ -191,12 +173,12 @@ png("mapbiomas-solos/res/fig/carbon-stock-spatial-distribution.png",
 plot(biomes["name_biome"], reset = FALSE,
   main = "", axes = TRUE, col = "transparent", lwd = 0.5, border = "darkgray",
   key.pos = NULL, graticule = TRUE)
-cex <- febr_data_sf[["carbono_estoque_g.m2"]] / (max(febr_data_sf[["carbono_estoque_g.m2"]]) * 0.4)
-plot(febr_data_sf["carbono_estoque_g.m2"], add = TRUE, pch = 21, cex = cex, col = "black")
+cex <- febr_data_sf[["cos_estoque_gm2"]] / (max(febr_data_sf[["cos_estoque_gm2"]]) * 0.4)
+plot(febr_data_sf["cos_estoque_gm2"], add = TRUE, pch = 21, cex = cex, col = "black")
 prob <- c(0, 0.5, 0.95, 0.975, 1)
 legend(
   x = -40, y = 8,
-  legend = paste0(round(quantile(febr_data_sf[["carbono_estoque_g.m2"]], prob) / 1000, 1), " kg/m^2"),
+  legend = paste0(round(quantile(febr_data_sf[["cos_estoque_gm2"]], prob) / 1000, 1), " kg/m^2"),
   pch = 21, box.lwd = 0, pt.cex = quantile(cex, prob)
 )
 dev.off()
@@ -204,6 +186,6 @@ dev.off()
 # Write date to disk
 colnames(febr_data)
 data.table::fwrite(
-  febr_data,
+  febr_data[, c("id", "cos_estoque_gm2", "data_coleta_ano", "coord_x", "coord_y")],
   paste0("mapbiomas-solos/res/tab/", format(Sys.time(), "%Y-%m-%d"), "-pontos-estoque-cos.csv")
 )
