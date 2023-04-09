@@ -1,4 +1,4 @@
-# MapBiomas Soil (beta): Script 01a. Process FEBR data - time coordinate
+# MapBiomas Soil (beta): Script 01a. Process FEBR data - Rondônia
 # Alessandro Samuel-Rosa & Taciara Zborowski Horst
 # 2023 CC-BY
 rm(list = ls())
@@ -27,8 +27,9 @@ event34[, dataset_id34 := dataset_id]
 event34[, dataset_id := NULL]
 event34[, data_coleta := as.Date(data_coleta, origin = "1899-12-30")]
 # event34[, data_coleta := NULL]
-sapply(list(event33 = event33, event34 = event34), nrow)
+sapply(list(event33 = event33, event34 = event34), nrow) # 2998 and 107 events
 eventRO <- merge(event33, event34, all = TRUE)
+nrow(eventRO) # 2999 events after merge
 eventRO[, dataset_id := "ctb0033"]
 eventRO[, coord_datum_epsg := NULL]
 eventRO[, coord_datum_epsg := "EPSG:4326"]
@@ -44,6 +45,7 @@ eventRO[, estado_id := "RO"]
 cols <- intersect(names(eventRO), tolower(names(eventRO)))
 eventRO <- eventRO[, ..cols]
 eventRO[, data_coleta_ano := as.integer(format(data_coleta, "%Y"))]
+nrow(eventRO[is.na(data_coleta_ano), ]) # 87 events missing the sampling date
 eventRO[is.na(data_coleta_ano), data_coleta_ano := 1996]
 if (FALSE) {
   x11()
@@ -56,20 +58,20 @@ str(eventRO)
 layer33 <- febr::layer("ctb0033", "all")
 layer33 <- data.table::as.data.table(layer33)
 layer33[, camada_id_sisb := NULL]
-
 # ctb0034
 layer34 <- febr::layer("ctb0034", "all")
 layer34 <- data.table::as.data.table(layer34)
 layer34[, dataset_id34 := dataset_id]
 layer34[, dataset_id := NULL]
 layer34[, camada_id_febr := camada_id_alt]
-
+sapply(list(layer33, layer34), nrow) # 10 779 and 419 layers
 # Merge layers from ctb0033 and ctb0034
 layerRO <- merge(layer33, layer34,
   by = c("evento_id_febr", "camada_id_febr"),
   suffixes = c("", ".IGNORE"),
   all = TRUE
 )
+nrow(layerRO) # 10 785 layers after merge
 layerRO[, dataset_id := "ctb0033"]
 colnames(layerRO)
 new_names <- c(
@@ -91,6 +93,9 @@ layerRO[, dataset_id34 := NULL]
 
 # Merge events and layers
 rondonia <- merge(eventRO, layerRO, all = TRUE)
+nrow(rondonia) # 10 789 layers
+
+# Standardize measurement units
 rondonia[, areia := areia * 10]
 rondonia[, argila := argila * 10]
 rondonia[, silte := silte * 10]
@@ -100,6 +105,8 @@ rondonia[, carbono := carbono * 10]
 # Deal with the identification of events containing duplicated layers
 # These are extra samples for soil fertility assessment collected nearby the soil profile
 rondonia[, EXTRA := duplicated(profund_sup), by = observacao_id]
+nrow(rondonia[EXTRA == TRUE, ]) # 63 duplicated layers
+nrow(unique(rondonia[EXTRA == TRUE, "observacao_id"])) # 24 events with duplicated layers
 rondonia[EXTRA == TRUE, observacao_id := paste0(observacao_id, camada_id_febr)]
 rondonia[, id := paste0(dataset_id, "-", observacao_id)]
 
@@ -115,6 +122,8 @@ extra_coords <- sf::st_coordinates(extra_coords)
 rondonia[EXTRA == TRUE & !is.na(coord_x), coord_x := extra_coords[, "X"]]
 rondonia[EXTRA == TRUE & !is.na(coord_x), coord_y := extra_coords[, "Y"]]
 rondonia[, EXTRA := NULL]
+nrow(rondonia) # 10 789 layers
+nrow(unique(rondonia[, "id"])) # 3061 events
 
 # Read FEBR data processed in the previous script
 febr_data <- data.table::fread("mapbiomas-solos/data/01a-febr-data.txt", dec = ",", sep = "\t")
@@ -128,7 +137,8 @@ length(unique(febr_data[, id])) # 11 129 events
 col_ro <- intersect(names(febr_data), names(rondonia))
 febr_data <- data.table::rbindlist(list(febr_data, rondonia[, ..col_ro]), fill = TRUE)
 length(unique(febr_data[, id])) # 14 190 events
-colnames(febr_data)
+nrow(febr_data) # 14 190 events
+colnames(febr_data) # 50 385 layers
 
 # Write data to disk
 data.table::fwrite(febr_data, "mapbiomas-solos/data/01b-febr-data.txt", sep = "\t", dec = ",")
