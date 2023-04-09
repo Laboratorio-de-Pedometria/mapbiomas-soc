@@ -119,7 +119,7 @@ nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")])
 febr_data[dataset_id == "ctb0815" & is.na(data_coleta_ano), data_coleta_ano := 1995]
 nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
 
-# RADAMBRASIL: set sampling year to any moment between 1970 and 1984
+# RADAMBRASIL: set sampling year to 1948
 # Result: 786 events still miss the sampling date
 idx <- febr_data[
   grepl("RADAMBRASIL", dataset_titulo, ignore.case = TRUE) & is.na(data_coleta_ano),
@@ -128,15 +128,15 @@ idx <- febr_data[
 febr_data[
   id %in% idx,
   # data_coleta_ano := round(runif(length(idx), min = 1970, max = 1984))
-  data_coleta_ano := 1984
+  data_coleta_ano := 1948
 ]
 nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
 
 # All other
-# Set a random year between 1960 and 1984
+# Set a sampling year to 1948
 idx <- febr_data[is.na(data_coleta_ano), id]
 # febr_data[id %in% idx, data_coleta_ano := round(runif(n = length(idx), min = 1960, max = 1984))]
-febr_data[id %in% idx, data_coleta_ano := 1984]
+febr_data[id %in% idx, data_coleta_ano := 1948]
 nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
 
 # Temporal distribution of samples with known sampling date after data rescue
