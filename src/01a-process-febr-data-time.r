@@ -119,7 +119,13 @@ nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")])
 febr_data[dataset_id == "ctb0815" & is.na(data_coleta_ano), data_coleta_ano := 1995]
 nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
 
-# RADAMBRASIL: set sampling year to 1948
+# Define an arbitrarily low year below the actual minimum
+# Use this year as the value for events with NAs
+# This allows these data to be shown in the histogram in a separate column from the other data.
+year_min <- min(febr_data[, data_coleta_ano], na.rm = TRUE)
+year_min <- (floor(year_min / 10) * 10) - 2
+
+# RADAMBRASIL: set sampling year to year_min
 # Result: 786 events still miss the sampling date
 idx <- febr_data[
   grepl("RADAMBRASIL", dataset_titulo, ignore.case = TRUE) & is.na(data_coleta_ano),
@@ -128,15 +134,15 @@ idx <- febr_data[
 febr_data[
   id %in% idx,
   # data_coleta_ano := round(runif(length(idx), min = 1970, max = 1984))
-  data_coleta_ano := 1948
+  data_coleta_ano := year_min
 ]
 nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
 
 # All other
-# Set a sampling year to 1948
+# Set a sampling year to year_min
 idx <- febr_data[is.na(data_coleta_ano), id]
 # febr_data[id %in% idx, data_coleta_ano := round(runif(n = length(idx), min = 1960, max = 1984))]
-febr_data[id %in% idx, data_coleta_ano := 1948]
+febr_data[id %in% idx, data_coleta_ano := year_min]
 nrow(unique(febr_data[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
 
 # Temporal distribution of samples with known sampling date after data rescue
@@ -144,7 +150,8 @@ missing_time <- is.na(febr_data[["data_coleta_ano"]])
 if (FALSE) {
   x11()
   hist(febr_data[["data_coleta_ano"]], sub = paste0("n = ", sum(!missing_time)))
-  rug(febr_data[["data_coleta_ano"]])
+  rug(febr_data[data_coleta_ano != year_min, data_coleta_ano])
+  text(x = year_min - 0.5, y = -400, labels = "NAs")
 }
 
 # Write data to disk
