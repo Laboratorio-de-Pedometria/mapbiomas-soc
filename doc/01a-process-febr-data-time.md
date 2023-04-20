@@ -21,19 +21,19 @@ three approaches were used:
 
 1. If the year of sampling is known for at least a few events in a
   soil survey report, then we compute the average (mean year of
-  sampling) and use that estimate as the most likely year of sampling of any events for which such information is missing.
+  sampling) and use that estimate as the most likely year of sampling
+  of any events for which such information is missing.
 1. For soil surveys published in 1985 onwards and the year of sampling
   is unknown for all of its events, we check the year of publication
   of the report and of its latest references. Based on that time
   interval, we select an intermediate year, generally about two years
   before the publication of the survey report, and use that year as
   the most likely year of sampling of all of the events.
-1. For events from soil surveys published before 1985 where the
-  sampling date is unknown, we set the year of sampling to 1948. This
-  is only done for the purpose of plotting the data, specifically for
-  showing these samples on a histogram. We chose 1948 because it is
-  significantly earlier than any true sampling date found across the
-  existing events.
+1. For soil survey events published prior to 1985 that lack a known sampling
+  date, we set an arbitrarily low year as the sampling date. This allows us
+  to plot these events on a separate column of the histogram, distinguishing
+  them from the other data. Please note that this approach is solely intended
+  for visualization purposes.
 
 ## Results
 
@@ -45,6 +45,6 @@ attributed a sampling date based on the average sampling year of the
 source survey report. For the remaining 1,869 events, we attempted to
 attribute a sampling date based on the year of publication of the
 source survey report, but this only worked for 157 events because they
-belonged to a survey report published after 1984. For the remaining
-1,712 events, we set the year of sampling to 1948. After this process,
-we ended up with 14,043 events with a sampling date.
+belonged to a survey report published after 1984. For the remaining 1,712
+events, we set the year of sampling to an arbitrarily low value, and this
+approach is intended solely for visualization purposes.
