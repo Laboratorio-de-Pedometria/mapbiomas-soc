@@ -1,27 +1,6 @@
-# 02. MERGE EXTERNAL DATA SETS #####################################################################
-# SUMMARY
-# Several data sets were selected to enter the FEBR during the last months. However, these data sets
-# have not been modelled according to the data model used in the FEBR. The reason for this is that
-# we were looking for data that could be readily used to model the spatio-temporal variation of soil
-# organic carbon stocks in Brazil. In other words, our focus was on simply gathering data that could
-# help improve the predictions, thus focusing on key soil variables. The main data source in these
-# phase was the National Forest Inventory (IFN) (see URL below). We also ingested data from a
-# private natural reserve in the Pantanal biome (SESC Pantanal). Due to limitations of resources,
-# any differences in laboratory methods were ignored during data processing and the new data was
-# merged with the existing data as is. The only exception is the standardization of the coordinate
-# reference system, with EPSG:4326 used as target.
-# During data processing, we noticed that 32 samples coming from the latest (2021) FEBR snapshot we
-# missing data on the concentration of the fine earth fraction. After checking the horizon/layer
-# designation, we attributed a concentration of fine earth of 1000 g/kg.
-# We also noticed that some events were duplicated. These were events with the same ID but different
-# spatial or temporal coordinates. We identify them computing the standard deviation of the
-# coordinates of each event: for non-duplicated events, the standard deviation should be zero.
-# IFN: https://snif.florestal.gov.br/pt-br/inventario-florestal-nacional-ifn/ifn-dados-abertos
-# KEY RESULTS
-# We started with 14 043 events (50 470 layers) in the data base and added another 1098 events
-# (2226 layers) to the data base. All of these 1098 events contain the spatial and temporal
-# coordinates. After removing 12 duplicated events (130 layers), we ended with 15 129 events
-# (52 566 layers).
+# MapBiomas Soil (beta): Script 02. Merge external data
+# Alessandro Samuel-Rosa & Taciara Zborowski Horst
+# 2023 CC-BY
 rm(list = ls())
 
 pronasolos <- TRUE # ctb0064
@@ -72,7 +51,7 @@ for (i in seq_along(files_event)) {
 }
 data_event <- data.table::rbindlist(data_event, fill = TRUE)
 nrow(data_event)
-# 10 098 (not all IFN events have layers)
+# 10 098 events (not all IFN events have layers)
 
 # Standardize coordinate reference system
 data_event[, coord_datum_epsg := as.integer(gsub("EPSG:", "", coord_datum_epsg))]
@@ -101,7 +80,7 @@ data.table::setnames(data_event, old = c("X", "Y"), new = c("coord_x", "coord_y"
 data_event[, geometry := NULL]
 
 # Clean sampling date
-data_event[data_coleta_ano < 1900, data_coleta_ano := NA_integer_]
+data_event[data_coleta_ano < 1950, data_coleta_ano := NA_integer_]
 data_event[data_coleta_ano > as.integer(format(Sys.time(), "%Y")), data_coleta_ano := NA_integer_]
 nrow(data_event) # 10 098 (not all events have layers)
 
@@ -166,9 +145,9 @@ if (FALSE) {
   points(febr_data02[, coord_x], febr_data02[, coord_y], cex = 0.5, pch = 20)
 }
 
-# Corrigir amostras com terrafina = 0
-# Assume-se que se tratam de amostras com dado faltante e que, quando faltante, o valor de terra
-# fina é 1000 g/kg
+# Correct samples with terrafina = 0
+# It is assumed that these are samples with missing data and that, when missing, the value of fine
+# earth is 1000 g/kg.
 febr_data02[terrafina == 0, terrafina := 1000]
 nrow(unique(febr_data02[, "id"]))
 # 14 190 events
@@ -224,9 +203,19 @@ nrow(unique(febr_data[, "id"]))
 nrow(febr_data)
 # Result: 44 155 layers
 
-# Set a random year between 1960 and 1984
+# Set sampling year to year_min
 # febr_data[is.na(data_coleta_ano), data_coleta_ano := sample(1960:1984, 1)]
-febr_data[is.na(data_coleta_ano), data_coleta_ano := 1985]
+year_min <- min(febr_data[, data_coleta_ano], na.rm = TRUE)
+febr_data[is.na(data_coleta_ano), data_coleta_ano := year_min]
+
+# Temporal distribution of samples with known sampling date after data rescue
+missing_time <- is.na(febr_data[["data_coleta_ano"]])
+if (FALSE) {
+  x11()
+  hist(febr_data[["data_coleta_ano"]], sub = paste0("n = ", sum(!missing_time)))
+  rug(febr_data[data_coleta_ano != year_min, data_coleta_ano])
+  text(x = year_min - 0.5, y = -400, labels = "NAs")
+}
 
 # Write data to disk
 data.table::fwrite(febr_data, "mapbiomas-solos/data/02-febr-data.txt", sep = "\t", dec = ",")
