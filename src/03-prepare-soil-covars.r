@@ -57,9 +57,9 @@ if (!require("data.table")) {
 # Read data processed in the previous script
 febr_data <- data.table::fread("mapbiomas-solos/data/02-febr-data.txt", dec = ",", sep = "\t")
 nrow(unique(febr_data[, "id"]))
-# Result: 12 729 events
+# Result: 12 730 events
 nrow(febr_data)
-# Result: 44 155 layers
+# Result: 44 160 layers
 colnames(febr_data)
 
 # Correct layer depth and name
