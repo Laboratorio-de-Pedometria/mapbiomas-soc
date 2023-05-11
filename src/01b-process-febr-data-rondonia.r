@@ -13,6 +13,9 @@ if (!require("sf")) {
 if (!require("geobr")) {
   install.packages("geobr")
 }
+if (!require("febr")) {
+  install.packages("febr")
+}
 
 # Zoneamento Socioeconômico-Ecológico do Estado de Rondônia (ctb0033 and ctb0034)
 # Download current version from FEBR: events
