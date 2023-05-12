@@ -1,18 +1,10 @@
 # 06. COMPUTE ORGANIC CARBON STOCK #################################################################
-# SUMMARY
-# 
-# KEY RESULTS
-# 
 rm(list = ls())
 
 # Install and load required packages
-if (!require("sf")) {
-  install.packages("sf")
+if (!require("data.table")) {
+  install.packages("data.table")
 }
-if (!require("geobr")) {
-  install.packages("geobr")
-}
-biomes <- geobr::read_biomes()[-7, ]
 
 # Read data processed in the previous script
 febr_data <- data.table::fread("mapbiomas-solos/data/05-febr-data.txt", dec = ",", sep = "\t")
@@ -113,84 +105,8 @@ double <- duplicated(febr_data[, c("data_coleta_ano", "coord_x", "coord_y", "cos
 sum(double) # no duplicated events
 febr_data <- febr_data[!double, ]
 
-# Avaliar distribuição de frequência dos dados de estoque de carbono
-dev.off()
-png("mapbiomas-solos/res/fig/carbon-stock-histogram.png",
-  width = 480 * 3, height = 480 * 3, res = 72 * 3
-)
-par(mar = c(5, 4, 2, 2) + 0.1)
-y_max <- hist(febr_data[, cos_estoque_gm2] / 1000, plot = FALSE)$counts
-y_max <- ceiling(max(y_max) / 1000) * 1000
-hist(febr_data[, cos_estoque_gm2] / 1000,
-  panel.first = grid(nx = FALSE, ny = NULL), 
-  xlab = expression("Estoque de carbono orgânico, kg m"^-2),
-  ylab = paste0("Frequência absoluta (n = ", nrow(febr_data), ")"),
-  ylim = c(0, y_max),
-  xlim = c(0, 120),
-  main = ""
-)
-rug(febr_data[, cos_estoque_gm2] / 1000)
-dev.off()
-
-# Avaliar distribuição de frequência da espessura da camada
-dev.off()
-png("mapbiomas-solos/res/fig/carbon-stock-depth-distribution.png",
-  width = 480 * 3, height = 480 * 3, res = 72 * 3
-)
-par(mar = c(5, 4, 2, 2) + 0.1)
-y_max <- hist(febr_data[, espessura], plot = FALSE)$counts
-y_max <- ceiling(max(y_max) / 1000) * 1000
-hist(febr_data[, espessura] / 100,
-  panel.first = grid(nx = FALSE, ny = NULL),
-  xlab = "Espessura da camada superficial, m",
-  ylab = paste0("Frequência absoluta (n = ", nrow(febr_data), ")"),
-  ylim = c(0, y_max),
-  xlim = c(0, 30) / 100,
-  main = ""
-)
-rug(febr_data[, espessura] / 100)
-dev.off()
-
-# Avaliar distribuição de frequência dos dados pontuais ao longo do tempo
-dev.off()
-png("mapbiomas-solos/res/fig/carbon-stock-temporal-distribution.png",
-  width = 480 * 3, height = 480 * 3, res = 72 * 3
-)
-par(mar = c(5, 4, 2, 2) + 0.1)
-y_max <- hist(febr_data[, data_coleta_ano], plot = FALSE)$counts
-y_max <- ceiling(max(y_max) / 1000) * 1000
-hist(febr_data[, data_coleta_ano],
-  panel.first = grid(nx = FALSE, ny = NULL),
-  xlab = "Ano de amostragem",
-  ylab = paste0("Frequência absoluta (n = ", nrow(febr_data), ")"),
-  ylim = c(0, y_max),
-  xlim = c(min(febr_data[, data_coleta_ano]),
-    as.integer(format(Sys.time(), "%Y"))),
-  main = ""
-)
-rug(febr_data[, data_coleta_ano])
-dev.off()
-
-# Criar objeto espacial e avaliar distribuição por bioma
-febr_data_sf <- sf::st_as_sf(febr_data, coords = c("coord_x", "coord_y"), crs = 4623)
-nrow(febr_data_sf)
-dev.off()
-png("mapbiomas-solos/res/fig/carbon-stock-spatial-distribution.png",
-  width = 480 * 3, height = 480 * 3, res = 72 * 3)
-plot(biomes["name_biome"], reset = FALSE,
-  main = "", axes = TRUE, col = "transparent", lwd = 0.5, border = "darkgray",
-  key.pos = NULL, graticule = TRUE)
-cex <- febr_data_sf[["cos_estoque_gm2"]] / (max(febr_data_sf[["cos_estoque_gm2"]]) * 0.4)
-plot(febr_data_sf["cos_estoque_gm2"], add = TRUE, pch = 21, cex = cex, col = "black")
-prob <- c(0, 0.5, 0.95, 0.975, 1)
-quant <- round(quantile(febr_data_sf[["cos_estoque_gm2"]], prob) / 1000, 1)
-leg_text <- paste(quant, "~ kg/m^2")
-leg_text <- sapply(leg_text, function(x) parse(text = x))
-legend(x = -40, y = 8, legend = leg_text, pch = 21, box.lwd = 0, pt.cex = quantile(cex, prob))
-dev.off()
-
-# Write date to disk
-colnames(febr_data)
+# Write data to disk
+data.table::fwrite(febr_data, "mapbiomas-solos/data/06-febr-data.txt", sep = "\t", dec = ",")
 data.table::fwrite(
   febr_data[, c("id", "cos_estoque_gm2", "data_coleta_ano", "coord_x", "coord_y")],
   paste0("mapbiomas-solos/res/tab/", format(Sys.time(), "%Y-%m-%d"), "-pontos-estoque-cos.csv")
