@@ -24,7 +24,7 @@ febr_data[, data_coleta_mes := as.integer(format(observacao_data, "%m"))]
 febr_data[, data_coleta_ano := as.integer(format(observacao_data, "%Y"))]
 
 # Clean odd sampling date
-febr_data[data_coleta_ano == 1939, data_coleta_ano := NA_integer_]
+febr_data[data_coleta_ano < 1950, data_coleta_ano := NA_integer_]
 
 # Temporal distribution of samples with known sampling date
 nrow(unique(febr_data[, c("dataset_id", "observacao_id")]))
