@@ -115,11 +115,12 @@ rondonia[, id := paste0(dataset_id, "-", observacao_id)]
 
 # Add random perturbation to the coordinates of extra samples
 # Use sf::st_jitter() with amount = 200 m, where runif(1, -amount, amount)
+amount <- 200
 extra_coords <- rondonia[EXTRA == TRUE & !is.na(coord_x), c("id", "coord_x", "coord_y")]
 extra_coords <- sf::st_as_sf(extra_coords, coords = c("coord_x", "coord_y"), crs = 4326)
 extra_coords <- sf::st_transform(extra_coords, crs = 32720)
 set.seed(32720)
-extra_coords <- sf::st_jitter(extra_coords, amount = 200)
+extra_coords <- sf::st_jitter(extra_coords, amount = amount)
 extra_coords <- sf::st_transform(extra_coords, crs = 4326)
 extra_coords <- sf::st_coordinates(extra_coords)
 rondonia[EXTRA == TRUE & !is.na(coord_x), coord_x := extra_coords[, "X"]]
@@ -140,8 +141,7 @@ length(unique(febr_data[, id])) # 11 129 events
 col_ro <- intersect(names(febr_data), names(rondonia))
 febr_data <- data.table::rbindlist(list(febr_data, rondonia[, ..col_ro]), fill = TRUE)
 length(unique(febr_data[, id])) # 14 190 events
-nrow(febr_data) # 14 190 events
-colnames(febr_data) # 50 385 layers
+nrow(febr_data) # 50 385 layers
 
 # Write data to disk
 data.table::fwrite(febr_data, "mapbiomas-solos/data/01b-febr-data.txt", sep = "\t", dec = ",")
