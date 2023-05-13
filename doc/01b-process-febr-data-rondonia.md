@@ -1,7 +1,6 @@
 # MapBiomas Soil (beta): Script 01a. Process FEBR data - Rondônia
 
-_Alessandro Samuel-Rosa & Taciara Zborowski Horst_
-
+_Alessandro Samuel-Rosa & Taciara Zborowski Horst_<br>
 _2023 CC-BY_
 
 ## Material and Methods

@@ -1,7 +1,6 @@
 # MapBiomas Soil (beta): Script 02. Merge external data
 
-_Alessandro Samuel-Rosa & Taciara Zborowski Horst_
-
+_Alessandro Samuel-Rosa & Taciara Zborowski Horst_<br>
 _2023 CC-BY_
 
 ## Material and Methods
@@ -16,9 +15,9 @@ During this phase, the National Forest Inventory (NFI) served as the main data s
 we included data from a private natural reserve in the Pantanal biome (SESC). Lastly, we integrated
 data from the National Soil Survey and Interpretation Program of Brazil (PronaSolos).
 
-* NFI: https://snif.florestal.gov.br/pt-br/inventario-florestal-nacional-ifn/ifn-dados-abertos
-* SESC: https://www.sescpantanal.com.br/arquivos/cadastro-itens/layout-6/arquivos/file-636003159185881485.pdf
-* PRONASOLOS: http://geoinfo.cnps.embrapa.br/layers/geonode%3Aperfis_pronasolos_20201202v2
+* NFI: <https://snif.florestal.gov.br/pt-br/inventario-florestal-nacional-ifn/ifn-dados-abertos>
+* SESC: <https://www.sescpantanal.com.br/arquivos/cadastro-itens/layout-6/arquivos/file-636003159185881485.pdf>
+* PRONASOLOS: <http://geoinfo.cnps.embrapa.br/layers/geonode%3Aperfis_pronasolos_20201202v2>
 
 The soil data underwent a series of standardization and filtering steps. As part of this process,
 the coordinate reference system was standardized to EPSG:4326 to ensure consistency across the
@@ -29,13 +28,13 @@ laboratory methods were disregarded during the data processing, and the new data
 existing data without any alterations.
 
 Next, the data from events and layers from different data sources were merged, and important data
-fields such as terrafina and camada_nome were added. The next step involved removing events and
+fields such as 'terrafina' and 'camada_nome' were added. The next step involved removing events and
 layers that lacked sampling dates, some of which were created in the previous processing step. This
 step was necessary to discard problematic data from PronaSolos.
 
 After completing the previous steps, the previously processed FEBR data, consisting of 14,190
-events, was loaded. During this data processing step, samples with terrafina = 0 were corrected. It
-was assumed that these samples had missing data, and when the data was missing, the value of fine
+events, was loaded. During this data processing step, samples with 'terrafina' = 0 were corrected.
+It was assumed that these samples had missing data, and when the data was missing, the value of fine
 earth was assumed to be 1000 g/kg.
 
 All the data from the different data sources was then merged, and the next step was to check for any
