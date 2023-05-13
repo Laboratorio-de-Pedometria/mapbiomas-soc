@@ -1,52 +1,6 @@
-# 03. PREPARE SOIL COVARIATES ######################################################################
-# SUMMARY
-# Soil covariates are predictor variables created using data on soil properties (clay content, soil
-# classification and so on). These covariates will be necessary later on to train a random forest
-# regression model. That regression model will be used to estimate the bulk density of soil samples
-# that are missing data on such variable. The bulk density is a key soil property to compute SOC
-# stocks.
-# Soil covariates prepared in this script include categorical and continuous variables. A key
-# feature of the process of creating soil covariates is the handling of missing data. For
-# categorical variables, a new category named UNKNOWN is created to replace the NAs. For continuous
-# variables, three new variables are created to replace the original:
-# 1. A continuous variable with the NAs replaced with +Inf,
-# 2. A continuous variable with the NAs replaced with -Inf, and
-# 3. A categorical variable with two levels, ISNA and ISNOTNA, indicating if the data for a
-#    particular sample was missing or not.
-# This approach of handling missing data is based on the idea of incorporating the missingness in
-# attributes (MIA, [1]). Our implementation differs from the original MIA in that MIA was designed
-# to operate inside the decision/regression trees, that is, in each partition node. We are not aware
-# of the impacts that this difference has on the prediction results.
-# The exception to the process described above is the data on the concentration of soil organic
-# carbon (SOC). For this soil property, we first performed a data imputation step using the average
-# (mean) concentration of SOC of particular types of soil horizons and layers (organic layers, Ap,
-# Bt, E and so on). The quasi-MIA approach was applied after the group imputation step.
-# We also create bivariate categorical variables to record the presence/absence of particular
-# features in the soil such as concretions and nodules.
-# We noticed that, in some soil samples coming from the latest (2021) FEBR snapshot, the fine earth
-# and skeleton concentration data are inverted. This is quite common in cases where the skeleton
-# concentration is greater than 800 g/kg. The solution used here is to swap the values between the
-# two variables for soil horizons such as A, Ap, Bt, and Bw.
-# [1] B. E. T. H. Twala, M. C. Jones, and D. J. Hand, “Good methods for coping with missing data
-#    in decision trees,” Pattern Recognition Letters, vol. 29, no. 7, pp. 950–956, May 2008, doi:
-#    10.1016/j.patrec.2008.01.010. 
-# KEY RESULTS
-# The following soil covariates were created:
-# * ORDER, SUBORDER, GREATGROUP, and SUBGROUP: Soil classification (multivariate; MIA)
-# * STONESOL: Soil classes known for having a skeleton (bivariate)
-# * STONES: Soil layers known for having concretions, nodules, rock fragments, rock-like pedogenic
-#   layers, and human artifacts (bivariate)
-# * AHRZN: A horizon (bivariate)
-# * BHRZN: B horizon (bivariate)
-# * DEPTH: Layer average depth (continuous; MIA)
-# * CLAY: Clay content (continuous; MIA)
-# * SAND: Sand content (continuous; MIA)
-# * SILT: Silt content (continuous; MIA)
-# * CARBON: Carbon content (continuous; group imputation + MIA)
-# * CEC: Cation exchange capacity (continuous; MIA)
-# * PH: pH (continuous; MIA)
-# * LONG: Geographic coordinates - Longitude (continuous; MIA)
-# * LAT: Geographic coordinates - Latitude (continuous; MIA)
+# MapBiomas Soil (beta): Script 03. Prepare soil covariates
+# Alessandro Samuel-Rosa & Taciara Zborowski Horst
+# 2023 CC-BY
 rm(list = ls())
 
 # Install and load required packages
@@ -56,10 +10,8 @@ if (!require("data.table")) {
 
 # Read data processed in the previous script
 febr_data <- data.table::fread("mapbiomas-solos/data/02-febr-data.txt", dec = ",", sep = "\t")
-nrow(unique(febr_data[, "id"]))
-# Result: 12 730 events
-nrow(febr_data)
-# Result: 44 160 layers
+nrow(unique(febr_data[, "id"])) # 12 729 events
+nrow(febr_data) # 44 158 layers
 colnames(febr_data)
 
 # Correct layer depth and name
@@ -70,26 +22,24 @@ febr_data[
 ]
 
 # Filter out soil layers with thickness > 50 cm
+# Many of these layers are below 30 cm depth or result form typing errors: a common recommendation
+# of soil description and sampling manuals is to use a maximum layers thickness of 50 cm
 febr_data[, thickness := profund_inf - profund_sup]
-nrow(febr_data[thickness > 50, ])
-# Result: 3729 layers with thickness > 50 cm
+nrow(febr_data[thickness > 50, ]) # 3729 layers with thickness > 50 cm
 febr_data <- febr_data[thickness <= 50, ]
 febr_data[, thickness := NULL]
-nrow(unique(febr_data[, "id"]))
-# Result: 12 455 events
-nrow(febr_data)
-# Result: 40 069 layers
+nrow(unique(febr_data[, "id"])) # 12 455 events
+nrow(febr_data) # 40 072 layers
 
 # Filter out soil layers starting below 30 cm depth
 # We work only with data from the first 30 cm and deeper layers that start at or before 30 cm.
-# We also ignore organic layers (negative depth) in mineral soils.
-# * four layers with negative depth
-# * 26 351 layers with superior depth equal to or larger than 30 cm
-nrow(febr_data[profund_sup < 0, ]) # Result: 04 layers with profund_sup < 0
-nrow(febr_data[profund_sup >= 30, ]) # Result: 20 811 layers with profund_sup >= 30
+# We also ignore organic layers in mineral soils: these layers generally are indicated with negative
+# depth 
+nrow(febr_data[profund_sup < 0, ]) # 04 layers with profund_sup < 0
+nrow(febr_data[profund_sup >= 30, ]) # 20 814 layers with profund_sup >= 30
 febr_data <- febr_data[profund_sup >= 0 & profund_sup < 30, ]
-nrow(unique(febr_data[, "id"])) # Result: 12 455 events
-nrow(febr_data) # Result: 40 069 layers
+nrow(unique(febr_data[, "id"])) # Result: 12 186 events
+nrow(febr_data) # Result: 19 254 layers
 
 # Soil skeleton
 # In some soil samples, the fine earth and skeleton concentration data are inverted. This is quite
@@ -218,24 +168,9 @@ febr_data[grepl("^B", camada_nome, ignore.case = FALSE), BHRZN := "TRUE"]
 febr_data[, BHRZN := as.factor(BHRZN)]
 summary(febr_data[, BHRZN])
 
-# DEPTH: Layer average depth (continuous)
-# febr_data[, espessura := profund_inf - profund_sup]
-# febr_data[, DEPTH := profund_sup + (espessura / 2)]
-# febr_data[is.na(DEPTH) & esqueleto == 1000, DEPTH := 2000]
-# febr_data[, DEPTHplus := DEPTH]
-# febr_data[, DEPTHminus := DEPTH]
-# febr_data[, DEPTHna := "ISNOTNA"]
-# febr_data[is.na(DEPTH), DEPTHplus := +Inf]
-# febr_data[is.na(DEPTH), DEPTHminus := -Inf]
-# febr_data[is.na(DEPTH), DEPTHna := "ISNA"]
-# febr_data[, DEPTHna := as.factor(DEPTHna)]
-# febr_data[is.na(DEPTH), c("DEPTH", "DEPTHplus", "DEPTHminus", "DEPTHna")]
-# febr_data[, DEPTH := NULL]
-# febr_data[, espessura := NULL]
-
 # Particle size distribution
 # Start by checking if all three fractions are present and, if so, check if their sum is 100%
-# of 1000 g/kg -- the later is the standard!
+# of 1000 g/kg -- the later is the standard! If sum(psd) != 1000, adjust all three values.
 febr_data[, psd := argila + silte + areia]
 febr_data[psd != 1000, argila := round(argila / psd * 1000)]
 febr_data[psd != 1000, silte := round(silte / psd * 1000)]
