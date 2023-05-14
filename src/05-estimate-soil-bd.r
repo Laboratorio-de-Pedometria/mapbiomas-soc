@@ -31,7 +31,7 @@ colnames(febr_data)
 # We noticed that very high values (> 2.3 g/cm^3) were recorded for a few layers (n = 12). There
 # also were two B horizons and one A horizon with too low density values (< 0.5). Checking their
 # source soil surveys, we identified that these data were erroneous. The data was then deleted.
-# There are 3582 layers with data on soil bulk density. Predictions need to be made for 13 014
+# There are 5480 layers with data on soil bulk density. Predictions need to be made for 34 589
 # layers.
 nrow(febr_data[dsi > 2.3, ]) # Result: 26 layers
 febr_data[dsi > 2.3, dsi := NA_real_]
@@ -60,8 +60,6 @@ dev.off()
 
 # Estimate random forest model
 colnames(febr_data)
-# febr_data[, GREATGROUP := NULL]
-# febr_data[, SUBGROUP := NULL]
 covars <- colnames(febr_data)
 idx <- which(covars == "ORDER")
 covars <- covars[idx:length(covars)]

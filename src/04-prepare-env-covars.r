@@ -72,22 +72,22 @@ rgee::ee_Initialize(user = gee_user)
 
 # Read data processed in the previous script
 febr_data <- data.table::fread("mapbiomas-solos/data/03-febr-data.txt", dec = ",", sep = "\t")
-nrow(unique(febr_data[, "id"])) # Result: 12 455 events
-nrow(febr_data) # Result: 40 069 layers
+nrow(unique(febr_data[, "id"])) # Result: 12 186 events
+nrow(febr_data) # Result: 19 254 layers
 
 # Create spatial object
 # First filter out those samples without coordinates
 # Also keep a single sample per soil profile
 is_na_coordinates <- is.na(febr_data[, coord_x]) | is.na(febr_data[, coord_y])
 sp_febr_data <- febr_data[!is_na_coordinates, ]
-nrow(unique(sp_febr_data[, "id"])) # Result: 12 407 events
-nrow(sp_febr_data) # Result: 39 833 layers
+nrow(unique(sp_febr_data[, "id"])) # Result: 12 139 events
+nrow(sp_febr_data) # Result: 19 141 layers
 first <- function(x) x[1, ]
 sf_febr_data <- 
   sp_febr_data[, first(id),
   by = c("dataset_id", "observacao_id", "coord_x", "coord_y", "data_coleta_ano")]
 sf_febr_data[, V1 := NULL]
-nrow(sf_febr_data) # Result: 12 407 events
+nrow(sf_febr_data) # Result: 12 139 events
 sf_febr_data <- sf::st_as_sf(sf_febr_data, coords = c("coord_x", "coord_y"), crs = 4326)
 if (FALSE) {
   x11()
