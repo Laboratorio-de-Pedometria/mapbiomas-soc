@@ -1,29 +1,6 @@
-# 04. PREPARE ENVIRONMENTAL COVARIATES #############################################################
-# SUMMARY
-# Environmental covariates are predictor variables extracted from maps of soil properties and other
-# spatial information. Like the soil variables, the environmental covariates will be used to train
-# a random forest regression model to estimate the bulk density of soil samples that are missing
-# data on such variable.
-# Sampling environmental covariates requires the events to have spatial coordinates. Thus, we start
-# by filtering out those event that are not geolocalized. Then we sample two data sets. The first is
-# SoilGrids 250m v2.0, a collection of soil property maps available for six depth intervals, three
-# of which are of our interest: 0-5, 5-15, and 15-30 cm. The soil properties of interest are clay,
-# sand, bulk density, and SOC. The second data set is MapBiomas Land Use/Land Cover Collection 7.0.
-# This data set contains data covering the period between 1985 and 2021. After sampling the raster
-# layers, we identify and retain for each event the land use/land cover at the year at which it was
-# collected in the field.
-# Both SoilGrids and MapBiomas data are available on Google Earth Engine. Because sampling data on
-# Google Earth Engine has limitations, we perform the operation using subsets containing at most
-# 5000 or 1000 events for SoilGrids and MapBiomas, respectively. For both data sources, missing data
-# is handled using the MIA approach described earlier for soil covariates.
-# KEY RESULTS
-# Out of the 15 129 existing events, 12 099 are geolocalized. With these events, we sampled data
-# from SoilGrids 250m v2.0 (clay, sand, SOC, and bulk density) at three depth intervals (0-5, 5-15,
-# and 15-30 cm) -- 359 events returned NAs. With the same events we also sampled MapBiomas Land
-# Use/Land Cover Collection 7.0 -- six events returned NAs.
-# * GEE/projects/soilgrids
-# * GEE/projects/mapbiomas-workspace/public/collection7/mapbiomas_collection70_integration_v2
-#   (MapBiomas Land Use/Land Cover Collection 7.0)
+# MapBiomas Soil (beta): Script 04. Prepare environmental covariates
+# Alessandro Samuel-Rosa & Taciara Zborowski Horst
+# 2023 CC-BY
 rm(list = ls())
 
 # Install and load required packages
@@ -79,15 +56,16 @@ nrow(febr_data) # Result: 19 254 layers
 # First filter out those samples without coordinates
 # Also keep a single sample per soil profile
 is_na_coordinates <- is.na(febr_data[, coord_x]) | is.na(febr_data[, coord_y])
+paste0(sum(is_na_coordinates), " events without coordinates") # 113 layers without coordinates
 sp_febr_data <- febr_data[!is_na_coordinates, ]
-nrow(unique(sp_febr_data[, "id"])) # Result: 12 139 events
-nrow(sp_febr_data) # Result: 19 141 layers
+nrow(unique(sp_febr_data[, "id"])) # Result: 12 139 events with coordinates
+nrow(sp_febr_data) # Result: 19 141 layers with coordinates
 first <- function(x) x[1, ]
 sf_febr_data <- 
   sp_febr_data[, first(id),
   by = c("dataset_id", "observacao_id", "coord_x", "coord_y", "data_coleta_ano")]
 sf_febr_data[, V1 := NULL]
-nrow(sf_febr_data) # Result: 12 139 events
+nrow(sf_febr_data) # Result: 12 139 events with coordinates
 sf_febr_data <- sf::st_as_sf(sf_febr_data, coords = c("coord_x", "coord_y"), crs = 4326)
 if (FALSE) {
   x11()
@@ -96,14 +74,14 @@ if (FALSE) {
 }
 
 # Prepare for sampling on GEE
-n_max <- 5000
+n_max <- 5000 # Maximum number of events to be sampled at once
 n_points <- nrow(sf_febr_data)
 n_lags <- ceiling(n_points / n_max)
 lag_width <- ceiling(n_points / n_lags)
 lags <- rep(1:n_lags, each = lag_width)
 lags <- lags[1:n_points]
 
-# Soil Grids 250m v2.0: bdod_mean
+# Soil Grids 250m v2.0: bdod_mean (bulk density)
 bdod_mean <- list()
 for (i in 1:n_lags) {
   bdod_mean[[i]] <- rgee::ee_extract(
@@ -114,9 +92,9 @@ for (i in 1:n_lags) {
 }
 bdod_mean <- data.table::rbindlist(bdod_mean)
 bdod_mean[, c("bdod_30.60cm_mean", "bdod_60.100cm_mean", "bdod_100.200cm_mean") := NULL]
-nrow(bdod_mean) # Result: 12 407 events
+nrow(bdod_mean) # Result: 12 139 events returned
 
-# Soil Grids 250m v2.0: clay_mean
+# Soil Grids 250m v2.0: clay_mean (clay content)
 clay_mean <- list()
 for (i in 1:n_lags) {
   clay_mean[[i]] <- rgee::ee_extract(
@@ -127,9 +105,9 @@ for (i in 1:n_lags) {
 }
 clay_mean <- data.table::rbindlist(clay_mean)
 clay_mean[, c("clay_30.60cm_mean", "clay_60.100cm_mean", "clay_100.200cm_mean") := NULL]
-nrow(clay_mean) # Result: 12 407 events
+nrow(clay_mean) # Result: 12 139 events returned
 
-# Soil Grids 250m v2.0: sand_mean
+# Soil Grids 250m v2.0: sand_mean (sand content)
 sand_mean <- list()
 for (i in 1:n_lags) {
   sand_mean[[i]] <- rgee::ee_extract(
@@ -140,9 +118,9 @@ for (i in 1:n_lags) {
 }
 sand_mean <- data.table::rbindlist(sand_mean)
 sand_mean[, c("sand_30.60cm_mean", "sand_60.100cm_mean", "sand_100.200cm_mean") := NULL]
-nrow(sand_mean) # Result: 12 407 events
+nrow(sand_mean) # Result: 12 139 events returned
 
-# Soil Grids 250m v2.0: soc_mean
+# Soil Grids 250m v2.0: soc_mean (soil organic carbon)
 soc_mean <- list()
 for (i in 1:n_lags) {
   soc_mean[[i]] <- rgee::ee_extract(
@@ -152,10 +130,9 @@ for (i in 1:n_lags) {
 }
 soc_mean <- data.table::rbindlist(soc_mean)
 soc_mean[, c("soc_30.60cm_mean", "soc_60.100cm_mean", "soc_100.200cm_mean") := NULL]
-nrow(soc_mean)
-# Result: 12 407 events
+nrow(soc_mean) # Result: 12 139 events returned
 
-# Soil Grids 250m v2.0: cfvo_mean
+# Soil Grids 250m v2.0: cfvo_mean (coarse fragments volume)
 cfvo_mean <- list()
 for (i in 1:n_lags) {
   cfvo_mean[[i]] <- rgee::ee_extract(
@@ -165,19 +142,18 @@ for (i in 1:n_lags) {
 }
 cfvo_mean <- data.table::rbindlist(cfvo_mean)
 cfvo_mean[, c("cfvo_30.60cm_mean", "cfvo_60.100cm_mean", "cfvo_100.200cm_mean") := NULL]
-nrow(cfvo_mean) # Result: 12 407 events
+nrow(cfvo_mean) # Result: 12 139 events returned
 
-# Collate data from SoilGrids
+# Collate data sampled from SoilGrids
 SoilGrids <- merge(bdod_mean, clay_mean)
 SoilGrids <- merge(SoilGrids, sand_mean)
 SoilGrids <- merge(SoilGrids, soc_mean)
 SoilGrids <- merge(SoilGrids, cfvo_mean)
 colnames(SoilGrids) <- gsub("_mean", "", colnames(SoilGrids), fixed = TRUE)
-nrow(SoilGrids)
-# Result: 12 407 events
+nrow(SoilGrids) # Result: 12 139 events returned
 
 # Prepare to sample MapBiomas on GEE
-n_max <- 1000
+n_max <- 1000 # Maximum number of events to be sampled at once
 n_points <- nrow(sf_febr_data)
 n_lags <- ceiling(n_points / n_max)
 lag_width <- ceiling(n_points / n_lags)
@@ -185,8 +161,10 @@ lags <- rep(1:n_lags, each = lag_width)
 lags <- lags[1:n_points]
 
 # Sample MapBiomas LULC
-# gee_path <- "projects/mapbiomas-workspace/public/collection7/mapbiomas_collection70_integration_v2"
-gee_path <- "projects/mapbiomas-workspace/public/collection7_1/mapbiomas_collection71_integration_v1"
+gee_path <- paste0(
+  "projects/mapbiomas-workspace/public/", # GEE asset path
+  "collection7_1/mapbiomas_collection71_integration_v1" # GEE asset name
+)
 mapbiomas <- list()
 for (i in 1:n_lags) {
   mapbiomas[[i]] <- rgee::ee_extract(
@@ -197,9 +175,9 @@ for (i in 1:n_lags) {
   )
 }
 mapbiomas <- data.table::rbindlist(mapbiomas)
-nrow(mapbiomas) # Result: 12 407 events
+nrow(mapbiomas) # Result: 12 139 events returned
 
-# Get LULC class at the year of sampling
+# Get LULC class at the year of sampling (data_coleta_ano)  
 colnames(mapbiomas) <- gsub("classification_", "", colnames(mapbiomas))
 mapbiomas[, YEAR := data_coleta_ano]
 mapbiomas[YEAR < 1985, YEAR := 1985]
@@ -208,12 +186,12 @@ lulc <- as.matrix(mapbiomas)
 lulc <- lulc[cbind(1:nrow(lulc), lulc_idx)]
 mapbiomas[, lulc := as.character(lulc)]
 mapbiomas[, YEAR := NULL]
-nrow(mapbiomas) # Result: 12 407
+nrow(mapbiomas) # Result: 12 139 events returned
 
 # Create bivariate covariates indicating natural land covers and agricultural land uses
-# https://mapbiomas-br-site.s3.amazonaws.com/downloads/_EN__C%C3%B3digos_da_legenda_Cole%C3%A7%C3%A3o_7.pdf
-table(mapbiomas[, lulc])
-sort(unique(mapbiomas[, lulc]))
+# mapbiomas-br-site.s3.amazonaws.com/downloads/_EN__C%C3%B3digos_da_legenda_Cole%C3%A7%C3%A3o_7.pdf
+table(mapbiomas[, lulc]) # A value 0 means "no data" (e.g., map holes and outside the map domain)
+sort(unique(mapbiomas[, lulc])) # Single digit codes such as " 1" and " 3" start with a space
 forest <- as.character(c(" 1", " 3", " 4", " 5", "49"))
 nonforest <- as.character(c(10, "11", "12", "32", "29", "50", 13))
 pasture <- c("15")
@@ -233,10 +211,11 @@ mapbiomas[lulc %in% agriculture, AGRICULTURE := "TRUE"]
 mapbiomas[lulc %in% forestry, FORESTRY := "TRUE"]
 mapbiomas[lulc %in% nonvegetation, NONVEGETATION := "TRUE"]
 mapbiomas[, as.character(1985:2021) := NULL]
-nrow(mapbiomas) # Results: 12 407
+nrow(mapbiomas) # Results: 12 139 events returned
 
 # Distribution of events through land use/land cover classes
-lulc_classes <- sort(c("FOREST", "NONFOREST", "PASTURE", "AGRICULTURE", "FORESTRY", "NONVEGETATION"))
+lulc_classes <- c("FOREST", "NONFOREST", "PASTURE", "AGRICULTURE", "FORESTRY", "NONVEGETATION")
+lulc_classes <- sort(lulc_classes)
 lulc_classes <- sapply(mapbiomas[, ..lulc_classes], function(x) { sum(x == "TRUE") })
 dev.off()
 png("mapbiomas-solos/res/fig/bulk-density-lulc-classes.png",
@@ -254,29 +233,30 @@ barplot(lulc_classes,
 )
 dev.off()
 
-# Merge data sampled from Google Earth Engine
+# Merge data sampled from SoilGrids and MapBiomas
 sf_febr_data <- merge(sf_febr_data, SoilGrids)
 sf_febr_data <- merge(sf_febr_data, mapbiomas)
-nrow(sf_febr_data)
-# Result: 12 407 events
+nrow(sf_febr_data) # Result: 12 139 events returned
 
 # Merge geolocalized events and layers
 sf_febr_data <- data.table::as.data.table(sf_febr_data)
 sf_febr_data[, geometry := NULL]
 sp_febr_data <- merge(sp_febr_data, sf_febr_data,
   by = c("dataset_id", "observacao_id", "data_coleta_ano"))
-nrow(unique(sp_febr_data[, c("dataset_id", "observacao_id", "data_coleta_ano")])) # 12 407 events
-nrow(sp_febr_data) # Result: 39 833 layers
+nrow(unique(sp_febr_data[, c("dataset_id", "observacao_id", "data_coleta_ano")])) # 12 139 events
+nrow(sp_febr_data) # Result: 19 141 layers
 
 # Merge geolocalized and non-geolocalized events and layers
 febr_data <- data.table::rbindlist(list(sp_febr_data, febr_data[is_na_coordinates, ]),
   use.names = TRUE, fill = TRUE)
-nrow(unique(febr_data[, "id"])) # Result: 12 455 events
-nrow(febr_data) # Result: 40 069 layers
+nrow(unique(febr_data[, "id"])) # Result: 12 186 events
+nrow(febr_data) # Result: 19 254 layers
 
-# Impute missing data
+# Impute missing data using the MIA method
 which_cols <- union(colnames(SoilGrids), colnames(mapbiomas))
-which_cols <- which_cols[!which_cols %in% c("dataset_id", "observacao_id", "data_coleta_ano", "lulc")]
+which_cols <- which_cols[
+    !which_cols %in% c("dataset_id", "observacao_id", "data_coleta_ano", "lulc")
+]
 which_cols <- match(which_cols, colnames(febr_data))
 for (i in which_cols) {
   y <- mia(febr_data[[i]])
@@ -293,17 +273,17 @@ n_na_soilgrids <- nrow(unique(febr_data[
   SOC_0.5CMna == "ISNA" & !is.na(coord_x),
   c("dataset_id", "observacao_id", "data_coleta_ano")
 ]))
-print(n_na_soilgrids) # SoilGrids: 344 events
+print(n_na_soilgrids) # SoilGrids: 340 events are missing values
 n_na_mapbiomas <- nrow(unique(febr_data[
   is.na(lulc) & !is.na(coord_x),
   c("dataset_id", "observacao_id", "data_coleta_ano")
 ]))
-print(n_na_mapbiomas) # MapBiomas: 06 events
+print(n_na_mapbiomas) # MapBiomas: 06 events are missing values
 dev.off()
-png("mapbiomas-solos/res/fig/environmental-covariates-missing-data.png",
+png("mapbiomas-solos/res/fig/bulk-density-mapbiomas-soilgrids-missing-data.png",
   width = 480 * 3, height = 480 * 3, res = 72 * 3)
 plot(biomas, reset = FALSE, graticule = TRUE, axes = TRUE, ylab = "Longitude", xlab = "Latitude",
-  main = "", key.pos = NULL)
+  main = "", key.pos = 1, key.length = 1)
 points(febr_data[SOC_0.5CMna == "ISNA" & !is.na(coord_x), c("coord_x", "coord_y")], col = "red")
 points(febr_data[is.na(lulc) & !is.na(coord_x), c("coord_x", "coord_y")], col = "blue")
 legend(x = -45, y = 6.5,
