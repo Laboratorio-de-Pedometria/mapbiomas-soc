@@ -23,8 +23,8 @@ febr_data <- data.table::fread("mapbiomas-solos/data/04-febr-data.txt",
   stringsAsFactors = TRUE
 )
 str(febr_data)
-nrow(unique(febr_data[, "id"])) # Result: 12 455 events
-nrow(febr_data) # Result: 40 069 layers
+nrow(unique(febr_data[, "id"])) # Result: 12 186 events
+nrow(febr_data) # Result: 19 254 layers
 colnames(febr_data)
 
 # Identify layers missing soil bulk density data
@@ -42,7 +42,7 @@ febr_data[
   dsi := NA_real_
 ]
 dsi_isna <- is.na(febr_data[["dsi"]])
-sum(!dsi_isna); sum(dsi_isna) # Result: 5480 and 34 589
+sum(!dsi_isna); sum(dsi_isna) # Result: 3017 and 16 237
 dev.off()
 png("mapbiomas-solos/res/fig/bulk-density-training-data.png",
   width = 480 * 3, height = 480 * 3, res = 72 * 3
@@ -166,8 +166,8 @@ dev.off()
 # Predict soil bulk density
 tmp <- predict(dsi_model, data = febr_data[dsi_isna, ])
 febr_data[dsi_isna, dsi := round(tmp$predictions, 2)]
-nrow(unique(febr_data[, "id"])) # Result: 12 455
-nrow(febr_data) # Result: 40 069
+nrow(unique(febr_data[, "id"])) # Result: 12 186
+nrow(febr_data) # Result: 19 254
 
 # Write data to disk
 data.table::fwrite(febr_data, "mapbiomas-solos/data/05-febr-data.txt", sep = "\t", dec = ",")

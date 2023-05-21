@@ -9,12 +9,12 @@ if (!require("data.table")) {
 # Read data processed in the previous script
 febr_data <- data.table::fread("mapbiomas-solos/data/05-febr-data.txt", dec = ",", sep = "\t")
 colnames(febr_data)
-nrow(unique(febr_data[, "id"])) # Result: 12 455 events
-nrow(febr_data) # Result: 40 069 layers
+nrow(unique(febr_data[, "id"])) # Result: 12 186 events
+nrow(febr_data) # Result: 19 254 layers
 
 # Filter out soil layers missing data on soil organic carbon
-nrow(febr_data[is.na(carbono), ]) # Result: 4251 layers
-nrow(unique(febr_data[is.na(carbono), "id"])) # Result: 2357 events
+nrow(febr_data[is.na(carbono), ]) # Result: 2275 layers
+nrow(unique(febr_data[is.na(carbono), "id"])) # Result: 1597 events
 febr_data <- febr_data[!is.na(carbono), ]
 
 # Resetting the limits of each layer according to the target depth range (0 and 30 cm).
@@ -92,7 +92,7 @@ febr_data <- febr_data[
   ),
   by = id
 ]
-nrow(febr_data) # Result: 9650 events/layers
+nrow(febr_data) # Result: 9649 events/layers
 
 if (FALSE) {
   x11()

@@ -11,16 +11,22 @@ if (!require("sf")) {
 if (!require("geobr")) {
   install.packages("geobr")
 }
+if (!require("rnaturalearth")) {
+  install.packages("rnaturalearth", dependencies = TRUE)
+}
 biomes <- geobr::read_biomes()[-7, ]
 biomes <- sf::st_transform(biomes, crs = 4326)
 brazil <- geobr::read_country()
 brazil <- sf::st_transform(brazil, crs = 4326)
+southamerica <- rnaturalearth::ne_countries(continent = c("south america", "europe"),
+  returnclass = "sf", scale = "medium")
+southamerica <- southamerica[, "iso_a2"]
 
 # Read data processed in the previous script
 febr_data <- data.table::fread("mapbiomas-solos/data/06-febr-data.txt", dec = ",", sep = "\t")
 colnames(febr_data)
-nrow(unique(febr_data[, "id"])) # Result: 9650 events
-nrow(febr_data) # Result: 9650 layers
+nrow(unique(febr_data[, "id"])) # Result: 9649 events
+nrow(febr_data) # Result: 9649 layers
 
 # Avaliar distribuição de frequência dos dados de estoque de carbono
 dev.off()
@@ -81,7 +87,7 @@ hist(febr_data[, data_coleta_ano],
 rug(febr_data[, data_coleta_ano])
 dev.off()
 
-# Criar objeto espacial e avaliar distribuição por bioma
+# Criar objeto espacial e avaliar distribuição do estoque por bioma
 febr_data_sf <- sf::st_as_sf(febr_data, coords = c("coord_x", "coord_y"), crs = 4326)
 nrow(febr_data_sf)
 dev.off()
@@ -98,6 +104,75 @@ leg_text <- paste(quant, "~ kg/m^2")
 leg_text <- sapply(leg_text, function(x) parse(text = x))
 legend(x = -40, y = 8, legend = leg_text, pch = 21, box.lwd = 0, pt.cex = quantile(cex, prob))
 dev.off()
+
+# Avaliar distribuição espacial dos pontos
+# x11()
+dev.off()
+png("mapbiomas-solos/res/fig/points-spatial-distribution.png",
+  width = 480 * 3, height = 480 * 3, res = 72 * 3
+)
+par(mar = rep(1.9, 4))
+plot(brazil, reset = FALSE, main = "", col = "transparent",
+      axes = TRUE, graticule = TRUE, lwd = 0.01)
+plot(southamerica,
+  reset = FALSE,
+  col = "gray96",
+  add = TRUE, lwd = 0.5
+)
+plot(biomes["name_biome"], reset = FALSE,
+  main = "", axes = TRUE, col = "#eeece1", lwd = 0.5,
+  border = "gray69",
+  key.pos = NULL, graticule = TRUE, add = TRUE)
+plot(febr_data_sf["cos_estoque_gm2"],
+  add = TRUE,
+  # pch = 21,
+  cex = 0.5, col = "firebrick"
+)
+dev.off()
+
+# Avaliar distribuição temporal dos pontos
+# Definir fatias temporais
+x11()
+time_slices <- c(1900, 1985, 1995, 2005, 2015, 2021)
+time_main <- c("<1985", "1985-1994", "1995-2004", "2005-2014", "2015-2021")
+dev.off()
+png("mapbiomas-solos/res/fig/points-spatial-temporal-distribution.png",
+  width = 480 * 5, height = 480, res = 72 * 2
+)
+par(mar = rep(1.9, 4), mfrow = c(1, 5))
+for (i in 1:5) {
+  plot(brazil,
+    reset = FALSE, main = time_main[i], col = "transparent",
+    axes = TRUE, graticule = TRUE, lwd = 0.01
+  )
+  plot(southamerica,
+    reset = FALSE,
+    col = "gray96",
+    add = TRUE, lwd = 0.5
+  )
+  plot(biomes["name_biome"],
+    reset = FALSE,
+    main = "", axes = TRUE, col = "#eeece1", lwd = 0.5,
+    border = "gray69",
+    key.pos = NULL, add = TRUE
+  )
+  idx <- which(febr_data_sf[["data_coleta_ano"]] >= time_slices[i] &
+    febr_data_sf[["data_coleta_ano"]] < time_slices[i + 1])
+  plot(febr_data_sf[idx, "cos_estoque_gm2"], add = TRUE,
+  cex = 0.5, col = "firebrick")
+}
+dev.off()
+
+
+
+
+plot(febr_data_sf[idx, "cos_estoque_gm2"],
+  add = TRUE,
+  # pch = 21,
+  cex = 0.5, col = "firebrick"
+)
+dev.off()
+
 
 # Avaliar distribuição por bioma
 biomes$name_biome <- gsub(" ", "-", biomes$name_biome)
