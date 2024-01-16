@@ -1,1 +1,1 @@
-# mapbiomas-solos
+# mapbiomas-solo
