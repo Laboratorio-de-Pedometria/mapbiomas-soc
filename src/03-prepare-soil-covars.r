@@ -15,7 +15,10 @@ nrow(febr_data) # 44 158 layers
 colnames(febr_data)
 
 # Correct layer depth and name
-febr_data[dataset_id == "ctb0829" & observacao_id == "P92", profund_inf := 8]
+febr_data[
+  dataset_id == "ctb0829" & observacao_id == "P92" & camada_nome == "A",
+  profund_inf := 8
+]
 febr_data[
   dataset_id == "ctb0636" & observacao_id == "Perfil-03" & profund_sup == 0,
   camada_nome := "A1"
