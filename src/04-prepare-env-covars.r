@@ -10,15 +10,23 @@ if (!require("data.table")) {
 if (!require("sf")) {
   install.packages("sf")
 }
-if (!require("rgee")) {
-  # snap install google-cloud-cli --classic
-  install.packages("rgee", dependencies = TRUE)
-  # rgee::ee_clean_pyenv()
-  rgee::ee_install()
-}
 if (!require("geobr")) {
   install.packages("geobr")
 }
+
+# Google Earth Engine
+if (!require("rgee")) {
+  install.packages(c("remotes", "googledrive"))
+  # remotes::install_github("r-spatial/rgee")
+  install.packages("rgee", dependencies = TRUE)
+  rgee::ee_install()
+  library(rgee)
+}
+local_user <- Sys.getenv("USER")
+gee_user <- ifelse(grepl("alessandro", local_user), "alessandrosamuelrosa", NULL)
+rgee::ee_Initialize(user = gee_user)
+
+# Read data from geobr
 brazil <- geobr::read_country()
 biomas <- geobr::read_biomes()[-7, "name_biome"]
 
@@ -42,13 +50,8 @@ mia <-
     return(out)
   }
 
-# Initialize Google Earth Engine
-local_user <- Sys.getenv("USER")
-gee_user <- ifelse(grepl("alessandro", local_user), "alessandrosamuelrosa", NULL)
-rgee::ee_Initialize(user = gee_user)
-
 # Read data processed in the previous script
-febr_data <- data.table::fread("mapbiomas-solos/data/03-febr-data.txt", dec = ",", sep = "\t")
+febr_data <- data.table::fread("mapbiomas-solo/data/03-febr-data.txt", dec = ",", sep = "\t")
 nrow(unique(febr_data[, "id"])) # Result: 12 186 events
 nrow(febr_data) # Result: 19 254 layers
 
