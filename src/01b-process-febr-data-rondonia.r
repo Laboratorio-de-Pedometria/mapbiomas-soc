@@ -14,7 +14,10 @@ if (!require("geobr")) {
   install.packages("geobr")
 }
 if (!require("febr")) {
-  install.packages("febr")
+  if (!require(remotes)) {
+    install.packages(pkgs = "remotes")
+  }
+  remotes::install_github(repo = "laboratorio-de-pedometria/febr-package")
 }
 
 # Zoneamento Socioeconômico-Ecológico do Estado de Rondônia (ctb0033 and ctb0034)
@@ -130,7 +133,7 @@ nrow(rondonia) # 10 789 layers
 nrow(unique(rondonia[, "id"])) # 3061 events
 
 # Read FEBR data processed in the previous script
-febr_data <- data.table::fread("mapbiomas-solos/data/01a-febr-data.txt", dec = ",", sep = "\t")
+febr_data <- data.table::fread("mapbiomas-solo/data/01a-febr-data.txt", dec = ",", sep = "\t")
 febr_data[, coord_datum_epsg := 4326]
 
 # Merge data from Rondônia with the FEBR snapshot
@@ -144,4 +147,4 @@ length(unique(febr_data[, id])) # 14 190 events
 nrow(febr_data) # 50 385 layers
 
 # Write data to disk
-data.table::fwrite(febr_data, "mapbiomas-solos/data/01b-febr-data.txt", sep = "\t", dec = ",")
+data.table::fwrite(febr_data, "mapbiomas-solo/data/01b-febr-data.txt", sep = "\t", dec = ",")
