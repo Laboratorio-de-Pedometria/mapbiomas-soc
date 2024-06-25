@@ -155,4 +155,4 @@ if (FALSE) {
 }
 
 # Write data to disk
-data.table::fwrite(febr_data, "mapbiomas-solos/data/01a-febr-data.txt", sep = "\t", dec = ",")
+data.table::fwrite(febr_data, "mapbiomas-solo/data/01a-febr-data.txt", sep = "\t", dec = ",")
