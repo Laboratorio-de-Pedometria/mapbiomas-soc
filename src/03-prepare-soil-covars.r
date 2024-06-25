@@ -9,7 +9,7 @@ if (!require("data.table")) {
 }
 
 # Read data processed in the previous script
-febr_data <- data.table::fread("mapbiomas-solos/data/02-febr-data.txt", dec = ",", sep = "\t")
+febr_data <- data.table::fread("mapbiomas-solo/data/02-febr-data.txt", dec = ",", sep = "\t")
 nrow(unique(febr_data[, "id"])) # 12 729 events
 nrow(febr_data) # 44 158 layers
 colnames(febr_data)
@@ -355,4 +355,4 @@ febr_data[is.na(LAT), c("LAT", "LATplus", "LATminus", "LATna")]
 febr_data[, LAT := NULL]
 
 # Write data to disk
-data.table::fwrite(febr_data, "mapbiomas-solos/data/03-febr-data.txt", sep = "\t", dec = ",")
+data.table::fwrite(febr_data, "mapbiomas-solo/data/03-febr-data.txt", sep = "\t", dec = ",")
