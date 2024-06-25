@@ -134,7 +134,7 @@ if (FALSE) {
 }
 
 # Read FEBR data processed in the previous scripts
-febr_data02 <- data.table::fread("mapbiomas-solos/data/01b-febr-data.txt", dec = ",", sep = "\t")
+febr_data02 <- data.table::fread("mapbiomas-solo/data/01b-febr-data.txt", dec = ",", sep = "\t")
 febr_data02[, coord_datum_epsg := 4326]
 if (FALSE) {
   x11()
@@ -207,4 +207,4 @@ if (FALSE) {
 }
 
 # Write data to disk
-data.table::fwrite(febr_data, "mapbiomas-solos/data/02-febr-data.txt", sep = "\t", dec = ",")
+data.table::fwrite(febr_data, "mapbiomas-solo/data/02-febr-data.txt", sep = "\t", dec = ",")
