@@ -7,5 +7,5 @@
 "Target node size:                 5 "
 "Variable importance mode:         impurity "
 "Splitrule:                        variance "
-"OOB prediction error (MSE):       0.02696239 "
-"R squared (OOB):                  0.6905207 "
+"OOB prediction error (MSE):       0.02679737 "
+"R squared (OOB):                  0.6924148 "
