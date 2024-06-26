@@ -23,14 +23,14 @@ southamerica <- rnaturalearth::ne_countries(continent = c("south america", "euro
 southamerica <- southamerica[, "iso_a2"]
 
 # Read data processed in the previous script
-febr_data <- data.table::fread("mapbiomas-solos/data/06-febr-data.txt", dec = ",", sep = "\t")
+febr_data <- data.table::fread("mapbiomas-solo/data/06-febr-data.txt", dec = ",", sep = "\t")
 colnames(febr_data)
 nrow(unique(febr_data[, "id"])) # Result: 9649 events
 nrow(febr_data) # Result: 9649 layers
 
 # Avaliar distribuição de frequência dos dados de estoque de carbono
 dev.off()
-png("mapbiomas-solos/res/fig/carbon-stock-histogram.png",
+png("mapbiomas-solo/res/fig/carbon-stock-histogram.png",
   width = 480 * 3, height = 480 * 3, res = 72 * 3
 )
 par(mar = c(5, 4, 2, 2) + 0.1)
@@ -50,7 +50,7 @@ dev.off()
 
 # Avaliar distribuição de frequência da espessura da camada
 dev.off()
-png("mapbiomas-solos/res/fig/carbon-stock-depth-distribution.png",
+png("mapbiomas-solo/res/fig/carbon-stock-depth-distribution.png",
   width = 480 * 3, height = 480 * 3, res = 72 * 3
 )
 par(mar = c(5, 4, 2, 2) + 0.1)
@@ -69,7 +69,7 @@ dev.off()
 
 # Avaliar distribuição de frequência dos dados pontuais ao longo do tempo
 dev.off()
-png("mapbiomas-solos/res/fig/carbon-stock-temporal-distribution.png",
+png("mapbiomas-solo/res/fig/carbon-stock-temporal-distribution.png",
   width = 480 * 3, height = 480 * 3, res = 72 * 3
 )
 par(mar = c(5, 4, 2, 2) + 0.1)
@@ -91,7 +91,7 @@ dev.off()
 febr_data_sf <- sf::st_as_sf(febr_data, coords = c("coord_x", "coord_y"), crs = 4326)
 nrow(febr_data_sf)
 dev.off()
-png("mapbiomas-solos/res/fig/carbon-stock-spatial-distribution.png",
+png("mapbiomas-solo/res/fig/carbon-stock-spatial-distribution.png",
   width = 480 * 3, height = 480 * 3, res = 72 * 3)
 plot(biomes["name_biome"], reset = FALSE,
   main = "", axes = TRUE, col = "transparent", lwd = 0.5, border = "darkgray",
@@ -108,7 +108,7 @@ dev.off()
 # Avaliar distribuição espacial dos pontos
 # x11()
 dev.off()
-png("mapbiomas-solos/res/fig/points-spatial-distribution.png",
+png("mapbiomas-solo/res/fig/points-spatial-distribution.png",
   width = 480 * 3, height = 480 * 3, res = 72 * 3
 )
 par(mar = rep(1.9, 4))
@@ -132,11 +132,11 @@ dev.off()
 
 # Avaliar distribuição temporal dos pontos
 # Definir fatias temporais
-x11()
+# x11()
 time_slices <- c(1900, 1985, 1995, 2005, 2015, 2021)
 time_main <- c("<1985", "1985-1994", "1995-2004", "2005-2014", "2015-2021")
 dev.off()
-png("mapbiomas-solos/res/fig/points-spatial-temporal-distribution.png",
+png("mapbiomas-solo/res/fig/points-spatial-temporal-distribution.png",
   width = 480 * 5, height = 480, res = 72 * 2
 )
 par(mar = rep(1.9, 4), mfrow = c(1, 5))
@@ -163,17 +163,6 @@ for (i in 1:5) {
 }
 dev.off()
 
-
-
-
-plot(febr_data_sf[idx, "cos_estoque_gm2"],
-  add = TRUE,
-  # pch = 21,
-  cex = 0.5, col = "firebrick"
-)
-dev.off()
-
-
 # Avaliar distribuição por bioma
 biomes$name_biome <- gsub(" ", "-", biomes$name_biome)
 biomes$name_biome <- gsub("ô", "o", biomes$name_biome)
@@ -186,7 +175,7 @@ for (i in biomes$name_biome) {
   idx_sf <- sf::st_intersects(biomes[idx_bio, ], febr_data_sf)[[1]]
   febr_data_sf[["biome"]][idx_sf] <- i
   file_name <- paste0(
-    "mapbiomas-solos/res/fig/carbon-stock-spatial-distribution-", i, ".png"
+    "mapbiomas-solo/res/fig/carbon-stock-spatial-distribution-", i, ".png"
   )
   png(file_name, width = 480 * 3, height = 480 * 3, res = 72 * 3, bg = "transparent")
   plot(
@@ -200,15 +189,9 @@ for (i in biomes$name_biome) {
   dev.off()
 }
 
-# Mapa da distribuição espacial e temporal
-# < 1985 e depois quatro intervalos
-# Remover linhas de grade
-
 # Number of samples per biome
 table(febr_data_sf[["biome"]])
 
 # Areal density of points per biome
 round(table(febr_data_sf[["biome"]]) / (as.numeric(sf::st_area(biomes)) / (1000 * 1000 * 1000)), 1)
-
-
 round(table(febr_data_sf[["biome"]]) / (2022 - 1985))
