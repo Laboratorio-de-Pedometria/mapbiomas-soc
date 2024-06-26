@@ -7,7 +7,7 @@ if (!require("data.table")) {
 }
 
 # Read data processed in the previous script
-febr_data <- data.table::fread("mapbiomas-solos/data/05-febr-data.txt", dec = ",", sep = "\t")
+febr_data <- data.table::fread("mapbiomas-solo/data/05-febr-data.txt", dec = ",", sep = "\t")
 colnames(febr_data)
 nrow(unique(febr_data[, "id"])) # Result: 12 186 events
 nrow(febr_data) # Result: 19 254 layers
@@ -106,8 +106,8 @@ sum(double) # no duplicated events
 febr_data <- febr_data[!double, ]
 
 # Write data to disk
-data.table::fwrite(febr_data, "mapbiomas-solos/data/06-febr-data.txt", sep = "\t", dec = ",")
+data.table::fwrite(febr_data, "mapbiomas-solo/data/06-febr-data.txt", sep = "\t", dec = ",")
 data.table::fwrite(
   febr_data[, c("id", "cos_estoque_gm2", "data_coleta_ano", "coord_x", "coord_y")],
-  paste0("mapbiomas-solos/res/tab/", format(Sys.time(), "%Y-%m-%d"), "-pontos-estoque-cos.csv")
+  paste0("mapbiomas-solo/res/tab/", format(Sys.time(), "%Y-%m-%d"), "-pontos-estoque-cos.csv")
 )
