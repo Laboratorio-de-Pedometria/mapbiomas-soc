@@ -30,7 +30,7 @@ landuse <- c(
   "Lavouras"
 )
 dev.off()
-png("mapbiomas-solos/res/gee-trainning-stock-time-landuse.png",
+png("mapbiomas-solo/res/gee-trainning-stock-time-landuse.png",
   width = 480 * 3, height = 480 * 3, res = 72 * 2)
 par(mfrow = c(3, 3))
 for (i in seq_along(landuse)) {
