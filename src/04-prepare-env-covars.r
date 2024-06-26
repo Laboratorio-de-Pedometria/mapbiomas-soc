@@ -16,15 +16,28 @@ if (!require("geobr")) {
 
 # Google Earth Engine
 if (!require("rgee")) {
-  install.packages(c("remotes", "googledrive"))
-  # remotes::install_github("r-spatial/rgee")
   install.packages("rgee", dependencies = TRUE)
-  rgee::ee_install()
   library(rgee)
 }
+# rgee::ee$Initialize
+# rgee::ee_Initialize
+
+# rgee::ee_install_set_pyenv(py_path = "~/.local/share/r-miniconda/envs/r-reticulate/bin/python", py_env = "rgee")
+
+
+# if (!require("rgee")) {
+#   # install.packages(c("remotes", "googledrive"))
+#   # remotes::install_github("r-spatial/rgee")
+#   install.packages("rgee", dependencies = TRUE)
+#   # rgee::ee_install()
+#   library(rgee)
+# }
 local_user <- Sys.getenv("USER")
 gee_user <- ifelse(grepl("alessandro", local_user), "alessandrosamuelrosa", NULL)
 rgee::ee_Initialize(user = gee_user)
+# rgee::ee_Authenticate()
+# rgee::ee$Initialize()
+
 
 # Read data from geobr
 brazil <- geobr::read_country()
