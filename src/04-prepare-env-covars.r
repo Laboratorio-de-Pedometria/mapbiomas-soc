@@ -218,7 +218,7 @@ lulc_classes <- c("FOREST", "NONFOREST", "PASTURE", "AGRICULTURE", "FORESTRY", "
 lulc_classes <- sort(lulc_classes)
 lulc_classes <- sapply(mapbiomas[, ..lulc_classes], function(x) { sum(x == "TRUE") })
 dev.off()
-png("mapbiomas-solos/res/fig/bulk-density-lulc-classes.png",
+png("mapbiomas-solo/res/fig/bulk-density-lulc-classes.png",
   width = 480 * 5, height = 480 * 3, res = 72 * 3)
 barplot(lulc_classes,
   # horiz = TRUE, las = 1,
@@ -280,7 +280,7 @@ n_na_mapbiomas <- nrow(unique(febr_data[
 ]))
 print(n_na_mapbiomas) # MapBiomas: 06 events are missing values
 dev.off()
-png("mapbiomas-solos/res/fig/bulk-density-mapbiomas-soilgrids-missing-data.png",
+png("mapbiomas-solo/res/fig/bulk-density-mapbiomas-soilgrids-missing-data.png",
   width = 480 * 3, height = 480 * 3, res = 72 * 3)
 plot(biomas, reset = FALSE, graticule = TRUE, axes = TRUE, ylab = "Longitude", xlab = "Latitude",
   main = "", key.pos = 1, key.length = 1)
@@ -295,4 +295,4 @@ dev.off()
 
 # Write data to disk
 febr_data[, lulc := NULL]
-data.table::fwrite(febr_data, "mapbiomas-solos/data/04-febr-data.txt", sep = "\t", dec = ",")
+data.table::fwrite(febr_data, "mapbiomas-solo/data/04-febr-data.txt", sep = "\t", dec = ",")
