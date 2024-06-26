@@ -38,7 +38,9 @@ rename <- matrix(rename, ncol = 2, byrow = TRUE)
 files_event <- list.files(
   path = path.expand("~/ownCloud/febr-repo/processamento"),
   pattern = "-evento.txt$",
-  full.names = TRUE, recursive = TRUE)
+  full.names = TRUE, recursive = TRUE
+)
+length(files_event) # 9 data sets
 data_event <- list()
 for (i in seq_along(files_event)) {
   data_event[[i]] <- data.table::fread(files_event[i], dec = ",")
