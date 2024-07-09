@@ -295,4 +295,4 @@ dev.off()
 
 # Write data to disk
 febr_data[, lulc := NULL]
-data.table::fwrite(febr_data, "mapbiomas-solo/data/04-febr-data.txt", sep = "\t", dec = ",")
+data.table::fwrite(febr_data, "mapbiomas-soc/data/04-febr-data.txt", sep = "\t", dec = ",")
