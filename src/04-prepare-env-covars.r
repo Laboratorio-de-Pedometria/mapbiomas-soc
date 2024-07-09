@@ -58,14 +58,14 @@ nrow(febr_data) # Result: 17 606 layers
 is_na_coordinates <- is.na(febr_data[, coord_x]) | is.na(febr_data[, coord_y])
 paste0(sum(is_na_coordinates), " events without coordinates") # 113 layers without coordinates
 sp_febr_data <- febr_data[!is_na_coordinates, ]
-nrow(unique(sp_febr_data[, "id"])) # Result: 12 139 events with coordinates
-nrow(sp_febr_data) # Result: 19 141 layers with coordinates
+nrow(unique(sp_febr_data[, "id"])) # Result: 11 312 events with coordinates
+nrow(sp_febr_data) # Result: 17 493 layers with coordinates
 first <- function(x) x[1, ]
 sf_febr_data <- 
   sp_febr_data[, first(id),
   by = c("dataset_id", "observacao_id", "coord_x", "coord_y", "data_coleta_ano")]
 sf_febr_data[, V1 := NULL]
-nrow(sf_febr_data) # Result: 12 139 events with coordinates
+nrow(sf_febr_data) # Result: 11 312 events with coordinates
 sf_febr_data <- sf::st_as_sf(sf_febr_data, coords = c("coord_x", "coord_y"), crs = 4326)
 if (FALSE) {
   x11()
@@ -293,6 +293,15 @@ legend(x = -45, y = 6.5,
   box.lwd = 0, pch = 1)
 dev.off()
 
+# Restore past
+# idx <- febr_data[, id]
+# febr_data <- data.table::fread("mapbiomas-soc/data/04-febr-data.txt", dec = ",", sep = "\t")
+# febr_data <- febr_data[id %in% idx, ]
+# nrow(febr_data) # Result: 17 606 events
+# nrow(unique(febr_data[, "id"])) # Result: 11 359 events
+
 # Write data to disk
+nrow(unique(febr_data[, "id"])) # Result: 11 149 events
+nrow(febr_data) # Result: 17 145 layers
 febr_data[, lulc := NULL]
 data.table::fwrite(febr_data, "mapbiomas-soc/data/04-febr-data.txt", sep = "\t", dec = ",")

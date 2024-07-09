@@ -44,6 +44,13 @@ febr_data <- febr_data[profund_sup >= 0 & profund_sup < 30, ]
 nrow(unique(febr_data[, "id"])) # Result: 11 359 events
 nrow(febr_data) # Result: 17 606 layers
 
+# Filter out soil layers with id starting as ctb0001
+# ctb0001 does not have any data on carbon or bulk density
+# nrow(febr_data[grepl("^ctb0001", id), ]) # 392 layers
+# febr_data <- febr_data[!grepl("^ctb0001", id), ]
+# nrow(unique(febr_data[, "id"])) # Result: 11 163 events
+# nrow(febr_data) # Result: 17 214 layers
+
 # Soil skeleton
 # In some soil samples, the fine earth and skeleton concentration data are inverted. This is quite
 # common in cases where the skeleton concentration is greater than 800. The solution used here is
@@ -355,4 +362,6 @@ febr_data[is.na(LAT), c("LAT", "LATplus", "LATminus", "LATna")]
 febr_data[, LAT := NULL]
 
 # Write data to disk
+nrow(unique(febr_data[, "id"])) # 11 359 events
+nrow(febr_data) # 17 606 layers
 data.table::fwrite(febr_data, "mapbiomas-soc/data/03-febr-data.txt", sep = "\t", dec = ",")
