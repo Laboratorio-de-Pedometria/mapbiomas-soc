@@ -1,5 +1,6 @@
-# 05. ESTIMATE SOIL BULK DENSITY ###################################################################
-# SUMMARY
+# MapBiomas Soil (beta): Script 05. Estimate soil bulk density
+# Alessandro Samuel-Rosa & Taciara Zborowski Horst
+# 2024 CC-BY
 # The bulk density is a key soil property to compute SOC stocks. However, data on this soil property
 # is missing for various soil layers. We deal with this issue by training a random forest regression
 # model to estimate the bulk density of soil samples that are missing data on such variable. We use
@@ -18,22 +19,20 @@ if (!require("caret")) {
 }
 
 # Ler dados do disco
-febr_data <- data.table::fread("mapbiomas-solo/data/04-febr-data.txt",
+febr_data <- data.table::fread("mapbiomas-soc/data/04-febr-data.txt",
   dec = ",", sep = "\t",
   stringsAsFactors = TRUE
 )
 str(febr_data)
-nrow(unique(febr_data[, "id"])) # Result: 12 186 events
-nrow(febr_data) # Result: 19 254 layers
+nrow(unique(febr_data[, "id"])) # Result: 11 359 events
+nrow(febr_data) # Result: 17 606 layers
 colnames(febr_data)
 
 # Identify layers missing soil bulk density data
-# We noticed that very high values (> 2.3 g/cm^3) were recorded for a few layers (n = 11). There
+# We noticed that very high values (> 2.3 g/cm^3) were recorded for a few layers. There
 # also were two B horizons and one A horizon with too low density values (< 0.5). Checking their
 # source soil surveys, we identified that these data were erroneous. The data was then deleted.
-# There are 5480 layers with data on soil bulk density. Predictions need to be made for 34 589
-# layers.
-nrow(febr_data[dsi > 2.3, ]) # Result: 11 layers
+nrow(febr_data[dsi > 2.3, ]) # Result: 7 layers
 febr_data[dsi > 2.3, dsi := NA_real_]
 febr_data[dsi < 0.25, dsi := NA_real_]
 febr_data[dsi < 0.5 & grepl("B", camada_nome), dsi := NA_real_]
@@ -42,9 +41,9 @@ febr_data[
   dsi := NA_real_
 ]
 dsi_isna <- is.na(febr_data[["dsi"]])
-sum(!dsi_isna); sum(dsi_isna) # Result: 3017 and 16 237
+sum(!dsi_isna); sum(dsi_isna) # Result: 2787 and 14 819
 dev.off()
-png("mapbiomas-solo/res/fig/bulk-density-training-data.png",
+png("mapbiomas-soc/res/fig/bulk-density-training-data.png",
   width = 480 * 3, height = 480 * 3, res = 72 * 3
 )
 par(mar = c(5, 4, 2, 2) + 0.1)
@@ -66,6 +65,7 @@ covars <- covars[idx:length(covars)]
 dsi_formula <- as.formula(paste0("dsi ~ ", paste0(covars, collapse = " + ")))
 
 t0 <- proc.time()
+set.seed(1984)
 dsi_model <- ranger::ranger(
   formula = dsi_formula,
   data = febr_data[!dsi_isna, ],
@@ -91,13 +91,13 @@ print(dsi_model)
 
 # Write model parameters to disk
 write.table(capture.output(print(dsi_model))[6:15],
-    file = "mapbiomas-solo/res/tab/bulk-density-model-parameters.txt", sep = "\t",
+    file = "mapbiomas-soc/res/tab/bulk-density-model-parameters.txt", sep = "\t",
     row.names = FALSE
 )
 
 # Variable importance
 dev.off()
-png("mapbiomas-solo/res/fig/bulk-density-variable-importance.png",
+png("mapbiomas-soc/res/fig/bulk-density-variable-importance.png",
   width = 480 * 3, height = 480 * 4, res = 72 * 3)
 par(mar = c(4, 6, 1, 1) + 0.1)
 barplot(sort(dsi_model$variable.importance) / max(dsi_model$variable.importance),
@@ -110,7 +110,7 @@ dev.off()
 
 # Fitted versus observed
 dev.off()
-png("mapbiomas-solo/res/fig/bulk-density-observed-versus-oob.png",
+png("mapbiomas-soc/res/fig/bulk-density-observed-versus-oob.png",
   width = 480 * 3, height = 480 * 3, res = 72 * 3
 )
 par(mar = c(4, 4.5, 2, 2) + 0.1)
@@ -146,11 +146,11 @@ print(dsi_model_stats)
 
 # Write model statistics to disk
 write.table(dsi_model_stats,
-    file = "mapbiomas-solo/res/tab/bulk-density-model-statistics.txt", sep = "\t"
+    file = "mapbiomas-soc/res/tab/bulk-density-model-statistics.txt", sep = "\t"
 )
 
 dev.off()
-png("mapbiomas-solo/res/fig/bulk-density-observed-versus-10cv.png",
+png("mapbiomas-soc/res/fig/bulk-density-observed-versus-10cv.png",
   width = 480 * 3, height = 480 * 3, res = 72 * 3
 )
 par(mar = c(4, 4.5, 2, 2) + 0.1)
@@ -166,8 +166,8 @@ dev.off()
 # Predict soil bulk density
 tmp <- predict(dsi_model, data = febr_data[dsi_isna, ])
 febr_data[dsi_isna, dsi := round(tmp$predictions, 2)]
-nrow(unique(febr_data[, "id"])) # Result: 12 186
-nrow(febr_data) # Result: 19 254
+nrow(unique(febr_data[, "id"])) # Result: 11 359
+nrow(febr_data) # Result: 17 606
 
 # Write data to disk
-data.table::fwrite(febr_data, "mapbiomas-solo/data/05-febr-data.txt", sep = "\t", dec = ",")
+data.table::fwrite(febr_data, "mapbiomas-soc/data/05-febr-data.txt", sep = "\t", dec = ",")

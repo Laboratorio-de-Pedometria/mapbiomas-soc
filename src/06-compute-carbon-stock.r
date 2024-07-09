@@ -1,4 +1,6 @@
-# 06. COMPUTE ORGANIC CARBON STOCK #################################################################
+# MapBiomas Soil (beta): Script 06. Compute soil organic carbon stocks
+# Alessandro Samuel-Rosa & Taciara Zborowski Horst
+# 2024 CC-BY
 rm(list = ls())
 
 # Install and load required packages
@@ -7,14 +9,14 @@ if (!require("data.table")) {
 }
 
 # Read data processed in the previous script
-febr_data <- data.table::fread("mapbiomas-solo/data/05-febr-data.txt", dec = ",", sep = "\t")
+febr_data <- data.table::fread("mapbiomas-soc/data/05-febr-data.txt", dec = ",", sep = "\t")
 colnames(febr_data)
-nrow(unique(febr_data[, "id"])) # Result: 12 186 events
-nrow(febr_data) # Result: 19 254 layers
+nrow(unique(febr_data[, "id"])) # Result: 11 359 events
+nrow(febr_data) # Result: 17 606 layers
 
 # Filter out soil layers missing data on soil organic carbon
-nrow(febr_data[is.na(carbono), ]) # Result: 2275 layers
-nrow(unique(febr_data[is.na(carbono), "id"])) # Result: 1597 events
+nrow(febr_data[is.na(carbono), ]) # Result: 2145 layers
+nrow(unique(febr_data[is.na(carbono), "id"])) # Result: 1496 events
 febr_data <- febr_data[!is.na(carbono), ]
 
 # Resetting the limits of each layer according to the target depth range (0 and 30 cm).
@@ -28,11 +30,11 @@ febr_data[profund_inf < target_layer[1], profund_inf := target_layer[1]]
 febr_data[profund_sup > target_layer[2], profund_sup := target_layer[2]]
 febr_data[profund_inf > target_layer[2], profund_inf := target_layer[2]]
 febr_data[, espessura := profund_inf - profund_sup]
-nrow(febr_data[espessura < 0, ]) # 06 layers with thickness < 0 --> remove them
+nrow(febr_data[espessura < 0, ]) # 0 layers with thickness < 0 --> remove them
 febr_data <- febr_data[espessura > 0, ]
 febr_data[, thickness := sum(espessura), by = c("dataset_id", "observacao_id")]
-length(febr_data[thickness > 30, id]) # Result: 152 layers with thickness > 30
-length(unique(febr_data[thickness > 30, id])) # Result: 47 events with layers with thickness > 30
+length(febr_data[thickness > 30, id]) # Result: 138 layers with thickness > 30
+length(unique(febr_data[thickness > 30, id])) # Result: 42 events with layers with thickness > 30
 febr_data <- febr_data[thickness <= 30, ] # remove layers
 febr_data[, thickness := NULL]
 
@@ -66,8 +68,8 @@ febr_data <- febr_data[dataset_id != "ctb0036", ]
 febr_data <- febr_data[dataset_id != "ctb0599", ]
 # Projeto Caldeirão: caracterização e gênese das Terras Pretas de Índio na Amazônia
 febr_data <- febr_data[dataset_id != "ctb0018", ]
-nrow(unique(febr_data[, "id"])) # Result: 10 758 events
-nrow(febr_data) # Result: 16 556 layers
+nrow(unique(febr_data[, "id"])) # Result: 9979 events
+nrow(febr_data) # Result: 15 059 layers
 
 # Agregar estoque de carbono na camada superficial (0 até 30 cm) de cada evento
 colnames(febr_data)
@@ -92,7 +94,7 @@ febr_data <- febr_data[
   ),
   by = id
 ]
-nrow(febr_data) # Result: 9649 events/layers
+nrow(febr_data) # Result: 8904 events/layers
 
 if (FALSE) {
   x11()
@@ -106,8 +108,8 @@ sum(double) # no duplicated events
 febr_data <- febr_data[!double, ]
 
 # Write data to disk
-data.table::fwrite(febr_data, "mapbiomas-solo/data/06-febr-data.txt", sep = "\t", dec = ",")
+data.table::fwrite(febr_data, "mapbiomas-soc/data/06-febr-data.txt", sep = "\t", dec = ",")
 data.table::fwrite(
   febr_data[, c("id", "cos_estoque_gm2", "data_coleta_ano", "coord_x", "coord_y")],
-  paste0("mapbiomas-solo/res/tab/", format(Sys.time(), "%Y-%m-%d"), "-pontos-estoque-cos.csv")
+  paste0("mapbiomas-soc/res/tab/", format(Sys.time(), "%Y-%m-%d"), "-pontos-estoque-cos.csv")
 )
