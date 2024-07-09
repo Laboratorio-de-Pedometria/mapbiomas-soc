@@ -94,7 +94,7 @@ febr_data <- febr_data[
   ),
   by = id
 ]
-nrow(febr_data) # Result: 8904 events/layers
+nrow(febr_data) # Result: 8901 events/layers
 
 if (FALSE) {
   x11()
@@ -102,10 +102,33 @@ if (FALSE) {
   rug(febr_data[, cos_estoque_gm2] / 1000)
 }
 
-# Check if we have replicated sample points
-double <- duplicated(febr_data[, c("data_coleta_ano", "coord_x", "coord_y", "cos_estoque_gm2")])
-sum(double) # no duplicated events
-febr_data <- febr_data[!double, ]
+# Filter out duplicated events
+# Dataset ctb0829 used events from the RADAMBRASIL project. Those events are erroneously assigned
+# the sampling year 2000. We will correct this by removing those events.
+test_columns <- c("coord_x", "coord_y")
+duplicates <- duplicated(febr_data[, ..test_columns])
+# Identify duplicates with id starting with "ctb0829"
+duplicates <- duplicates & grepl("ctb0829", febr_data$id)
+sum(duplicates) # 34 duplicated events
+febr_data <- febr_data[!duplicates, ]
+nrow(febr_data) # 8867 events/layers
+
+# Other datasets used events from the RADAMBRASIL project. Those events are erroneously assigned
+# the sampling year. We will correct this by removing those events.
+# ctb0702
+febr_data <- febr_data[id != "ctb0702-P-86", ]
+febr_data <- febr_data[id != "ctb0702-P-97", ]
+# ctb0683
+febr_data <- febr_data[id != "ctb0683-232", ]
+nrow(febr_data) # 8865 events/layers
+
+# Other events with equal coordinates will be jittered (add small noise)
+test_columns <- c("coord_x", "coord_y")
+duplicates <- duplicated(febr_data[, ..test_columns])
+sum(duplicates) # 23 duplicated events
+febr_data[duplicates, coord_x := coord_x + runif(.N, -0.0001, 0.0001)]
+febr_data[duplicates, coord_y := coord_y + runif(.N, -0.0001, 0.0001)]
+nrow(febr_data) # 8864 events
 
 # Write data to disk
 data.table::fwrite(febr_data, "mapbiomas-soc/data/06-febr-data.txt", sep = "\t", dec = ",")
