@@ -48,7 +48,7 @@ no_time_coord <- febr_data[missing_time & profund_sup == 0,
 no_time_coord[, dataset_id := paste0("https://www.pedometria.org/febr/", dataset_id, "/")]
 write.table(
   x = no_time_coord,
-  file = "mapbiomas-solo/data/no-time-coord.csv",
+  file = "mapbiomas-soc/data/no-time-coord.csv",
   sep = "\t", row.names = FALSE)
 
 # Read Google Sheets spreadsheet containing the recovered sampling dates
@@ -155,4 +155,4 @@ if (FALSE) {
 }
 
 # Write data to disk
-data.table::fwrite(febr_data, "mapbiomas-solo/data/01a-febr-data.txt", sep = "\t", dec = ",")
+data.table::fwrite(febr_data, "mapbiomas-soc/data/01a-febr-data.txt", sep = "\t", dec = ",")

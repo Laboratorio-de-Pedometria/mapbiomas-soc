@@ -133,7 +133,7 @@ nrow(rondonia) # 10 789 layers
 nrow(unique(rondonia[, "id"])) # 3061 events
 
 # Read FEBR data processed in the previous script
-febr_data <- data.table::fread("mapbiomas-solo/data/01a-febr-data.txt", dec = ",", sep = "\t")
+febr_data <- data.table::fread("mapbiomas-soc/data/01a-febr-data.txt", dec = ",", sep = "\t")
 febr_data[, coord_datum_epsg := 4326]
 
 # Merge data from Rondônia with the FEBR snapshot
@@ -147,4 +147,4 @@ length(unique(febr_data[, id])) # 14 190 events
 nrow(febr_data) # 50 385 layers
 
 # Write data to disk
-data.table::fwrite(febr_data, "mapbiomas-solo/data/01b-febr-data.txt", sep = "\t", dec = ",")
+data.table::fwrite(febr_data, "mapbiomas-soc/data/01b-febr-data.txt", sep = "\t", dec = ",")

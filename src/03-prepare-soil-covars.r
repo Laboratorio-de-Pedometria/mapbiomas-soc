@@ -1,6 +1,6 @@
 # MapBiomas Soil (beta): Script 03. Prepare soil covariates
 # Alessandro Samuel-Rosa & Taciara Zborowski Horst
-# 2023 CC-BY
+# 2024 CC-BY
 rm(list = ls())
 
 # Install and load required packages

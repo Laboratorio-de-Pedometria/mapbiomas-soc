@@ -294,14 +294,16 @@ legend(x = -45, y = 6.5,
 dev.off()
 
 # Restore past
-# idx <- febr_data[, id]
+# ids_keep <- unique(febr_data[, id])
 # febr_data <- data.table::fread("mapbiomas-soc/data/04-febr-data.txt", dec = ",", sep = "\t")
-# febr_data <- febr_data[id %in% idx, ]
-# nrow(febr_data) # Result: 17 606 events
+# nrow(febr_data)
+# nrow(unique(febr_data[, "id"]))
+# febr_data <- febr_data[id %in% ids_keep, ]
+# nrow(febr_data) # Result: 17 606 layers
 # nrow(unique(febr_data[, "id"])) # Result: 11 359 events
 
 # Write data to disk
-nrow(unique(febr_data[, "id"])) # Result: 11 149 events
-nrow(febr_data) # Result: 17 145 layers
+nrow(unique(febr_data[, "id"])) # Result: 11 359 events
+nrow(febr_data) # Result: 17 606 layers
 febr_data[, lulc := NULL]
 data.table::fwrite(febr_data, "mapbiomas-soc/data/04-febr-data.txt", sep = "\t", dec = ",")
