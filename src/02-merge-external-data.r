@@ -1,6 +1,6 @@
 # MapBiomas Soil (beta): Script 02. Merge external data
 # Alessandro Samuel-Rosa & Taciara Zborowski Horst
-# 2023 CC-BY
+# 2024 CC-BY
 rm(list = ls())
 
 # Install and load required packages
@@ -40,7 +40,8 @@ files_event <- list.files(
   pattern = "-evento.txt$",
   full.names = TRUE, recursive = TRUE
 )
-length(files_event) # 9 data sets
+length(files_event) # 8 data sets
+print(files_event)
 data_event <- list()
 for (i in seq_along(files_event)) {
   data_event[[i]] <- data.table::fread(files_event[i], dec = ",")
@@ -50,7 +51,7 @@ for (i in seq_along(files_event)) {
   data.table::setnames(data_event[[i]], old = rename[, 1], new = rename[, 2], skip_absent = TRUE)
 }
 data_event <- data.table::rbindlist(data_event, fill = TRUE)
-nrow(data_event) # 10 098 events (not all IFN events have layers)
+nrow(data_event) # 1709 events (not all IFN events have layers)
 
 # Standardize coordinate reference system
 data_event[, coord_datum_epsg := as.integer(gsub("EPSG:", "", coord_datum_epsg))]
@@ -81,22 +82,15 @@ data_event[, geometry := NULL]
 # Clean sampling date
 data_event[data_coleta_ano < 1950, data_coleta_ano := NA_integer_]
 data_event[data_coleta_ano > as.integer(format(Sys.time(), "%Y")), data_coleta_ano := NA_integer_]
-nrow(data_event) # 10 098 (not all events have layers)
-
-if (FALSE) {
-  x11()
-  plot(brazil, reset = FALSE, main = "PronaSolos")
-  points(data_event[dataset_id == "ctb0064", coord_x],
-    data_event[dataset_id == "ctb0064", coord_y],
-    cex = 0.5, pch = 20
-  )
-}
+nrow(data_event) # 1709 (not all events have layers)
 
 # Camadas
 files_layer <- list.files(
   path = path.expand("~/ownCloud/febr-repo/processamento"),
   pattern = "-camada.txt$",
   full.names = TRUE, recursive = TRUE)
+length(files_layer) # 8 data sets
+print(files_layer)
 data_layer <- list()
 for (i in seq_along(files_layer)) {
   data_layer[[i]] <- data.table::fread(files_layer[i], dec = ",")
@@ -106,7 +100,7 @@ for (i in seq_along(files_layer)) {
   data.table::setnames(data_layer[[i]], old = rename[, 1], new = rename[, 2], skip_absent = TRUE)
 }
 data_layer <- data.table::rbindlist(data_layer, fill = TRUE)
-nrow(data_layer) # 36 883 layers
+nrow(data_layer) # 2419 layers
 # (not all layers of the National Forest Inventory have events - there must be some error in their
 # database)
 
@@ -119,27 +113,17 @@ if (!"terrafina" %in% colnames(febr_data01)) {
 if (!"camada_nome" %in% colnames(febr_data01)) {
   febr_data01[, camada_nome := NA_character_]
 }
-nrow(unique(febr_data01[, c("dataset_id", "id")])) # 9487 events (not all events have layers)
-nrow(febr_data01) # 36 690 layers
+nrow(unique(febr_data01[, c("dataset_id", "id")])) # 1098 events (not all events have layers)
+nrow(febr_data01) # 2226 layers
 # (not all layers of the National Forest Inventory have events - there must be some error in their
 # database)
 
-# Remove events/layers missing sampling date
-# This step is necessary to discard unwanted data from PronaSolos
-febr_data01 <- febr_data01[!is.na(data_coleta_ano), ]
-nrow(unique(febr_data01[, "id"])) # 7681 events
-nrow(febr_data01) # 28 414 layers
-if (FALSE) {
-  x11()
-  hist(febr_data01[["data_coleta_ano"]])
-}
-
 # Read FEBR data processed in the previous scripts
-febr_data02 <- data.table::fread("mapbiomas-solo/data/01b-febr-data.txt", dec = ",", sep = "\t")
+febr_data02 <- data.table::fread("mapbiomas-soc/data/01b-febr-data.txt", dec = ",", sep = "\t")
 febr_data02[, coord_datum_epsg := 4326]
 if (FALSE) {
   x11()
-  plot(brazil, reset = FALSE, main = "FEBR")
+  plot(brazil, reset = FALSE, main = "")
   points(febr_data02[, coord_x], febr_data02[, coord_y], cex = 0.5, pch = 20)
 }
 
@@ -156,8 +140,8 @@ idx <- match(colnames(febr_data02), colnames(febr_data01))
 idx01 <- na.exclude(idx)
 idx02 <- which(!is.na(idx))
 febr_data <- rbind(febr_data02[, ..idx02], febr_data01[, ..idx01])
-nrow(unique(febr_data[, "id"])) # 21 871 events
-nrow(febr_data) # 78 799 layers
+nrow(unique(febr_data[, "id"])) # 15 288 events
+nrow(febr_data) # 52 611 layers
 
 # Check if we have replicated sample points
 # There are events in the FEBR data with the same ID but different spatial or temporal coordinates.
@@ -165,7 +149,7 @@ nrow(febr_data) # 78 799 layers
 # We identify problem events by computing the standard deviation of the coordinates of each event:
 # for non-duplicated events, the standard deviation should be zero.
 nrow(unique(febr_data[, c("id", "data_coleta_ano", "coord_x", "coord_y")]))
-# 21 912 --> should be equal to 21 871
+# 15 329 --> should be equal to 15 288
 # (there are events with the same ID but different coordinates)
 febr_data[, std_x := sd(coord_x), by = c("dataset_id", "observacao_id")]
 febr_data[is.na(std_x), std_x := 0]
@@ -177,13 +161,12 @@ febr_data[, std_xyt := (std_x + std_y + std_t)]
 nrow(unique(febr_data[std_xyt > 0, c("dataset_id", "observacao_id")]))
 # Result: 32 duplicated events
 febr_data <- febr_data[std_xyt == 0, ] # remove duplicated events
-nrow(unique(febr_data[, "id"])) # 21 839 events
-nrow(febr_data) # 78 419 layers
+nrow(unique(febr_data[, "id"])) # 15 256 events
+nrow(febr_data) # 52 231 layers
 febr_data[, c("std_x", "std_y", "std_t", "std_xyt") := NULL]
 
 # Remove duplicated events: equal spatial and temporal coordinates
-# Events are commonly reused in more than one data set. Besides, FEBR and PronaSolos data have a 
-# large overlap.
+# Events are commonly reused in more than one data set.
 first <- function(x) x[1, ]
 tmp <- febr_data[, first(id),
   by = c("dataset_id", "observacao_id", "coord_x", "coord_y", "data_coleta_ano")
@@ -191,8 +174,8 @@ tmp <- febr_data[, first(id),
 duplo <- duplicated(tmp[, c("coord_x", "coord_y", "data_coleta_ano")])
 duplo <- tmp[duplo, V1]
 febr_data <- febr_data[!(id %in% duplo), ] # remove duplicated events
-nrow(unique(febr_data[, "id"])) # 12 729 events
-nrow(febr_data) # 44 158 layers
+nrow(unique(febr_data[, "id"])) # 11 850 events
+nrow(febr_data) # 40 376 layers
 
 # Set sampling year to year_min
 year_min <- min(febr_data[, data_coleta_ano], na.rm = TRUE)
@@ -208,4 +191,4 @@ if (FALSE) {
 }
 
 # Write data to disk
-data.table::fwrite(febr_data, "mapbiomas-solo/data/02-febr-data.txt", sep = "\t", dec = ",")
+data.table::fwrite(febr_data, "mapbiomas-soc/data/02-febr-data.txt", sep = "\t", dec = ",")

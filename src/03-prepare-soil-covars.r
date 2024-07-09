@@ -9,9 +9,9 @@ if (!require("data.table")) {
 }
 
 # Read data processed in the previous script
-febr_data <- data.table::fread("mapbiomas-solo/data/02-febr-data.txt", dec = ",", sep = "\t")
-nrow(unique(febr_data[, "id"])) # 12 729 events
-nrow(febr_data) # 44 158 layers
+febr_data <- data.table::fread("mapbiomas-soc/data/02-febr-data.txt", dec = ",", sep = "\t")
+nrow(unique(febr_data[, "id"])) # 11 850 events
+nrow(febr_data) # 40 376 layers
 colnames(febr_data)
 
 # Correct layer depth and name
@@ -28,21 +28,21 @@ febr_data[
 # Many of these layers are below 30 cm depth or result form typing errors: a common recommendation
 # of soil description and sampling manuals is to use a maximum layers thickness of 50 cm
 febr_data[, thickness := profund_inf - profund_sup]
-nrow(febr_data[thickness > 50, ]) # 3729 layers with thickness > 50 cm
+nrow(febr_data[thickness > 50, ]) # 3178 layers with thickness > 50 cm
 febr_data <- febr_data[thickness <= 50, ]
 febr_data[, thickness := NULL]
-nrow(unique(febr_data[, "id"])) # 12 455 events
-nrow(febr_data) # 40 072 layers
+nrow(unique(febr_data[, "id"])) # 11 589 events
+nrow(febr_data) # 63 851 layers
 
 # Filter out soil layers starting below 30 cm depth
 # We work only with data from the first 30 cm and deeper layers that start at or before 30 cm.
 # We also ignore organic layers in mineral soils: these layers generally are indicated with negative
 # depth 
 nrow(febr_data[profund_sup < 0, ]) # 04 layers with profund_sup < 0
-nrow(febr_data[profund_sup >= 30, ]) # 20 814 layers with profund_sup >= 30
+nrow(febr_data[profund_sup >= 30, ]) # 19 241 layers with profund_sup >= 30
 febr_data <- febr_data[profund_sup >= 0 & profund_sup < 30, ]
-nrow(unique(febr_data[, "id"])) # Result: 12 186 events
-nrow(febr_data) # Result: 19 254 layers
+nrow(unique(febr_data[, "id"])) # Result: 11 359 events
+nrow(febr_data) # Result: 17 606 layers
 
 # Soil skeleton
 # In some soil samples, the fine earth and skeleton concentration data are inverted. This is quite
@@ -355,4 +355,4 @@ febr_data[is.na(LAT), c("LAT", "LATplus", "LATminus", "LATna")]
 febr_data[, LAT := NULL]
 
 # Write data to disk
-data.table::fwrite(febr_data, "mapbiomas-solo/data/03-febr-data.txt", sep = "\t", dec = ",")
+data.table::fwrite(febr_data, "mapbiomas-soc/data/03-febr-data.txt", sep = "\t", dec = ",")
