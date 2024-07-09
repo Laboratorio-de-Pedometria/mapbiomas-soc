@@ -132,6 +132,11 @@ rondonia[, EXTRA := NULL]
 nrow(rondonia) # 10 789 layers
 nrow(unique(rondonia[, "id"])) # 3061 events
 
+# Attribute new coordinates to events falling in water bodies or outside the state of Rondônia
+# RO2656: -61.306907, -13.485739
+rondonia[observacao_id == "RO2656", coord_x := -61.306907]
+rondonia[observacao_id == "RO2656", coord_y := -13.485739]
+
 # Read FEBR data processed in the previous script
 febr_data <- data.table::fread("mapbiomas-soc/data/01a-febr-data.txt", dec = ",", sep = "\t")
 febr_data[, coord_datum_epsg := 4326]
