@@ -1,6 +1,6 @@
 # MapBiomas Soil (beta): Script 04. Prepare environmental covariates
 # Alessandro Samuel-Rosa & Taciara Zborowski Horst
-# 2023 CC-BY
+# 2024 CC-BY
 rm(list = ls())
 
 # Install and load required packages
@@ -48,9 +48,9 @@ mia <-
   }
 
 # Read data processed in the previous script
-febr_data <- data.table::fread("mapbiomas-solo/data/03-febr-data.txt", dec = ",", sep = "\t")
-nrow(unique(febr_data[, "id"])) # Result: 12 186 events
-nrow(febr_data) # Result: 19 254 layers
+febr_data <- data.table::fread("mapbiomas-soc/data/03-febr-data.txt", dec = ",", sep = "\t")
+nrow(unique(febr_data[, "id"])) # Result: 11 359 events
+nrow(febr_data) # Result: 17 606 layers
 
 # Create spatial object
 # First filter out those samples without coordinates
