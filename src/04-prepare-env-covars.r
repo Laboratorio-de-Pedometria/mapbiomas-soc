@@ -52,6 +52,8 @@ febr_data <- data.table::fread("mapbiomas-soc/data/03-febr-data.txt", dec = ",",
 nrow(unique(febr_data[, "id"])) # Result: 11 359 events
 nrow(febr_data) # Result: 17 606 layers
 
+colnames(febr_data)
+
 # Create spatial object
 # First filter out those samples without coordinates
 # Also keep a single sample per soil profile
@@ -177,7 +179,10 @@ for (i in 1:n_lags) {
 mapbiomas <- data.table::rbindlist(mapbiomas)
 nrow(mapbiomas) # Result: 12 139 events returned
 
-# Get LULC class at the year of sampling (data_coleta_ano)  
+# Get LULC class at the year of sampling (data_coleta_ano)
+# Each column in the MapBiomas dataset represents a year. The column name is the year of the
+# classification. The value is the class code. We need to extract the class code for the year of
+# sampling, which is stored in the data_coleta_ano column. 
 colnames(mapbiomas) <- gsub("classification_", "", colnames(mapbiomas))
 mapbiomas[, YEAR := data_coleta_ano]
 mapbiomas[YEAR < 1985, YEAR := 1985]
