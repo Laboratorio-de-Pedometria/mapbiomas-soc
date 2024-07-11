@@ -18,15 +18,15 @@ if (!require("dataverse")) {
 # 'mapbiomas-soc/data/00_brazilian_soil_dataset_2023.txt'. The dataset is available at
 # https://doi.org/10.60502/SoilData/TUI25K. If the file already exists, read it using the
 # 'data.table' package.
-file_path <- "00_mapbiomas-soc/data/brazilian_soil_dataset_2023.txt"
+file_path <- "mapbiomas-soc/data/00_brazilian_soil_dataset_2023.txt"
 if (!file.exists(file_path)) {
-  br_soil2023 <- dataverse::get_dataframe_by_name("brazilian-soil-dataset-2023.txt",
+  br_soil2023 <- dataverse::get_dataframe_by_name("brazilian-soil-dataset.txt",
     server = "https://soildata.mapbiomas.org/dataverse/soildata",
     dataset = "10.60502/SoilData/TUI25K", .f = data.table::fread
   )
-  data.table::fwrite(br_soil2023, file_path, dec = ",", sep = ";")
+  data.table::fwrite(br_soil2023, file_path, dec = ".", sep = ";")
 } else {
-  br_soil2023 <- data.table::fread(file_path, dec = ",", sep = ";")
+  br_soil2023 <- data.table::fread(file_path, dec = ".", sep = ";")
 }
 nrow(unique(br_soil2023[, c("dataset_id", "observacao_id")])) # 14 043 events
 nrow(br_soil2023) # 50 470 layers

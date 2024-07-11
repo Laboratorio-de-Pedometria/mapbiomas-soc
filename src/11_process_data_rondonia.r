@@ -146,6 +146,10 @@ soildata <- data.table::fread("mapbiomas-soc/data/10_soildata_soc.txt", sep = "\
 soildata[, coord_datum_epsg := 4326]
 nrow(soildata) # 50 404 layers
 length(unique(soildata[, id])) # 13 977 events
+if (FALSE) {
+  x11()
+  plot(soildata[, c("coord_x", "coord_y")])
+}
 
 # Merge data from Rondônia with the SoilData snapshot
 # First remove existing data from Rondônia (morphological descriptions)
