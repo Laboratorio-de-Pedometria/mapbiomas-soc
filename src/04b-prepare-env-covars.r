@@ -1,4 +1,4 @@
-# MapBiomas Soil (beta): Script 04. Prepare environmental covariates
+# MapBiomas Soil (beta): Script 04b. Prepare environmental covariates
 # Alessandro Samuel-Rosa & Taciara Zborowski Horst
 # 2024 CC-BY
 rm(list = ls())
