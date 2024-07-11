@@ -1,5 +1,5 @@
 # title: SoilData - Soil Organic Carbon Stock
-# subtitle: Process Rondônia data
+# subtitle: Process data from Rondônia
 # author: Alessandro Samuel-Rosa and Taciara Zborowski Horst
 # data: 2024 CC-BY
 rm(list = ls())
