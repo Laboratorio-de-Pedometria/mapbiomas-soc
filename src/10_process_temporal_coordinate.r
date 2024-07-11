@@ -281,7 +281,7 @@ br_soil2023 <- br_soil2023[!(dataset_id %in% ctb & is.na(data_coleta_ano)), ]
 nrow(unique(br_soil2023[is.na(data_coleta_ano), c("dataset_id", "observacao_id")]))
 # 0 events remain without sampling date
 
-nrow(unique(br_soil2023[, c("dataset_id", "observacao_id")])) # 13977 events
+nrow(unique(br_soil2023[, c("dataset_id", "observacao_id")])) # 13 977 events
 nrow(br_soil2023) # 50 404 layers
 
 # Temporal distribution of samples with known sampling date after data rescue
