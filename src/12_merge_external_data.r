@@ -332,14 +332,14 @@ nrow(febr_data) # 40 376 layers
 year_min <- min(febr_data[, data_coleta_ano], na.rm = TRUE)
 febr_data[is.na(data_coleta_ano), data_coleta_ano := year_min]
 
-# Temporal distribution of samples with known sampling date after data rescue
-missing_time <- is.na(febr_data[["data_coleta_ano"]])
-if (FALSE) {
-  x11()
-  hist(febr_data[["data_coleta_ano"]], sub = paste0("n = ", sum(!missing_time)))
-  rug(febr_data[data_coleta_ano != year_min, data_coleta_ano])
-  text(x = year_min - 0.5, y = -400, labels = "NAs")
-}
+# # Temporal distribution of samples with known sampling date after data rescue
+# missing_time <- is.na(febr_data[["data_coleta_ano"]])
+# if (FALSE) {
+#   x11()
+#   hist(febr_data[["data_coleta_ano"]], sub = paste0("n = ", sum(!missing_time)))
+#   rug(febr_data[data_coleta_ano != year_min, data_coleta_ano])
+#   text(x = year_min - 0.5, y = -400, labels = "NAs")
+# }
 
-# Write data to disk
-data.table::fwrite(febr_data, "mapbiomas-soc/data/02-febr-data.txt", sep = "\t", dec = ",")
+# # Write data to disk
+# data.table::fwrite(febr_data, "mapbiomas-soc/data/02-febr-data.txt", sep = "\t", dec = ",")
