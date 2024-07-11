@@ -1,5 +1,5 @@
 # title: SoilData - Soil Organic Carbon Stock
-# subtitle: Time coordinate
+# subtitle: Process temporal coordinate
 # author: Alessandro Samuel-Rosa and Taciara Zborowski Horst
 # data: 2024 CC-BY
 rm(list = ls())
