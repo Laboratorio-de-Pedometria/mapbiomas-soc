@@ -269,6 +269,15 @@ nrow(soildata[camada_nome == "R", ]) # 66 R layers
 # Compute layer depth
 soildata[, profundidade := profund_inf - profund_sup]
 
+# Particle size distribution
+# Start by checking if all three fractions are present and, if so, check if their sum is 100%
+# of 1000 g/kg -- the later is the standard! If sum(psd) != 1000, adjust all three values.
+soildata[, psd := argila + silte + areia]
+soildata[psd != 1000, argila := round(argila / psd * 1000)]
+soildata[psd != 1000, silte := round(silte / psd * 1000)]
+soildata[psd != 1000, areia := round(areia / psd * 1000)]
+soildata[, psd := NULL]
+
 # Clean events
 
 # Identify duplicated events
