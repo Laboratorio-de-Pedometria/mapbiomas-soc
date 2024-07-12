@@ -277,13 +277,13 @@ data.table::fwrite(soildata, "mapbiomas-soc/data/12_soildata_soc.txt", sep = "\t
 #   plot(brazil, reset = FALSE, main = "")
 #   points(febr_data02[, coord_x], febr_data02[, coord_y], cex = 0.5, pch = 20)
 # }
-
-# Correct samples with terrafina = 0
-# It is assumed that these are samples with missing data and that, when missing, the value of fine
-# earth is 1000 g/kg.
-febr_data02[terrafina == 0, terrafina := 1000]
-nrow(unique(febr_data02[, "id"])) # 14 190 events
-
+# 
+# # Correct samples with terrafina = 0
+# # It is assumed that these are samples with missing data and that, when missing, the value of fine
+# # earth is 1000 g/kg.
+# febr_data02[terrafina == 0, terrafina := 1000]
+# nrow(unique(febr_data02[, "id"])) # 14 190 events
+# 
 # # Merge FEBR data with external data
 # febr_data01[, observacao_id := id]
 # febr_data01[, id := paste0(dataset_id, "-", id)]
@@ -293,45 +293,45 @@ nrow(unique(febr_data02[, "id"])) # 14 190 events
 # febr_data <- rbind(febr_data02[, ..idx02], febr_data01[, ..idx01])
 # nrow(unique(febr_data[, "id"])) # 15 288 events
 # nrow(febr_data) # 52 611 layers
-
-# Check if we have replicated sample points
-# There are events in the FEBR data with the same ID but different spatial or temporal coordinates.
-# This could also happen in the external data, but we have not checked it.
-# We identify problem events by computing the standard deviation of the coordinates of each event:
-# for non-duplicated events, the standard deviation should be zero.
-nrow(unique(febr_data[, c("id", "data_coleta_ano", "coord_x", "coord_y")]))
-# 15 329 --> should be equal to 15 288
-# (there are events with the same ID but different coordinates)
-febr_data[, std_x := sd(coord_x), by = c("dataset_id", "observacao_id")]
-febr_data[is.na(std_x), std_x := 0]
-febr_data[, std_y := sd(coord_y), by = c("dataset_id", "observacao_id")]
-febr_data[is.na(std_y), std_y := 0]
-febr_data[, std_t := sd(data_coleta_ano), by = c("dataset_id", "observacao_id")]
-febr_data[is.na(std_t), std_t := 0]
-febr_data[, std_xyt := (std_x + std_y + std_t)]
-nrow(unique(febr_data[std_xyt > 0, c("dataset_id", "observacao_id")]))
-# Result: 32 duplicated events
-febr_data <- febr_data[std_xyt == 0, ] # remove duplicated events
-nrow(unique(febr_data[, "id"])) # 15 256 events
-nrow(febr_data) # 52 231 layers
-febr_data[, c("std_x", "std_y", "std_t", "std_xyt") := NULL]
-
-# Remove duplicated events: equal spatial and temporal coordinates
-# Events are commonly reused in more than one data set.
-first <- function(x) x[1, ]
-tmp <- febr_data[, first(id),
-  by = c("dataset_id", "observacao_id", "coord_x", "coord_y", "data_coleta_ano")
-]
-duplo <- duplicated(tmp[, c("coord_x", "coord_y", "data_coleta_ano")])
-duplo <- tmp[duplo, V1]
-febr_data <- febr_data[!(id %in% duplo), ] # remove duplicated events
-nrow(unique(febr_data[, "id"])) # 11 850 events
-nrow(febr_data) # 40 376 layers
-
-# Set sampling year to year_min
-year_min <- min(febr_data[, data_coleta_ano], na.rm = TRUE)
-febr_data[is.na(data_coleta_ano), data_coleta_ano := year_min]
-
+# 
+# # Check if we have replicated sample points
+# # There are events in the FEBR data with the same ID but different spatial or temporal coordinates.
+# # This could also happen in the external data, but we have not checked it.
+# # We identify problem events by computing the standard deviation of the coordinates of each event:
+# # for non-duplicated events, the standard deviation should be zero.
+# nrow(unique(febr_data[, c("id", "data_coleta_ano", "coord_x", "coord_y")]))
+# # 15 329 --> should be equal to 15 288
+# # (there are events with the same ID but different coordinates)
+# febr_data[, std_x := sd(coord_x), by = c("dataset_id", "observacao_id")]
+# febr_data[is.na(std_x), std_x := 0]
+# febr_data[, std_y := sd(coord_y), by = c("dataset_id", "observacao_id")]
+# febr_data[is.na(std_y), std_y := 0]
+# febr_data[, std_t := sd(data_coleta_ano), by = c("dataset_id", "observacao_id")]
+# febr_data[is.na(std_t), std_t := 0]
+# febr_data[, std_xyt := (std_x + std_y + std_t)]
+# nrow(unique(febr_data[std_xyt > 0, c("dataset_id", "observacao_id")]))
+# # Result: 32 duplicated events
+# febr_data <- febr_data[std_xyt == 0, ] # remove duplicated events
+# nrow(unique(febr_data[, "id"])) # 15 256 events
+# nrow(febr_data) # 52 231 layers
+# febr_data[, c("std_x", "std_y", "std_t", "std_xyt") := NULL]
+# 
+# # Remove duplicated events: equal spatial and temporal coordinates
+# # Events are commonly reused in more than one data set.
+# first <- function(x) x[1, ]
+# tmp <- febr_data[, first(id),
+#   by = c("dataset_id", "observacao_id", "coord_x", "coord_y", "data_coleta_ano")
+# ]
+# duplo <- duplicated(tmp[, c("coord_x", "coord_y", "data_coleta_ano")])
+# duplo <- tmp[duplo, V1]
+# febr_data <- febr_data[!(id %in% duplo), ] # remove duplicated events
+# nrow(unique(febr_data[, "id"])) # 11 850 events
+# nrow(febr_data) # 40 376 layers
+# 
+# # Set sampling year to year_min
+# year_min <- min(febr_data[, data_coleta_ano], na.rm = TRUE)
+# febr_data[is.na(data_coleta_ano), data_coleta_ano := year_min]
+# 
 # # Temporal distribution of samples with known sampling date after data rescue
 # missing_time <- is.na(febr_data[["data_coleta_ano"]])
 # if (FALSE) {
@@ -340,6 +340,6 @@ febr_data[is.na(data_coleta_ano), data_coleta_ano := year_min]
 #   rug(febr_data[data_coleta_ano != year_min, data_coleta_ano])
 #   text(x = year_min - 0.5, y = -400, labels = "NAs")
 # }
-
+# 
 # # Write data to disk
 # data.table::fwrite(febr_data, "mapbiomas-soc/data/02-febr-data.txt", sep = "\t", dec = ",")
