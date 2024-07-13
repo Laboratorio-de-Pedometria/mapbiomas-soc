@@ -38,5 +38,5 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 res/gee-trainning-stock-time-landuse.png
-tmp/tmp.csv
-data/febr-data.txt
+tmp/*.csv
+data/*.txt
