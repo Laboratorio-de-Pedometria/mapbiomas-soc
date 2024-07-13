@@ -303,6 +303,7 @@ duplo <- soildata_events[duplo, V1]
 soildata <- soildata[!id %in% duplo, ] # remove duplicated events
 nrow(unique(soildata[, "id"])) # 11 813 events
 nrow(soildata) # 21 890 layers
+nrow(unique(soildata[!is.na(coord_x) & !is.na(coord_y), "id"])) # 9513 events
 
 # Export cleaned data
 # Write cleaned data file to disk
