@@ -2,10 +2,6 @@
 # subtitle: Prepare covariate figures
 # author: Alessandro Samuel-Rosa and Taciara Zborowski Horst
 # data: 2024 CC-BY
-
-# MapBiomas Soil (beta): Script 04b. Environmental covariates - get GEE data
-# Alessandro Samuel-Rosa & Taciara Zborowski Horst
-# 2024 CC-BY
 rm(list = ls())
 
 # Install and load required packages

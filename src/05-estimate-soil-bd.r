@@ -1,3 +1,34 @@
+# title: SoilData - Soil Organic Carbon Stock
+# subtitle: Estimate soil bulk density
+# author: Alessandro Samuel-Rosa and Taciara Zborowski Horst
+# data: 2024 CC-BY
+rm(list = ls())
+
+# Install and load required packages
+if (!require("data.table")) {
+  install.packages("data.table")
+}
+if (!require("ranger")) {
+  install.packages("ranger")
+}
+
+# Read data from disk
+soildata <- data.table::fread("mapbiomas-soc/data/21_soildata_soc.txt", sep = "\t")
+str(soildata)
+nrow(unique(soildata[, "id"])) # Result: 11 813 events
+nrow(soildata) # Result: 21 890 layers
+
+# Identify layers missing soil bulk density data
+nrow(soildata[is.na(dsi), ]) # Result: 19 047 layers
+nrow(unique(soildata[is.na(dsi), "id"])) # Result: 10 481 events
+
+
+
+
+
+
+
+# PREVIOUS /////////////////////////////////////////////////////////////////////////////////////////
 # MapBiomas Soil (beta): Script 05. Estimate soil bulk density
 # Alessandro Samuel-Rosa & Taciara Zborowski Horst
 # 2024 CC-BY
@@ -8,40 +39,42 @@
 # 
 # KEY RESULTS
 # 
-rm(list = ls())
+# rm(list = ls())
+# # Install and load required packages
+# if (!require("ranger")) {
+#   install.packages("ranger")
+# }
+# if (!require("caret")) {
+#   install.packages("caret")
+# }
+# 
+# # Ler dados do disco
+# febr_data <- data.table::fread("mapbiomas-soc/data/04-febr-data.txt",
+#   dec = ",", sep = "\t",
+#   stringsAsFactors = TRUE
+# )
+# str(febr_data)
+# nrow(unique(febr_data[, "id"])) # Result: 11 359 events
+# nrow(febr_data) # Result: 17 606 layers
+# colnames(febr_data)
+# 
+# # Identify layers missing soil bulk density data
+# # We noticed that very high values (> 2.3 g/cm^3) were recorded for a few layers. There
+# # also were two B horizons and one A horizon with too low density values (< 0.5). Checking their
+# # source soil surveys, we identified that these data were erroneous. The data was then deleted.
+# nrow(febr_data[dsi > 2.3, ]) # Result: 7 layers
+# febr_data[dsi > 2.3, dsi := NA_real_]
+# febr_data[dsi < 0.25, dsi := NA_real_]
+# febr_data[dsi < 0.5 & grepl("B", camada_nome), dsi := NA_real_]
+# febr_data[
+#   dataset_id == "ctb0654" & observacao_id == "11-V-RCC" & camada_nome == "A",
+#   dsi := NA_real_
+# ]
+# dsi_isna <- is.na(febr_data[["dsi"]])
+# sum(!dsi_isna)
+# sum(dsi_isna) # Result: 2787 and 14 819
 
-# Install and load required packages
-if (!require("ranger")) {
-  install.packages("ranger")
-}
-if (!require("caret")) {
-  install.packages("caret")
-}
-
-# Ler dados do disco
-febr_data <- data.table::fread("mapbiomas-soc/data/04-febr-data.txt",
-  dec = ",", sep = "\t",
-  stringsAsFactors = TRUE
-)
-str(febr_data)
-nrow(unique(febr_data[, "id"])) # Result: 11 359 events
-nrow(febr_data) # Result: 17 606 layers
-colnames(febr_data)
-
-# Identify layers missing soil bulk density data
-# We noticed that very high values (> 2.3 g/cm^3) were recorded for a few layers. There
-# also were two B horizons and one A horizon with too low density values (< 0.5). Checking their
-# source soil surveys, we identified that these data were erroneous. The data was then deleted.
-nrow(febr_data[dsi > 2.3, ]) # Result: 7 layers
-febr_data[dsi > 2.3, dsi := NA_real_]
-febr_data[dsi < 0.25, dsi := NA_real_]
-febr_data[dsi < 0.5 & grepl("B", camada_nome), dsi := NA_real_]
-febr_data[
-  dataset_id == "ctb0654" & observacao_id == "11-V-RCC" & camada_nome == "A",
-  dsi := NA_real_
-]
-dsi_isna <- is.na(febr_data[["dsi"]])
-sum(!dsi_isna); sum(dsi_isna) # Result: 2787 and 14 819
+# Figure 1: Distribution of soil bulk density data
 dev.off()
 png("mapbiomas-soc/res/fig/bulk-density-training-data.png",
   width = 480 * 3, height = 480 * 3, res = 72 * 3
