@@ -10,7 +10,7 @@ if (!require("data.table")) {
 }
 
 # Read data processed in the previous script
-soildata <- data.table::fread("mapbiomas-soc/data/13_soildata_soc.txt", sep = "\t")
+soildata <- data.table::fread("data/13_soildata_soc.txt", sep = "\t")
 nrow(unique(soildata[, "id"])) # 11 813 events
 nrow(soildata) # 21 890 layers
 
@@ -52,7 +52,7 @@ summary(soildata[, as.factor(SUBORDER)])
 
 # STONESOL
 # Soil classes known for having a skeleton (bivariate)
-soildata[, STONESOL := "UNKNOWN"]
+soildata[, STONESOL := NA_character_]
 soildata[ORDER != "UNKNOWN" | SUBORDER != "UNKNOWN", STONESOL := "FALSE"]
 soildata[ORDER == "NEOSSOLO", STONESOL := "TRUE"]
 soildata[ORDER == "PLINTOSSOLO", STONESOL := "TRUE"]
@@ -66,7 +66,7 @@ summary(soildata[, as.factor(STONESOL)])
 # STONES
 # Soil layers known for having concretions, nodules, rock fragments, rock-like pedogenic layers, and
 # human artifacts (bivariate)
-soildata[, STONES := "UNKNOWN"]
+soildata[, STONE := NA_character_]
 soildata[camada_nome != "UNKNOWN", STONES := "FALSE"]
 soildata[grepl("c", camada_nome, ignore.case = FALSE), STONES := "TRUE"]
 soildata[grepl("F", camada_nome, ignore.case = FALSE), STONES := "TRUE"]
@@ -114,7 +114,7 @@ summary(soildata[, as.factor(EHRZN)])
 # Write data to disk
 nrow(unique(soildata[, "id"])) # 11 813 events
 nrow(soildata) # 21 890 layers
-data.table::fwrite(soildata, "mapbiomas-soc/data/20_soildata_soc.txt", sep = "\t")
+data.table::fwrite(soildata, "data/20_soildata_soc.txt", sep = "\t")
 
 # PREVIOUS /////////////////////////////////////////////////////////////////////////////////////////
 # # MapBiomas Soil (beta): Script 03. Prepare soil covariates

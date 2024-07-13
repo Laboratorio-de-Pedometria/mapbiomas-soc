@@ -142,7 +142,7 @@ nrow(rondonia) # 10 789 layers
 nrow(unique(rondonia[, "id"])) # 3061 events
 
 # Read SoilData data processed in the previous script
-soildata <- data.table::fread("mapbiomas-soc/data/10_soildata_soc.txt", sep = "\t")
+soildata <- data.table::fread("data/10_soildata_soc.txt", sep = "\t")
 soildata[, coord_datum_epsg := 4326]
 nrow(soildata) # 50 404 layers
 length(unique(soildata[, id])) # 13 977 events
@@ -162,7 +162,8 @@ length(unique(soildata[, id])) # 14 124 events
 nrow(soildata) # 50 319 layers
 
 # Write data to disk
-data.table::fwrite(soildata, "mapbiomas-soc/data/11_soildata_soc.txt", sep = "\t")
+colnames(soildata)
+data.table::fwrite(soildata, "data/11_soildata_soc.txt", sep = "\t")
 
 # PREVIOUS /////////////////////////////////////////////////////////////////////////////////////////
 # MapBiomas Soil (beta): Script 01a. Process FEBR data - Rondônia

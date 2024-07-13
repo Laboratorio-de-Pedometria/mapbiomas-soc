@@ -119,7 +119,7 @@ nrow(unique(soildata_01[, c("dataset_id", "id")])) # 1098 events
 nrow(soildata_01) # 2226 layers
 
 # Read SoilData data processed in the previous scripts
-soildata_02 <- data.table::fread("mapbiomas-soc/data/11_soildata_soc.txt", sep = "\t")
+soildata_02 <- data.table::fread("data/11_soildata_soc.txt", sep = "\t")
 if (!"coord_datum_epsg" %in% colnames(soildata_02)) {
   soildata_02[, coord_datum_epsg := 4326]
 }
@@ -128,12 +128,6 @@ if (FALSE) {
   plot(brazil, reset = FALSE, main = "")
   points(soildata_02[, coord_x], soildata_02[, coord_y], cex = 0.5, pch = 20)
 }
-
-# # Correct samples with terrafina = 0
-# # It is assumed that these are samples with missing data and that, when missing, the value of fine
-# # earth is 1000 g/kg.
-# soildata_02[terrafina == 0, terrafina := 1000]
-# nrow(unique(soildata_02[, "id"])) # 14 190 events
 
 # Merge SoilData data with external data
 soildata_01[, observacao_id := id]
@@ -146,7 +140,8 @@ nrow(unique(soildata[, "id"])) # 15 222 events
 nrow(soildata) # 52 545 layers
 
 # Write data to disk
-data.table::fwrite(soildata, "mapbiomas-soc/data/12_soildata_soc.txt", sep = "\t")
+colnames(soildata)
+data.table::fwrite(soildata, "data/12_soildata_soc.txt", sep = "\t")
 
 # PREVIOUS /////////////////////////////////////////////////////////////////////////////////////////
 # # MapBiomas Soil (beta): Script 02. Merge external data

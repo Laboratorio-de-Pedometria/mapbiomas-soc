@@ -10,7 +10,7 @@ if (!require("data.table")) {
 }
 
 # Read SoilData data processed in the previous script
-soildata <- data.table::fread("mapbiomas-soc/data/12_soildata_soc.txt", sep = "\t")
+soildata <- data.table::fread("data/12_soildata_soc.txt", sep = "\t")
 nrow(soildata) # 52 545 layers
 nrow(unique(soildata[, "id"])) # 15 222 events
 
@@ -27,7 +27,7 @@ nrow(soildata) # 52 153 layers
 # Some topsoil layers are organic layers that do not have a measurement of carbon. This can occur
 # when the soil surface is moved to the top of organic layers.
 # We start by identifying layers with profund_sup == 0, carbono == NA, and H or O in camada_nome.
-# Then we correct the layer limits accordingly. Finnally, we filter out layers with profund_sup < 0,
+# Then we correct the layer limits accordingly. Finally, we filter out layers with profund_sup < 0,
 # i.e. the organic topsoil layers (litter)..
 soildata[
   ,
@@ -61,10 +61,10 @@ nrow(soildata[profund_sup == profund_inf]) # 69 layers
 soildata[profund_sup == profund_inf & profund_sup == 0, .(id, camada_nome, profund_sup, profund_inf)]
 
 # Layer id
-# Sort each event (id) by layer depth (profund_sup)
-# Create a column with the layer number of each event (id)
+# Sort each event (id) by layer depth (profund_sup and profund_inf)
+# Update the columns camada_id
 soildata <- soildata[order(id, profund_sup, profund_inf)]
-soildata[, layer_number := 1:.N, by = id]
+soildata[, camada_id := 1:.N, by = id]
 
 # Remove repeated layers
 # Some layers are repeated in the same event (id). These layers have equal values for camada_nome,
@@ -151,17 +151,16 @@ nrow(unique(soildata[, "id"])) # 13 678 events
 nrow(soildata) # 25 244 layers
 
 # Update layer id
-# Sort each event (id) by layer depth (profund_sup)
-# Create a column with the layer number of each event (id)
+# Sort each event (id) by layer depth (profund_sup and profund_inf)
 soildata <- soildata[order(id, profund_sup, profund_inf)]
-soildata[, layer_number := 1:.N, by = id]
+soildata[, camada_id := 1:.N, by = id]
 
 # Topsoil
 # For each event (id), check if there is a layer with profund_sup == 0. Missing a surface layer is
 # common in reconnaissance soil surveys, where only the diagnostic subsurface horizons are 
 # described. It can also occur in studies that use data from various sources and have a focus on
 # subsurface horizons. 
-# Filter out events without a topsoil layer.
+# Filter out whole events without a topsoil layer.
 soildata[, topsoil := any(profund_sup == 0), by = id]
 nrow(unique(soildata[topsoil != TRUE, "id"])) # 572 events
 soildata <- soildata[topsoil == TRUE, ]
@@ -265,10 +264,6 @@ nrow(soildata[camada_nome == "R", ]) # 66 R layers
 # nrow(unique(soildata[, "id"])) # 13 101 events
 # nrow(soildata) # 21 687 layers
 
-# Depth
-# Compute layer depth
-soildata[, profundidade := profund_inf - profund_sup]
-
 # Particle size distribution
 # Start by checking if all three fractions are present and, if so, check if their sum is 100%
 # of 1000 g/kg -- the later is the standard! If sum(psd) != 1000, adjust all three values.
@@ -306,8 +301,8 @@ nrow(soildata) # 21 890 layers
 nrow(unique(soildata[!is.na(coord_x) & !is.na(coord_y), "id"])) # 9513 events
 
 # Export cleaned data
-# Write cleaned data file to disk
-data.table::fwrite(soildata, "mapbiomas-soc/data/13_soildata_soc.txt", sep = "\t")
+colnames(soildata)
+data.table::fwrite(soildata, "data/13_soildata_soc.txt", sep = "\t")
 
 # PREVIOUS /////////////////////////////////////////////////////////////////////////////////////////
 # # Organic topsoil

@@ -13,12 +13,12 @@ if (!require("dataverse")) {
 }
 
 # Read the latest Brazilian Soil Dataset
-# Check if "mapbiomas-soc/data/00_brazilian_soil_dataset_2023.txt" exists. If not, read the Brazilian 
+# Check if "data/00_brazilian_soil_dataset_2023.txt" exists. If not, read the Brazilian 
 # Soil Dataset 2023 using the 'dataverse' package. Next, write it to
-# 'mapbiomas-soc/data/00_brazilian_soil_dataset_2023.txt'. The dataset is available at
+# 'data/00_brazilian_soil_dataset_2023.txt'. The dataset is available at
 # https://doi.org/10.60502/SoilData/TUI25K. If the file already exists, read it using the
 # 'data.table' package.
-file_path <- "mapbiomas-soc/data/00_brazilian_soil_dataset_2023.txt"
+file_path <- "data/00_brazilian_soil_dataset_2023.txt"
 if (!file.exists(file_path)) {
   br_soil2023 <- dataverse::get_dataframe_by_name("brazilian-soil-dataset.txt",
     server = "https://soildata.mapbiomas.org/dataverse/soildata",
@@ -62,7 +62,7 @@ if (FALSE) {
 #   )
 # ]
 # no_time_coord[, dataset_id := paste0("https://www.pedometria.org/febr/", dataset_id, "/")]
-# data.table::fwrite(no_time_coord, "mapbiomas-soc/data/no-time-coord.csv", sep = "\t", dec = ",")
+# data.table::fwrite(no_time_coord, "data/no-time-coord.csv", sep = "\t", dec = ",")
 
 # Read Google Sheets spreadsheet containing the recovered sampling dates
 # It is not necessary to set the table because the spreadsheet contains only one.
@@ -96,6 +96,7 @@ if (FALSE) {
   hist(br_soil2023[["data_coleta_ano"]], sub = paste0("n = ", sum(!missing_time)))
   rug(br_soil2023[["data_coleta_ano"]])
 }
+br_soil2023[, na_year := NULL]
 
 # Attribute the most likely temporal coordinate
 # Inventário das terras em microbacias hidrográficas, Santa Catarina
@@ -297,7 +298,8 @@ if (FALSE) {
 }
 
 # Write data to disk
-data.table::fwrite(br_soil2023, "mapbiomas-soc/data/10_soildata_soc.txt", sep = "\t")
+colnames(br_soil2023)
+data.table::fwrite(br_soil2023, "data/10_soildata_soc.txt", sep = "\t")
 
 # OLD //////////////////////////////////////////////////////////////////////////////////////////////
 # rm(list = ls())
