@@ -7,44 +7,16 @@ rm(list = ls())
 if (!require("data.table")) {
   install.packages("data.table")
 }
-if (!require("sf")) {
-  install.packages("sf")
-}
-if (!require("geobr")) {
-  install.packages("geobr")
-}
-
-# # Missingness in attribute
-# mia <-
-#   function(x) {
-#     is_na <- is.na(x)
-#     if (is.numeric(x)) {
-#       Xplus <- as.numeric(x)
-#       Xplus[is_na] <- as.numeric(+Inf)
-#       Xminus <- as.numeric(x)
-#       Xminus[is_na] <- as.numeric(-Inf)
-#       Xna <- rep("ISNOTNA", length(x))
-#       Xna[is_na] <- as.character("ISNA")
-#       out <- data.frame(Xplus = Xplus, Xminus = Xminus, Xna = Xna)
-#     } else {
-#       Xunknown <- as.character(x)
-#       Xunknown[is_na] <- "UNKNOWN"
-#       out <- data.frame(Xunknown = Xunknown)
-#     }
-#     return(out)
-#   }
 
 # Read data processed in the previous script
-febr_data <- data.table::fread("mapbiomas-soc/data/04a-febr-data.txt", dec = ",", sep = "\t")
-nrow(unique(febr_data[, "id"])) # Result: 11 359 events
-nrow(febr_data) # Result: 17 606 layers
+soildata <- data.table::fread("mapbiomas-soc/data/21_soildata_soc.txt", sep = "\t")
+nrow(unique(soildata[, "id"])) # Result: 11 813 events
+nrow(soildata) # Result: 21 891 layers
 
-# Reclassify land use/land cover classes
-febr_data[lulc == "", lulc := "unknown"]
-febr_data[lulc == 0, lulc := "unknown"]
-
+# Figure
 # Distribution of events through land use/land cover classes
-lulc_classes <- table(febr_data[, lulc[1], by = id][, V1])
+lulc_classes <- soildata[, lulc[1], by = id]
+lulc_classes <- table(lulc_classes[, V1])
 dev.off()
 png(
   "mapbiomas-soc/res/fig/bulk-density-lulc-classes.png",
@@ -57,6 +29,11 @@ barplot(lulc_classes,
   )
 grid(nx = FALSE, ny = NULL, col = "gray")
 dev.off()
+
+# Figure
+# Geolocalized events missing data on SoilGrids and MapBiomas
+nrow(soildata[is.na(clay_0_5cm) & !is.na(coord_x) & !is.na(coord_y), clay_0_5cm[1], by = .(id)]) # 279 events
+nrow(soildata[lulc == "unknown" & !is.na(coord_x) & !is.na(coord_y), lulc[1], by = .(id)]) # 4174 events
 
 # Read data from geobr
 brazil <- geobr::read_country()
