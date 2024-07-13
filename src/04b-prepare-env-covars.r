@@ -1,3 +1,8 @@
+# title: SoilData - Soil Organic Carbon Stock
+# subtitle: Prepare covariate figures
+# author: Alessandro Samuel-Rosa and Taciara Zborowski Horst
+# data: 2024 CC-BY
+
 # MapBiomas Soil (beta): Script 04b. Environmental covariates - get GEE data
 # Alessandro Samuel-Rosa & Taciara Zborowski Horst
 # 2024 CC-BY
@@ -32,14 +37,35 @@ dev.off()
 
 # Figure
 # Geolocalized events missing data on SoilGrids and MapBiomas
-nrow(soildata[is.na(clay_0_5cm) & !is.na(coord_x) & !is.na(coord_y), clay_0_5cm[1], by = .(id)]) # 279 events
-nrow(soildata[lulc == "unknown" & !is.na(coord_x) & !is.na(coord_y), lulc[1], by = .(id)]) # 4174 events
-
-# Read data from geobr
+na_sg <- nrow(soildata[is.na(clay_0_5cm) & !is.na(coord_x) & !is.na(coord_y), clay_0_5cm[1], by = .(id)])
+print(na_sg) # 279 events
+na_mb <- nrow(soildata[lulc == "unknown" & !is.na(coord_x) & !is.na(coord_y), lulc[1], by = .(id)])
+print(na_mb) # 4174 events
 brazil <- geobr::read_country()
 biomas <- geobr::read_biomes()[-7, "name_biome"]
+dev.off()
+png("mapbiomas-soc/res/fig/bulk-density-gee-missing-data.png",
+  width = 480 * 3, height = 480 * 3, res = 72 * 3
+)
+plot(biomas,
+  reset = FALSE, graticule = TRUE, axes = TRUE, ylab = "Longitude", xlab = "Latitude",
+  main = "", key.pos = 1, key.length = 1
+)
+points(soildata[lulc == "unknown" & !is.na(coord_x) & !is.na(coord_y), c("coord_x", "coord_y")],
+  col = "blue", cex = 0.5
+)
+points(soildata[is.na(clay_0_5cm) & !is.na(coord_x) & !is.na(coord_y), c("coord_x", "coord_y")],
+  col = "red", cex = 0.5
+)
+legend(
+  x = -48, y = 6.5,
+  legend = c(paste0("NA SoilGrids (n = ", na_sg, ")"), paste0("NA MapBiomas (n = ", na_mb, ")")),
+  col = c("red", "blue"),
+  box.lwd = 0, pch = 1
+)
+dev.off()
 
-# //////////////////////////////////////////////////////////////////////////////////////////////////
+# PREVIOUS /////////////////////////////////////////////////////////////////////////////////////////
 # rm(list = ls())
 # 
 # # Install and load required packages
@@ -295,46 +321,46 @@ biomas <- geobr::read_biomes()[-7, "name_biome"]
 # nrow(febr_data) # Result: 19 254 layers
 # 
 # Impute missing data using the MIA method
-which_cols <- union(colnames(SoilGrids), colnames(mapbiomas))
-which_cols <- which_cols[
-    !which_cols %in% c("dataset_id", "observacao_id", "data_coleta_ano", "lulc")
-]
-which_cols <- match(which_cols, colnames(febr_data))
-for (i in which_cols) {
-  y <- mia(febr_data[[i]])
-  colnames(y) <- gsub("X", toupper(colnames(febr_data)[i]), colnames(y))
-  febr_data <- cbind(febr_data, y)
-}
-febr_data[, colnames(febr_data)[which_cols] := NULL]
-colnames(febr_data) <- gsub("unknown", "", colnames(febr_data))
-
-# SoilGrids and MapBiomas
-# 340 geolocalized events are missing values for SoilGrids data
-# 6 geolocalized events are missing values for MapBiomas data
-n_na_soilgrids <- nrow(unique(febr_data[
-  SOC_0.5CMna == "ISNA" & !is.na(coord_x),
-  c("dataset_id", "observacao_id", "data_coleta_ano")
-]))
-print(n_na_soilgrids) # SoilGrids: 340 events are missing values
-n_na_mapbiomas <- nrow(unique(febr_data[
-  is.na(lulc) & !is.na(coord_x),
-  c("dataset_id", "observacao_id", "data_coleta_ano")
-]))
-print(n_na_mapbiomas) # MapBiomas: 06 events are missing values
-dev.off()
-png("mapbiomas-solo/res/fig/bulk-density-mapbiomas-soilgrids-missing-data.png",
-  width = 480 * 3, height = 480 * 3, res = 72 * 3)
-plot(biomas, reset = FALSE, graticule = TRUE, axes = TRUE, ylab = "Longitude", xlab = "Latitude",
-  main = "", key.pos = 1, key.length = 1)
-points(febr_data[SOC_0.5CMna == "ISNA" & !is.na(coord_x), c("coord_x", "coord_y")], col = "red")
-points(febr_data[is.na(lulc) & !is.na(coord_x), c("coord_x", "coord_y")], col = "blue")
-legend(x = -45, y = 6.5,
-  legend = c(paste0("NA SoilGrids (n = ", n_na_soilgrids, ")"),
-            paste0("NA MapBiomas (n = ", n_na_mapbiomas, ")")),
-  col = c("red", "blue"),
-  box.lwd = 0, pch = 1)
-dev.off()
-
+# which_cols <- union(colnames(SoilGrids), colnames(mapbiomas))
+# which_cols <- which_cols[
+#     !which_cols %in% c("dataset_id", "observacao_id", "data_coleta_ano", "lulc")
+# ]
+# which_cols <- match(which_cols, colnames(febr_data))
+# for (i in which_cols) {
+#   y <- mia(febr_data[[i]])
+#   colnames(y) <- gsub("X", toupper(colnames(febr_data)[i]), colnames(y))
+#   febr_data <- cbind(febr_data, y)
+# }
+# febr_data[, colnames(febr_data)[which_cols] := NULL]
+# colnames(febr_data) <- gsub("unknown", "", colnames(febr_data))
+# 
+# # SoilGrids and MapBiomas
+# # 340 geolocalized events are missing values for SoilGrids data
+# # 6 geolocalized events are missing values for MapBiomas data
+# n_na_soilgrids <- nrow(unique(febr_data[
+#   SOC_0.5CMna == "ISNA" & !is.na(coord_x),
+#   c("dataset_id", "observacao_id", "data_coleta_ano")
+# ]))
+# print(n_na_soilgrids) # SoilGrids: 340 events are missing values
+# n_na_mapbiomas <- nrow(unique(febr_data[
+#   is.na(lulc) & !is.na(coord_x),
+#   c("dataset_id", "observacao_id", "data_coleta_ano")
+# ]))
+# print(n_na_mapbiomas) # MapBiomas: 06 events are missing values
+# dev.off()
+# png("mapbiomas-solo/res/fig/bulk-density-mapbiomas-soilgrids-missing-data.png",
+#   width = 480 * 3, height = 480 * 3, res = 72 * 3)
+# plot(biomas, reset = FALSE, graticule = TRUE, axes = TRUE, ylab = "Longitude", xlab = "Latitude",
+#   main = "", key.pos = 1, key.length = 1)
+# points(febr_data[SOC_0.5CMna == "ISNA" & !is.na(coord_x), c("coord_x", "coord_y")], col = "red")
+# points(febr_data[is.na(lulc) & !is.na(coord_x), c("coord_x", "coord_y")], col = "blue")
+# legend(x = -45, y = 6.5,
+#   legend = c(paste0("NA SoilGrids (n = ", n_na_soilgrids, ")"),
+#             paste0("NA MapBiomas (n = ", n_na_mapbiomas, ")")),
+#   col = c("red", "blue"),
+#   box.lwd = 0, pch = 1)
+# dev.off()
+# 
 # Restore past
 # ids_keep <- unique(febr_data[, id])
 # febr_data <- data.table::fread("mapbiomas-soc/data/04-febr-data.txt", dec = ",", sep = "\t")
@@ -343,9 +369,9 @@ dev.off()
 # febr_data <- febr_data[id %in% ids_keep, ]
 # nrow(febr_data) # Result: 17 606 layers
 # nrow(unique(febr_data[, "id"])) # Result: 11 359 events
-
-# Write data to disk
-nrow(unique(febr_data[, "id"])) # Result: 11 359 events
-nrow(febr_data) # Result: 17 606 layers
-febr_data[, lulc := NULL]
-data.table::fwrite(febr_data, "mapbiomas-soc/data/04-febr-data.txt", sep = "\t", dec = ",")
+# 
+# # Write data to disk
+# nrow(unique(febr_data[, "id"])) # Result: 11 359 events
+# nrow(febr_data) # Result: 17 606 layers
+# febr_data[, lulc := NULL]
+# data.table::fwrite(febr_data, "mapbiomas-soc/data/04-febr-data.txt", sep = "\t", dec = ",")
