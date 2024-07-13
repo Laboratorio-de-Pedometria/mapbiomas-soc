@@ -10,19 +10,16 @@ if (!require("data.table")) {
 }
 
 # Read data processed in the previous script
-soildata <- data.table::fread("mapbiomas-soc/data/21_soildata_soc.txt", sep = "\t")
+soildata <- data.table::fread("data/21_soildata_soc.txt", sep = "\t", na.strings = c("NA", ""))
 nrow(unique(soildata[, "id"])) # Result: 11 813 events
 nrow(soildata) # Result: 21 891 layers
 
 # Figure
 # Distribution of events through land use/land cover classes
 lulc_classes <- soildata[, lulc[1], by = id]
-lulc_classes <- table(lulc_classes[, V1])
+lulc_classes <- table(lulc_classes[, V1], useNA = "always")
 dev.off()
-png(
-  "mapbiomas-soc/res/fig/bulk-density-lulc-classes.png",
-  width = 480 * 5, height = 480 * 3, res = 72 * 3
-)
+png("res/fig/bulk-density-lulc-classes.png", width = 480 * 5, height = 480 * 3, res = 72 * 3)
 barplot(lulc_classes,
   col = "gray", border = "gray",
   xlab = "Land use/land cover class",
@@ -35,23 +32,25 @@ dev.off()
 # Geolocalized events missing data on SoilGrids and MapBiomas
 na_sg <- nrow(soildata[is.na(clay_0_5cm) & !is.na(coord_x) & !is.na(coord_y), clay_0_5cm[1], by = .(id)])
 print(na_sg) # 279 events
-na_mb <- nrow(soildata[lulc == "unknown" & !is.na(coord_x) & !is.na(coord_y), lulc[1], by = .(id)])
-print(na_mb) # 4174 events
+na_mb <- nrow(soildata[is.na(lulc) & !is.na(coord_x) & !is.na(coord_y) & data_coleta_ano >= 1985,
+  lulc[1],
+  by = .(id)
+])
+print(na_mb) # 4 events
 brazil <- geobr::read_country()
 biomas <- geobr::read_biomes()[-7, "name_biome"]
 dev.off()
-png("mapbiomas-soc/res/fig/bulk-density-gee-missing-data.png",
-  width = 480 * 3, height = 480 * 3, res = 72 * 3
-)
+png("res/fig/bulk-density-gee-missing-data.png", width = 480 * 3, height = 480 * 3, res = 72 * 3)
 plot(biomas,
   reset = FALSE, graticule = TRUE, axes = TRUE, ylab = "Longitude", xlab = "Latitude",
   main = "", key.pos = 1, key.length = 1
 )
-points(soildata[lulc == "unknown" & !is.na(coord_x) & !is.na(coord_y), c("coord_x", "coord_y")],
-  col = "blue", cex = 0.5
-)
+points(soildata[
+  is.na(lulc) & !is.na(coord_x) & !is.na(coord_y) & data_coleta_ano >= 1985,
+  c("coord_x", "coord_y")
+], col = "blue")
 points(soildata[is.na(clay_0_5cm) & !is.na(coord_x) & !is.na(coord_y), c("coord_x", "coord_y")],
-  col = "red", cex = 0.5
+  col = "red"
 )
 legend(
   x = -48, y = 6.5,

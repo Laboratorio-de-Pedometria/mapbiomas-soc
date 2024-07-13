@@ -169,3 +169,16 @@ skewness <- function(x, na.rm = TRUE) {
   skew <- (sum((x - mean(x))^3) / n) / (sum((x - mean(x))^2) / n)^(3 / 2) # moments::skewness
   return(skew)
 }
+# Compute regression model statistics
+error_statistics <-
+  function(observed, predicted) {
+    error <- predicted - observed
+    residual <- mean(observed) - observed
+    me <- mean(error)
+    mae <- mean(abs(error))
+    mse <- mean(error^2)
+    rmse <- sqrt(mse)
+    mec <- 1 - mse/mean(residual^2)
+    slope <- coef(lm(observed ~ predicted))[2]
+    return(data.frame(me, mae, mse, rmse, mec, slope))
+}
