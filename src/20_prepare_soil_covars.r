@@ -61,8 +61,7 @@ soildata[SUBORDER == "LITOLICO", STONESOL := "TRUE"]
 soildata[SUBORDER == "REGOLITICO", STONESOL := "TRUE"]
 soildata[SUBORDER == "QUARTZARENICO", STONESOL := "FALSE"]
 soildata[SUBORDER == "HAPLICO", STONESOL := "FALSE"]
-soildata[, STONESOL := as.factor(STONESOL)]
-summary(soildata[, STONESOL])
+summary(soildata[, as.factor(STONESOL)])
 
 # STONES
 # Soil layers known for having concretions, nodules, rock fragments, rock-like pedogenic layers, and
