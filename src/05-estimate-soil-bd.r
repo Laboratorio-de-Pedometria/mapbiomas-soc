@@ -12,20 +12,54 @@ if (!require("ranger")) {
   install.packages("ranger")
 }
 
+# Source helper functions
+source("mapbiomas-soc/src/00_helper_functions.r")
+
 # Read data from disk
 soildata <- data.table::fread("mapbiomas-soc/data/21_soildata_soc.txt", sep = "\t")
-str(soildata)
 nrow(unique(soildata[, "id"])) # Result: 11 813 events
 nrow(soildata) # Result: 21 890 layers
 
 # Identify layers missing soil bulk density data
+is_na_dsi <- is.na(soildata[["dsi"]])
 nrow(soildata[is.na(dsi), ]) # Result: 19 047 layers
 nrow(unique(soildata[is.na(dsi), "id"])) # Result: 10 481 events
 
+# Set covariates
+colnames(soildata)
+not_covars <- c(
+  "dsi",
+  "observacao_id", "coord_precisao", "coord_fonte", "amostra_area", "amostra_id", "camada_nome",
+  "data_coleta_ano", "id", "coord_datum_epsg", "layer_number", "endpoint", "profundidade",
+  "taxon_sibcs"
+)
+covars_names <- colnames(soildata)[!colnames(soildata) %in% not_covars]
 
+# Missing value imputation
+# Use the missingness-in-attributes (MIA) approach with +/- Inf, with the indicator for missingness
+# (mask) to impute missing values in the covariates
+covariates <- imputation(soildata[, ..covars_names],
+  method = "mia", na.replacement = list(cont = Inf, cat = "???"), na.indicator = TRUE
+)
+covariates <- data.table::as.data.table(covariates)
 
+# Train random forest model
+t0 <- proc.time()
+set.seed(1984)
+dsi_model <- ranger::ranger(
+  y = soildata[!is_na_dsi, dsi],
+  x = covariates[!is_na_dsi, ],
+  num.trees = 500,
+  mtry = 10,
+  min.node.size = 3,
+  max.depth = 30,
+  importance = "impurity"
+)
+proc.time() - t0
 
+print(dsi_model)
 
+sort(dsi_model$variable.importance, decreasing = TRUE)
 
 
 # PREVIOUS /////////////////////////////////////////////////////////////////////////////////////////
