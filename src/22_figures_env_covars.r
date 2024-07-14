@@ -11,8 +11,8 @@ if (!require("data.table")) {
 
 # Read data processed in the previous script
 soildata <- data.table::fread("data/21_soildata_soc.txt", sep = "\t", na.strings = c("NA", ""))
-nrow(unique(soildata[, "id"])) # Result: 11 813 events
-nrow(soildata) # Result: 21 891 layers
+nrow(unique(soildata[, "id"])) # Result: 11 751 events
+nrow(soildata) # Result: 21 750 layers
 
 # Figure
 # Distribution of events through land use/land cover classes
@@ -31,7 +31,7 @@ dev.off()
 # Figure
 # Geolocalized events missing data on SoilGrids and MapBiomas
 na_sg <- nrow(soildata[is.na(clay_0_5cm) & !is.na(coord_x) & !is.na(coord_y), clay_0_5cm[1], by = .(id)])
-print(na_sg) # 279 events
+print(na_sg) # 274 events
 na_mb <- nrow(soildata[is.na(lulc) & !is.na(coord_x) & !is.na(coord_y) & data_coleta_ano >= 1985,
   lulc[1],
   by = .(id)
