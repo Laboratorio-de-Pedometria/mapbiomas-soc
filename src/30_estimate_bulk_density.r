@@ -11,9 +11,6 @@ if (!require("data.table")) {
 if (!require("ranger")) {
   install.packages("ranger")
 }
-if (!require("sf")) {
-  install.packages("sf")
-}
 
 # Source helper functions
 source("src/00_helper_functions.r")
@@ -30,49 +27,6 @@ nrow(unique(soildata[is.na(dsi), "id"])) # Result: 10 481 events
 
 # Endpoint (MUST BE CORRECTED IN PREVIOUS SCRIPT)
 soildata[is.na(endpoint), endpoint := 0]
-
-# Covariates
-
-# Bulk density of upper and lower layer
-# First, sort the data by soil event (id) and soil layer (camada_id).
-# For each soil layer (camada_id) in a soil event (id), identify the bulk density (dsi) of the
-# immediately upper and lower layers. If the layer is the first or last in a given soil event (id),
-# the bulk density of the upper or lower layer is set to NA, respectively.
-soildata <- soildata[order(id, camada_id)]
-soildata[, dsi_upper := shift(dsi, type = "lag"), by = id]
-soildata[, dsi_lower := shift(dsi, type = "lead"), by = id]
-
-# Dense horizon
-soildata[grepl("t", camada_nome), BHRZN_DENSE := TRUE]
-soildata[grepl("v", camada_nome), BHRZN_DENSE := TRUE]
-soildata[grepl("pl", camada_nome), BHRZN_DENSE := TRUE]
-soildata[grepl("n", camada_nome), BHRZN_DENSE := TRUE]
-soildata[is.na(BHRZN_DENSE), BHRZN_DENSE := FALSE]
-soildata[camada_nome == "???", BHRZN_DENSE := NA]
-summary(soildata$BHRZN_DENSE)
-
-# Project geographic coordinates
-# Start by converting the geographic coordinates (latitude and longitude) to UTM coordinates
-# (Universal Transverse Mercator) using the WGS 84 datum (EPSG:4326). The UTM coordinates are
-# projected to the SIRGAS 2000 datum (EPSG:31983) to minimize distortion in the study area.
-# The UTM coordinates are projected to the SIRGAS 2000 datum (EPSG:31983) to minimize distortion
-# in the study area.
-# Start by extracting the geographic coordinates from the soil data. Then create a sf object with
-# the geographic coordinates and the WGS 84 datum (EPSG:4326). Finally, project the geographic
-# coordinates to the SIRGAS 2000 datum (EPSG:31983). The projected coordinates are added back to the
-# soil data.
-soildata_sf <- sf::st_as_sf(
-  soildata[!is.na(coord_x) & !is.na(coord_y)],
-  coords = c("coord_x", "coord_y"), crs = 4326
-)
-if (FALSE) {
-  x11()
-  plot(soildata_sf["estado_id"])
-}
-soildata_sf <- sf::st_transform(soildata_sf, crs = 31983)
-soildata[!is.na(coord_x) & !is.na(coord_y), coord_x_utm := sf::st_coordinates(soildata_sf)[, 1]]
-soildata[!is.na(coord_x) & !is.na(coord_y), coord_y_utm := sf::st_coordinates(soildata_sf)[, 2]]
-rm(soildata_sf)
 
 # Set covariates
 colnames(soildata)
