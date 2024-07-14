@@ -23,29 +23,6 @@ soildata <- data.table::fread("data/21_soildata_soc.txt", sep = "\t", na.strings
 nrow(unique(soildata[, "id"])) # Result: 11 813 events
 nrow(soildata) # Result: 21 890 layers
 
-# Correct bulk density values
-soildata <- soildata[dataset_id != "ctb0654", ] # Duplicate of ctb0608
-soildata <- soildata[dataset_id != "ctb0800", ] # Duplicates of ctb0702
-soildata[id == "ctb0562-Perfil-13" & camada_id == 2, dsi := 0.86]
-soildata[id == "ctb0562-Perfil-14" & camada_id == 1, dsi := 1.09]
-soildata[id == "ctb0562-Perfil-14" & camada_id == 2, dsi := 0.9]
-soildata[id == "ctb0608-15-V-RCC" & camada_id == 3, dsi := 1.94]
-soildata[id == "ctb0631-Perfil-17" & camada_id == 3, dsi := 1.10]
-soildata[id == "ctb0700-15" & camada_id == 1, dsi := 1.6]
-soildata[id == "ctb0700-15" & camada_id == 2, dsi := 1.49]
-soildata[id == "ctb0771-26" & camada_id == 1, dsi := 1.32]
-soildata[id == "ctb0771-26" & camada_id == 2, dsi := 1.37]
-soildata[id == "ctb0777-1" & camada_id == 1, dsi := 1.35]
-soildata[id == "ctb0777-1" & camada_id == 2, dsi := 1.29]
-soildata[id == "ctb0787-1" & camada_id == 2, dsi := 1.35]
-soildata[id == "ctb0787-1" & camada_id == 3, dsi := 1.27]
-soildata[id == "ctb0787-4" & camada_id == 1, dsi := 1.35]
-soildata[id == "ctb0787-4" & camada_id == 2, dsi := 1.27]
-soildata[id == "ctb0811-2" & camada_id == 3, dsi := 1.64]
-soildata[id == "ctb0702-P-46" & camada_id == 1, dsi := 1.08] # check documentation
-soildata[id == "ctb0572-Perfil-063" & camada_id == 2, dsi := 0.84]
-soildata[id == "ctb0605-P-06" & camada_id == 2, dsi := 1.32]
-
 # Identify layers missing soil bulk density data
 is_na_dsi <- is.na(soildata[["dsi"]])
 nrow(soildata[is.na(dsi), ]) # Result: 19 047 layers
