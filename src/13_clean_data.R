@@ -15,9 +15,12 @@ nrow(soildata) # 52 545 layers
 nrow(unique(soildata[, "id"])) # 15 222 events
 
 # Clean datasets
-# Some datasets have no use here.
 # ctb0001
 soildata <- soildata[dataset_id != "ctb0001", ]
+# ctb0654 (duplicate of ctb0608)
+soildata <- soildata[dataset_id != "ctb0654", ]
+# ctb0800 (many duplicates of ctb0702)
+soildata <- soildata[dataset_id != "ctb0800", ]
 nrow(unique(soildata[, "id"])) # 15 026 events
 nrow(soildata) # 52 153 layers
 
