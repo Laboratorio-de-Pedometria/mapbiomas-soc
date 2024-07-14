@@ -41,8 +41,4 @@ res/gee-trainning-stock-time-landuse.png
 tmp/*.csv
 data/*.txt
 res/fig/*.png
-res/fig/bulk-density-lulc-classes.png
-res/tab/bulk_density_hyperparameter_tunning.txt
-res/tab/bulk_density_model_parameters.txt
-res/fig/bulk-density-lulc-classes.png
-res/fig/bulk-density-lulc-classes.png
+res/tab/*.txt
