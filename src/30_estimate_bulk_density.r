@@ -23,6 +23,29 @@ soildata <- data.table::fread("data/21_soildata_soc.txt", sep = "\t", na.strings
 nrow(unique(soildata[, "id"])) # Result: 11 813 events
 nrow(soildata) # Result: 21 890 layers
 
+# Correct bulk density values
+soildata <- soildata[dataset_id != "ctb0654", ] # Duplicate of ctb0608
+soildata <- soildata[dataset_id != "ctb0800", ] # Duplicates of ctb0702
+soildata[id == "ctb0562-Perfil-13" & camada_id == 2, dsi := 0.86]
+soildata[id == "ctb0562-Perfil-14" & camada_id == 1, dsi := 1.09]
+soildata[id == "ctb0562-Perfil-14" & camada_id == 2, dsi := 0.9]
+soildata[id == "ctb0608-15-V-RCC" & camada_id == 3, dsi := 1.94]
+soildata[id == "ctb0631-Perfil-17" & camada_id == 3, dsi := 1.10]
+soildata[id == "ctb0700-15" & camada_id == 1, dsi := 1.6]
+soildata[id == "ctb0700-15" & camada_id == 2, dsi := 1.49]
+soildata[id == "ctb0771-26" & camada_id == 1, dsi := 1.32]
+soildata[id == "ctb0771-26" & camada_id == 2, dsi := 1.37]
+soildata[id == "ctb0777-1" & camada_id == 1, dsi := 1.35]
+soildata[id == "ctb0777-1" & camada_id == 2, dsi := 1.29]
+soildata[id == "ctb0787-1" & camada_id == 2, dsi := 1.35]
+soildata[id == "ctb0787-1" & camada_id == 3, dsi := 1.27]
+soildata[id == "ctb0787-4" & camada_id == 1, dsi := 1.35]
+soildata[id == "ctb0787-4" & camada_id == 2, dsi := 1.27]
+soildata[id == "ctb0811-2" & camada_id == 3, dsi := 1.64]
+soildata[id == "ctb0702-P-46" & camada_id == 1, dsi := 1.08] # check documentation
+soildata[id == "ctb0572-Perfil-063" & camada_id == 2, dsi := 0.84]
+soildata[id == "ctb0605-P-06" & camada_id == 2, dsi := 1.32]
+
 # Identify layers missing soil bulk density data
 is_na_dsi <- is.na(soildata[["dsi"]])
 nrow(soildata[is.na(dsi), ]) # Result: 19 047 layers
@@ -31,7 +54,8 @@ nrow(unique(soildata[is.na(dsi), "id"])) # Result: 10 481 events
 # Endpoint (MUST BE CORRECTED IN PREVIOUS SCRIPT)
 soildata[is.na(endpoint), endpoint := 0]
 
-# Covariate
+# Covariates
+
 # Bulk density of upper and lower layer
 # First, sort the data by soil event (id) and soil layer (camada_id).
 # For each soil layer (camada_id) in a soil event (id), identify the bulk density (dsi) of the
@@ -40,6 +64,15 @@ soildata[is.na(endpoint), endpoint := 0]
 soildata <- soildata[order(id, camada_id)]
 soildata[, dsi_upper := shift(dsi, type = "lag"), by = id]
 soildata[, dsi_lower := shift(dsi, type = "lead"), by = id]
+
+# Dense horizon
+soildata[grepl("t", camada_nome), BHRZN_DENSE := TRUE]
+soildata[grepl("v", camada_nome), BHRZN_DENSE := TRUE]
+soildata[grepl("pl", camada_nome), BHRZN_DENSE := TRUE]
+soildata[grepl("n", camada_nome), BHRZN_DENSE := TRUE]
+soildata[is.na(BHRZN_DENSE), BHRZN_DENSE := FALSE]
+soildata[camada_nome == "???", BHRZN_DENSE := NA]
+summary(soildata$BHRZN_DENSE)
 
 # Project geographic coordinates
 # Start by converting the geographic coordinates (latitude and longitude) to UTM coordinates
@@ -185,6 +218,10 @@ write.table(capture.output(print(dsi_model))[6:15],
   file = "res/tab/bulk_density_model_parameters.txt", sep = "\t", row.names = FALSE
 )
 
+# Check absolute error
+soildata[!is_na_dsi, abs_error := abs(soildata[!is_na_dsi, dsi] - dsi_model$predictions)]
+soildata[round(abs_error, 2) >= 1, .(id, camada_id, camada_nome, dsi, dsi_upper, dsi_lower, BHRZN_DENSE, abs_error)]
+
 # Figure: Variable importance
 # Keep only those with relative importance > 0.01
 dsi_model_variable <- sort(dsi_model$variable.importance)
@@ -200,12 +237,19 @@ barplot(dsi_model_variable[dsi_model_variable > 0.01],
 grid(nx = NULL, ny = FALSE, col = "gray")
 dev.off()
 
-# Figure: Fitted versus observed
+# Figure: Plot fitted versus observed values
+# Set color of points as a function of the absolute error, that is, abs(y - x). The absolute error
+# ranges from 0 to 1.
+color_breaks <- seq(0, 1, by = 0.2)
+color_class <- cut(soildata[!is_na_dsi, abs_error], breaks = color_breaks, include.lowest = TRUE)
+color_palette <- RColorBrewer::brewer.pal(length(color_breaks) - 1, "Purples")
+color_palette <- color_palette[as.numeric(color_class)]
 png("res/fig/bulk_density_observed_versus_oob.png", width = 480 * 3, height = 480 * 3, res = 72 * 3)
 par(mar = c(4, 4.5, 2, 2) + 0.1)
 plot(
   y = soildata[!is_na_dsi, dsi], x = dsi_model$predictions, xlim = c(0, 2.5), ylim = c(0, 2.5),
   panel.first = grid(),
+  pch = 21, bg = color_palette,
   ylab = expression("Observed soil bulk density, g cm"^-3),
   xlab = expression("Fitted bulk soil density (OOB), g cm"^-3)
 )
@@ -216,8 +260,8 @@ dev.off()
 dsi_digits <- 2
 tmp <- predict(dsi_model, data = covariates[is_na_dsi, ])
 soildata[is_na_dsi, dsi := round(tmp$predictions, dsi_digits)]
-nrow(unique(soildata[, "id"])) # Result: 11 813
-nrow(soildata) # Result: 21 890
+nrow(unique(soildata[, "id"])) # Result: 11 794
+nrow(soildata) # Result: 21 847
 
 # Figure. Distribution of soil bulk density data
 png("res/fig/bulk_density_histogram.png", width = 480 * 3, height = 480 * 3, res = 72 * 3)
@@ -238,6 +282,8 @@ legend("topright",
 dev.off()
 
 # Write data to disk
+nrow(soildata[is_na_dsi, ]) # 19 036 layers
+nrow(unique(soildata[, "id"])) # 11 751 events
 data.table::fwrite(soildata, "data/30_soildata_soc.txt", sep = "\t")
 
 # PREVIOUS /////////////////////////////////////////////////////////////////////////////////////////
@@ -416,3 +462,4 @@ data.table::fwrite(soildata, "data/30_soildata_soc.txt", sep = "\t")
 # 
 # # Write data to disk
 # data.table::fwrite(febr_data, "mapbiomas-soc/data/05-febr-data.txt", sep = "\t", dec = ",")
+
