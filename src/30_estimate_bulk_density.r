@@ -140,6 +140,7 @@ dsi_model <- ranger::ranger(
   verbose = TRUE
 )
 Sys.time() - t0
+print(dsi_model)
 
 # Compute regression model statistics
 dsi_model_stats <- error_statistics(soildata[!is_na_dsi, dsi], dsi_model$predictions)
