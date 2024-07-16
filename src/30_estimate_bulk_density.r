@@ -99,6 +99,10 @@ Sys.time() - t0
 
 # Export the results to a TXT file
 data.table::fwrite(hyper_results, "res/tab/bulk_density_hyperparameter_tunning.txt", sep = "\t")
+if (FALSE) {
+  # Read the results from disk
+  hyper_results <- data.table::fread("res/tab/bulk_density_hyperparameter_tunning.txt", sep = "\t")
+}
 
 # Assess results
 # What is the Spearman correlation between hyperparameters and model performance metrics?
@@ -152,23 +156,33 @@ write.table(capture.output(print(dsi_model))[6:15],
 )
 
 # Check absolute error
+abs_error_tolerance <- 1
 soildata[!is_na_dsi, abs_error := abs(soildata[!is_na_dsi, dsi] - dsi_model$predictions)]
-soildata[round(abs_error, 2) >= 1, .(id, camada_id, camada_nome, dsi, dsi_upper, dsi_lower, BHRZN_DENSE, abs_error)]
+if (any(soildata[!is_na_dsi, abs_error] >= abs_error_tolerance)) {
+  print(soildata[
+    abs_error >= abs_error_tolerance,
+    .(id, camada_id, camada_nome, dsi, dsi_upper, dsi_lower, abs_error)
+  ])
+} else {
+  print(paste0("All absolute errors are below ", abs_error_tolerance, " g/dm^3."))
+}
 
 # Figure: Variable importance
-# Keep only those with relative importance > 0.01
+# Plot only those with relative importance >= 0.01
+variable_importance_threshold <- 0.01
 dsi_model_variable <- sort(dsi_model$variable.importance)
 dsi_model_variable <- round(dsi_model_variable / max(dsi_model_variable), 2)
-
 png("res/fig/bulk_density_variable_importance.png", width = 480 * 3, height = 480 * 4, res = 72 * 3)
 par(mar = c(4, 6, 1, 1) + 0.1)
-barplot(dsi_model_variable[dsi_model_variable > 0.01],
+barplot(dsi_model_variable[dsi_model_variable >= variable_importance_threshold],
   horiz = TRUE, las = 1,
   col = "gray", border = "gray",
-  xlab = "Relative importance > 0.01", cex.names = 0.5
+  xlab = "Relative importance >= 0.01", cex.names = 0.5
 )
 grid(nx = NULL, ny = FALSE, col = "gray")
 dev.off()
+dsi_model_variable[dsi_model_variable < variable_importance_threshold]
+
 
 # Figure: Plot fitted versus observed values
 # Set color of points as a function of the absolute error, that is, abs(y - x). The absolute error
