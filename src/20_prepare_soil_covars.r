@@ -92,7 +92,7 @@ summary(soildata[, as.factor(STONESOL)])
 # STONES
 # Soil layers known for having concretions, nodules, rock fragments, rock-like pedogenic layers, and
 # human artifacts (bivariate)
-soildata[, STONE := NA_character_]
+soildata[, STONES := NA_character_]
 soildata[camada_nome != "UNKNOWN", STONES := "FALSE"]
 soildata[grepl("c", camada_nome, ignore.case = FALSE), STONES := "TRUE"]
 soildata[grepl("F", camada_nome, ignore.case = FALSE), STONES := "TRUE"]

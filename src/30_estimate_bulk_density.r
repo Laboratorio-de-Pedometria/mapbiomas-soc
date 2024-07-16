@@ -25,8 +25,23 @@ is_na_dsi <- is.na(soildata[["dsi"]])
 nrow(soildata[is.na(dsi), ]) # Result: 19 036 layers
 nrow(unique(soildata[is.na(dsi), "id"])) # Result: 10 476 events
 
+# SOIL COVARIATES
 # Endpoint (MUST BE CORRECTED IN PREVIOUS SCRIPT)
 soildata[is.na(endpoint), endpoint := 0]
+# Dense horizon
+soildata[, BHRZN_DENSE := NULL]
+soildata[grepl("tg", camada_nome), DENSE := TRUE]
+soildata[grepl("v", camada_nome), DENSE := TRUE]
+soildata[grepl("n", camada_nome), DENSE := TRUE]
+soildata[is.na(DENSE), DENSE := FALSE]
+soildata[camada_nome == "???", DENSE := NA]
+summary(soildata$DENSE)
+# ctc/argila ratio
+soildata[ctc > 0 & argila > 0, ctc_clay := ctc / argila]
+summary(soildata$ctc_clay)
+# silte/argila ratio
+soildata[silte > 0 & argila > 0, silte_clay := silte / argila]
+summary(soildata$silte_clay)
 
 # Set covariates
 colnames(soildata)
@@ -146,14 +161,20 @@ dsi_model <- ranger::ranger(
 Sys.time() - t0
 print(dsi_model)
 
-# Compute regression model statistics
+# Compute regression model statistics and write to disk
 dsi_model_stats <- error_statistics(soildata[!is_na_dsi, dsi], dsi_model$predictions)
+data.table::fwrite(dsi_model_stats, "res/tab/bulk_density_model_statistics.txt", sep = "\t")
 print(round(dsi_model_stats, 2))
 
 # Write model parameters to disk
 write.table(capture.output(print(dsi_model))[6:15],
   file = "res/tab/bulk_density_model_parameters.txt", sep = "\t", row.names = FALSE
 )
+if (FALSE) {
+  # Read the model parameters from disk
+  dsi_model <- data.table::fread("res/tab/bulk_density_model_parameters.txt", sep = "\t")
+  print(dsi_model)
+}
 
 # Check absolute error
 abs_error_tolerance <- 1
@@ -181,7 +202,7 @@ barplot(dsi_model_variable[dsi_model_variable >= variable_importance_threshold],
 )
 grid(nx = NULL, ny = FALSE, col = "gray")
 dev.off()
-dsi_model_variable[dsi_model_variable < variable_importance_threshold]
+names(dsi_model_variable[dsi_model_variable < variable_importance_threshold])
 
 
 # Figure: Plot fitted versus observed values
@@ -190,25 +211,28 @@ dsi_model_variable[dsi_model_variable < variable_importance_threshold]
 color_breaks <- seq(0, 1, by = 0.2)
 color_class <- cut(soildata[!is_na_dsi, abs_error], breaks = color_breaks, include.lowest = TRUE)
 color_palette <- RColorBrewer::brewer.pal(length(color_breaks) - 1, "Purples")
-color_palette <- color_palette[as.numeric(color_class)]
 png("res/fig/bulk_density_observed_versus_oob.png", width = 480 * 3, height = 480 * 3, res = 72 * 3)
 par(mar = c(4, 4.5, 2, 2) + 0.1)
 plot(
   y = soildata[!is_na_dsi, dsi], x = dsi_model$predictions, xlim = c(0, 2.5), ylim = c(0, 2.5),
   panel.first = grid(),
-  pch = 21, bg = color_palette,
+  pch = 21, bg = color_palette[as.numeric(color_class)],
   ylab = expression("Observed soil bulk density, g cm"^-3),
   xlab = expression("Fitted bulk soil density (OOB), g cm"^-3)
 )
 abline(0, 1)
+legend("topleft", title = expression("Absolute error, g cm"^-3),
+  legend = levels(color_class),
+  pt.bg = color_palette, border = "white", box.lwd = 0, pch = 21
+)
 dev.off()
 
 # Predict soil bulk density
 dsi_digits <- 2
 tmp <- predict(dsi_model, data = covariates[is_na_dsi, ])
 soildata[is_na_dsi, dsi := round(tmp$predictions, dsi_digits)]
-nrow(unique(soildata[, "id"])) # Result: 11 794
-nrow(soildata) # Result: 21 847
+nrow(unique(soildata[, "id"])) # Result: 11 751
+nrow(soildata) # Result: 21 750
 
 # Figure. Distribution of soil bulk density data
 png("res/fig/bulk_density_histogram.png", width = 480 * 3, height = 480 * 3, res = 72 * 3)
@@ -223,8 +247,10 @@ rug(soildata[!is_na_dsi, dsi])
 # Legend: bars contain all data points, while the rug plot shows only the non-missing values used
 # for model training
 legend("topright",
-  legend = c("All data (columns)", "Training data (rug)"), fill = c("gray", "black"),
-  border = "white", box.lwd = "white" 
+  legend = c("All data (columns)", "Training data (rug)"),
+  fill = c("gray", "black"),
+  border = "white",
+  box.lwd = 0 
 )
 dev.off()
 
