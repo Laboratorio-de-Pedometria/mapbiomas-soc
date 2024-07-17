@@ -128,14 +128,14 @@ unique(soildata[BHRZN == "TRUE", camada_nome])
 unique(soildata[BHRZN == "FALSE", camada_nome])
 summary(soildata[, as.factor(BHRZN)])
 
+# DENSIC
 # Dense horizon
-soildata[grepl("t", camada_nome), BHRZN_DENSE := TRUE]
-soildata[grepl("v", camada_nome), BHRZN_DENSE := TRUE]
-soildata[grepl("pl", camada_nome), BHRZN_DENSE := TRUE]
-soildata[grepl("n", camada_nome), BHRZN_DENSE := TRUE]
-soildata[is.na(BHRZN_DENSE), BHRZN_DENSE := FALSE]
-soildata[camada_nome == "???", BHRZN_DENSE := NA]
-summary(soildata$BHRZN_DENSE)
+soildata[grepl("tg", camada_nome), DENSIC := TRUE]
+soildata[grepl("v", camada_nome), DENSIC := TRUE]
+soildata[grepl("n", camada_nome), DENSIC := TRUE]
+soildata[is.na(DENSIC), DENSIC := FALSE]
+soildata[camada_nome == "???", DENSIC := NA]
+summary(soildata$DENSIC)
 
 # EHRZN
 # E horizon (bivariate)
@@ -155,7 +155,16 @@ soildata <- soildata[order(id, camada_id)]
 soildata[, dsi_upper := shift(dsi, type = "lag"), by = id]
 soildata[, dsi_lower := shift(dsi, type = "lead"), by = id]
 
+# Silt to clay ratio
+soildata[silte > 0 & argila > 0, silt_clay_ratio := silte / argila]
+summary(soildata$silt_clay_ratio)
+
+# CEC to clay ratio
+soildata[ctc > 0 & argila > 0, cec_clay_ratio := ctc / argila]
+summary(soildata$cec_clay_ratio)
+
 # Write data to disk
+colnames(soildata)
 nrow(unique(soildata[, "id"])) # 11 751 events
 nrow(soildata) # 21 750 layers
 data.table::fwrite(soildata, "data/20_soildata_soc.txt", sep = "\t")
