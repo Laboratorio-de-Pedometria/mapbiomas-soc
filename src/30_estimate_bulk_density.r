@@ -229,6 +229,8 @@ legend("topright",
 dev.off()
 
 # Write data to disk
+colnames(soildata)
+soildata[, abs_error := NULL]
 nrow(soildata[is_na_dsi, ]) # 19 036 layers
 nrow(unique(soildata[, "id"])) # 11 751 events
 data.table::fwrite(soildata, "data/30_soildata_soc.txt", sep = "\t")
