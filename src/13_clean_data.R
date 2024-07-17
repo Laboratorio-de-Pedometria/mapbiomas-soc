@@ -8,6 +8,7 @@ rm(list = ls())
 if (!require("data.table")) {
   install.packages("data.table")
 }
+source("src/00_helper_functions.r")
 
 # Read SoilData data processed in the previous script
 soildata <- data.table::fread("data/12_soildata_soc.txt", sep = "\t")
@@ -151,7 +152,7 @@ max_thickness <- 50
 nrow(soildata[espessura > max_thickness, ]) # 507 layers
 soildata <- soildata[espessura <= max_thickness, ]
 nrow(unique(soildata[, "id"])) # 13 615 events
-nrow(soildata) # 24 103 layers
+nrow(soildata) # 25 103 layers
 
 # Update layer id
 # Sort each event (id) by layer depth (profund_sup and profund_inf)
@@ -324,5 +325,8 @@ nrow(soildata) # 21 750 layers
 nrow(unique(soildata[!is.na(coord_x) & !is.na(coord_y), "id"])) # 9452 events
 
 # Export cleaned data
-colnames(soildata)
+summary_soildata(soildata)
+# Layers: 21750
+# Events: 11751
+# Georeferenced events: 9452
 data.table::fwrite(soildata, "data/13_soildata_soc.txt", sep = "\t")
