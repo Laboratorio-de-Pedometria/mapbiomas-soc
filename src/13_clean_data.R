@@ -9,6 +9,9 @@ if (!require("data.table")) {
   install.packages("data.table")
 }
 
+# Source helper functions
+source("src/00_helper_functions.r")
+
 # Read SoilData data processed in the previous script
 soildata <- data.table::fread("data/12_soildata_soc.txt", sep = "\t")
 nrow(soildata) # 52 545 layers
@@ -324,5 +327,5 @@ nrow(soildata) # 21 750 layers
 nrow(unique(soildata[!is.na(coord_x) & !is.na(coord_y), "id"])) # 9452 events
 
 # Export cleaned data
-colnames(soildata)
+summary_soildata(soildata)
 data.table::fwrite(soildata, "data/13_soildata_soc.txt", sep = "\t")
