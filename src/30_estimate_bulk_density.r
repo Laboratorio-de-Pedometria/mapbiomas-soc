@@ -28,20 +28,6 @@ nrow(unique(soildata[is.na(dsi), "id"])) # Result: 10 476 events
 # SOIL COVARIATES
 # Endpoint (MUST BE CORRECTED IN PREVIOUS SCRIPT)
 soildata[is.na(endpoint), endpoint := 0]
-# Dense horizon
-soildata[, BHRZN_DENSE := NULL]
-soildata[grepl("tg", camada_nome), DENSE := TRUE]
-soildata[grepl("v", camada_nome), DENSE := TRUE]
-soildata[grepl("n", camada_nome), DENSE := TRUE]
-soildata[is.na(DENSE), DENSE := FALSE]
-soildata[camada_nome == "???", DENSE := NA]
-summary(soildata$DENSE)
-# ctc/argila ratio
-soildata[ctc > 0 & argila > 0, ctc_clay := ctc / argila]
-summary(soildata$ctc_clay)
-# silte/argila ratio
-soildata[silte > 0 & argila > 0, silte_clay := silte / argila]
-summary(soildata$silte_clay)
 
 # Set covariates
 colnames(soildata)
@@ -255,6 +241,8 @@ legend("topright",
 dev.off()
 
 # Write data to disk
-nrow(soildata[is_na_dsi, ]) # 19 036 layers
-nrow(unique(soildata[, "id"])) # 11 751 events
+summary_soildata(soildata)
+# Layers: 21750
+# Events: 11751
+# Georeferenced events: 9452
 data.table::fwrite(soildata, "data/30_soildata_soc.txt", sep = "\t")
