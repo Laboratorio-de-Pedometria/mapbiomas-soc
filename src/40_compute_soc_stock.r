@@ -1,3 +1,4 @@
+# title: SoilData - Soil Organic Carbon Stock
 # subtitle: Compute soil organic carbon stocks
 # author: Alessandro Samuel-Rosa and Taciara Zborowski Horst
 # data: 2024 CC-BY
@@ -95,7 +96,7 @@ soildata <- soildata[dataset_id != "ctb0599", ]
 # Projeto Caldeirão: caracterização e gênese das Terras Pretas de Índio na Amazônia
 soildata <- soildata[dataset_id != "ctb0018", ]
 nrow(unique(soildata[, "id"])) # Result: 10 378 events
-nrow(soildata) # Result: 16 742 layers
+nrow(soildata) # Result: 16 743 layers
 
 # Layers per event
 # Count the number of layers per event (id)
@@ -104,11 +105,12 @@ table(soildata[, n])
 #    1    2    3    4    5 
 # 5402 7392 3519  420   10 
 soildata[, n := NULL]
+
+# Write data to disk
+summary_soildata(soildata)
 # Layers: 16743
 # Events: 10378
 # Georeferenced events: 8311
-# Write data to disk
-summary_soildata(soildata)
 data.table::fwrite(soildata, "data/40_soildata_soc.txt", sep = "\t")
 
 # PREVIOUS /////////////////////////////////////////////////////////////////////////////////////////
