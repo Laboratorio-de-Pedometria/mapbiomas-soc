@@ -145,4 +145,7 @@ nrow(soildata) # 52 545 layers
 
 # Write data to disk
 summary_soildata(soildata)
+# Layers: 52545
+# Events: 15222
+# Georeferenced events: 12092
 data.table::fwrite(soildata, "data/12_soildata_soc.txt", sep = "\t")

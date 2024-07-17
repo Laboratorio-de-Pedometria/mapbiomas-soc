@@ -328,4 +328,7 @@ nrow(unique(soildata[!is.na(coord_x) & !is.na(coord_y), "id"])) # 9452 events
 
 # Export cleaned data
 summary_soildata(soildata)
+# Layers: 21750
+# Events: 11751
+# Georeferenced events: 9452
 data.table::fwrite(soildata, "data/13_soildata_soc.txt", sep = "\t")
