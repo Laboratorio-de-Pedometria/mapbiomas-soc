@@ -241,6 +241,7 @@ legend("topright",
 dev.off()
 
 # Write data to disk
+soildata[, abs_error := NULL]
 summary_soildata(soildata)
 # Layers: 21750
 # Events: 11751
