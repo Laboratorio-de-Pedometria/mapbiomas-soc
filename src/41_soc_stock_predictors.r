@@ -19,10 +19,6 @@ summary_soildata(soildata)
 # Events: 10378
 # Georeferenced events: 8311
 
-View(soildata[endpoint == 0, .(id, camada_id, profund_sup, profund_inf, soc_stock_kgm2, endpoint)])
-
-soildata[endpoint == 1, .(id, camada_id, profund_sup, profund_inf, soc_stock_kgm2, endpoint)]
-
 # Carbon stocks per event
 # Aggregation of carbon stocks in the top layer (0 to 30 cm) of each event
 # Computation of covariates
@@ -35,8 +31,8 @@ soildata_soc_stock <- soildata[
     # Profile wise predictor variables
     dataset_id = unique(dataset_id),
     year = as.integer(round(mean(data_coleta_ano, na.rm = TRUE))),
-    coord_x_utm = mean(coord_x_utm, na.rm = TRUE),
-    coord_y_utm = mean(coord_y_utm, na.rm = TRUE),
+    coord_x = mean(coord_x, na.rm = TRUE),
+    coord_y = mean(coord_y, na.rm = TRUE),
     br_state = unique(estado_id),
     max_depth = max(profund_inf),
     order = unique(ORDER),
@@ -46,7 +42,20 @@ soildata_soc_stock <- soildata[
   by = id
 ]
 
+# Set end point
+# If a profile has a max_depth of 30 cm, then set end_point to 1
+nrow(soildata_soc_stock[endpoint == 1, ]) # Result: 176 events
+soildata_soc_stock[max_depth == 30, endpoint := 1]
+nrow(soildata_soc_stock[endpoint == 1, ]) # Result: 6198 events
+nrow(soildata_soc_stock[is.na(endpoint), ]) # Result: 0 events
+soildata_soc_stock[is.na(endpoint), endpoint := 0]
 
+# Write data to disk
+summary_soildata(soildata_soc_stock)
+# Layers: 10378
+# Events: 10378
+# Georeferenced events: 8311
+data.table::fwrite(soildata_soc_stock, "data/41_soildata_soc.txt", sep = "\t")
 
 
 # PREVIOUS /////////////////////////////////////////////////////////////////////////////////////////
@@ -74,12 +83,12 @@ soildata_soc_stock <- soildata[
 #   by = id
 # ]
 # nrow(febr_data) # Result: 8904 events/layers
-
-if (FALSE) {
-  x11()
-  hist(febr_data[, cos_estoque_gm2] / 1000)
-  rug(febr_data[, cos_estoque_gm2] / 1000)
-}
+# 
+# if (FALSE) {
+#   x11()
+#   hist(febr_data[, cos_estoque_gm2] / 1000)
+#   rug(febr_data[, cos_estoque_gm2] / 1000)
+# }
 
 # Filter out duplicated events
 # Dataset ctb0829 used events from the RADAMBRASIL project. Those events are erroneously assigned
