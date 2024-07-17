@@ -11,6 +11,7 @@ if (!require("data.table")) {
 if (!require("sf")) {
   install.packages("sf")
 }
+source("src/00_helper_functions.r")
 
 # Read data processed in the previous script
 soildata <- data.table::fread("data/13_soildata_soc.txt", sep = "\t")
@@ -164,7 +165,8 @@ soildata[ctc > 0 & argila > 0, cec_clay_ratio := ctc / argila]
 summary(soildata$cec_clay_ratio)
 
 # Write data to disk
-colnames(soildata)
-nrow(unique(soildata[, "id"])) # 11 751 events
-nrow(soildata) # 21 750 layers
+summary_soildata(soildata)
+# Layers: 21750
+# Events: 11751
+# Georeferenced events: 9452
 data.table::fwrite(soildata, "data/20_soildata_soc.txt", sep = "\t")
