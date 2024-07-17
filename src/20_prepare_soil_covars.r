@@ -89,17 +89,17 @@ soildata[SUBORDER == "QUARTZARENICO", STONESOL := "FALSE"]
 soildata[SUBORDER == "HAPLICO", STONESOL := "FALSE"]
 summary(soildata[, as.factor(STONESOL)])
 
-# STONES
+# STONY
 # Soil layers known for having concretions, nodules, rock fragments, rock-like pedogenic layers, and
 # human artifacts (bivariate)
-soildata[, STONE := NA_character_]
-soildata[camada_nome != "UNKNOWN", STONES := "FALSE"]
-soildata[grepl("c", camada_nome, ignore.case = FALSE), STONES := "TRUE"]
-soildata[grepl("F", camada_nome, ignore.case = FALSE), STONES := "TRUE"]
+soildata[, STONY := NA_character_]
+soildata[camada_nome != "UNKNOWN", STONY := "FALSE"]
+soildata[grepl("c", camada_nome, ignore.case = FALSE), STONY := "TRUE"]
+soildata[grepl("F", camada_nome, ignore.case = FALSE), STONY := "TRUE"]
 soildata[grepl("^R$", camada_nome, ignore.case = FALSE, perl = TRUE), esqueleto := 1000]
-soildata[grepl("R", camada_nome, ignore.case = TRUE), STONES := "TRUE"]
-soildata[grepl("u", camada_nome, ignore.case = FALSE), STONES := "TRUE"]
-summary(soildata[, as.factor(STONES)])
+soildata[grepl("R", camada_nome, ignore.case = TRUE), STONY := "TRUE"]
+soildata[grepl("u", camada_nome, ignore.case = FALSE), STONY := "TRUE"]
+summary(soildata[, as.factor(STONY)])
 
 # ORGANIC
 # Organic layers (bivariate)
