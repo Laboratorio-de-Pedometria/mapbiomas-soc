@@ -17,8 +17,10 @@ source("src/00_helper_functions.r")
 
 # Read data from disk
 soildata <- data.table::fread("data/21_soildata_soc.txt", sep = "\t", na.strings = c("NA", ""))
-nrow(unique(soildata[, "id"])) # Result: 11 751 events
-nrow(soildata) # Result: 21 750 layers
+summary_soildata(soildata)
+# Layers: 21750
+# Events: 11751
+# Georeferenced events: 9452
 
 # Identify layers missing soil bulk density data
 is_na_dsi <- is.na(soildata[["dsi"]])
@@ -148,6 +150,8 @@ print(dsi_model)
 
 # Compute regression model statistics
 dsi_model_stats <- error_statistics(soildata[!is_na_dsi, dsi], dsi_model$predictions)
+# Write model statistics to disk
+data.table::fwrite(dsi_model_stats, "res/tab/bulk_density_model_statistics.txt", sep = "\t")
 print(round(dsi_model_stats, 2))
 
 # Write model parameters to disk
