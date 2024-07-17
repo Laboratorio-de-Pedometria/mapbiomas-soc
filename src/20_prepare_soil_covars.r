@@ -12,6 +12,9 @@ if (!require("sf")) {
   install.packages("sf")
 }
 
+# Source helper functions
+source("src/00_helper_functions.r")
+
 # Read data processed in the previous script
 soildata <- data.table::fread("data/13_soildata_soc.txt", sep = "\t")
 nrow(unique(soildata[, "id"])) # 11 751 events
@@ -89,17 +92,17 @@ soildata[SUBORDER == "QUARTZARENICO", STONESOL := "FALSE"]
 soildata[SUBORDER == "HAPLICO", STONESOL := "FALSE"]
 summary(soildata[, as.factor(STONESOL)])
 
-# STONES
+# STONY
 # Soil layers known for having concretions, nodules, rock fragments, rock-like pedogenic layers, and
 # human artifacts (bivariate)
-soildata[, STONES := NA_character_]
-soildata[camada_nome != "UNKNOWN", STONES := "FALSE"]
-soildata[grepl("c", camada_nome, ignore.case = FALSE), STONES := "TRUE"]
-soildata[grepl("F", camada_nome, ignore.case = FALSE), STONES := "TRUE"]
+soildata[, STONY := NA_character_]
+soildata[camada_nome != "UNKNOWN", STONY := "FALSE"]
+soildata[grepl("c", camada_nome, ignore.case = FALSE), STONY := "TRUE"]
+soildata[grepl("F", camada_nome, ignore.case = FALSE), STONY := "TRUE"]
 soildata[grepl("^R$", camada_nome, ignore.case = FALSE, perl = TRUE), esqueleto := 1000]
-soildata[grepl("R", camada_nome, ignore.case = TRUE), STONES := "TRUE"]
-soildata[grepl("u", camada_nome, ignore.case = FALSE), STONES := "TRUE"]
-summary(soildata[, as.factor(STONES)])
+soildata[grepl("R", camada_nome, ignore.case = TRUE), STONY := "TRUE"]
+soildata[grepl("u", camada_nome, ignore.case = FALSE), STONY := "TRUE"]
+summary(soildata[, as.factor(STONY)])
 
 # ORGANIC
 # Organic layers (bivariate)
@@ -155,7 +158,28 @@ soildata <- soildata[order(id, camada_id)]
 soildata[, dsi_upper := shift(dsi, type = "lag"), by = id]
 soildata[, dsi_lower := shift(dsi, type = "lead"), by = id]
 
+# DENSIC
+# Dense horizon (bivariate)
+soildata[grepl("tg", camada_nome), DENSIC := TRUE]
+soildata[grepl("v", camada_nome), DENSIC := TRUE]
+soildata[grepl("n", camada_nome), DENSIC := TRUE]
+soildata[is.na(DENSIC), DENSIC := FALSE]
+soildata[camada_nome == "???", DENSIC := NA]
+summary(soildata$DENSIC)
+
+# cec/clay ratio
+# Cation exchange capacity (ctc) to clay ratio
+soildata[ctc > 0 & argila > 0, cec_clay_ratio := ctc / argila]
+summary(soildata$cec_clay_ratio)
+
+# silt/clay ratio
+# Silt to clay ratio
+soildata[silte > 0 & argila > 0, silt_clay_ratio := silte / argila]
+summary(soildata$silt_clay_ratio)
+
 # Write data to disk
-nrow(unique(soildata[, "id"])) # 11 751 events
-nrow(soildata) # 21 750 layers
+summary_soildata(soildata)
+# Layers: 21750
+# Events: 11751
+# Georeferenced events: 9452
 data.table::fwrite(soildata, "data/20_soildata_soc.txt", sep = "\t")
