@@ -12,6 +12,10 @@ if (!require("randomForestSRC")) {
   install.packages("randomForestSRC")
   library(randomForestSRC)
 }
+if (!require("ranger")) {
+  install.packages("ranger")
+  library(ranger)
+}
 
 # Source helper functions
 source("src/00_helper_functions.r")
@@ -58,3 +62,66 @@ soc_stock_survival <- randomForestSRC::rfsrc(
   # ntime = seq_len(ceiling(max(soildata_mia[, soc_stock_kgm2]))),
   # save.memory = TRUE
 )
+# Save the model
+saveRDS(soc_stock_survival, "data/42_soc_stock_survival.rds")
+print(soc_stock_survival)
+
+# Save figure with error rate
+file_path <- "res/fig/42_soc_stock_survival_error_rate.png"
+png(file_path, width = 480 * 2, height = 480 * 2 , res = 72 * 2)
+plot(soc_stock_survival)
+grid(col = "gray")
+dev.off()
+
+# Compute and save variable importance
+soc_stock_survival_vimp <- randomForestSRC::vimp(soc_stock_survival)
+print(soc_stock_survival_vimp)
+saveRDS(soc_stock_survival_vimp, "data/42_soc_stock_survival_vimp.rds")
+
+# Save figure with variable importance
+file_path <- "res/fig/42_soc_stock_survival_vimp.png"
+png(file_path, width = 480 * 2, height = 480 * 2, res = 72 * 2)
+par(mar = c(4, 7, 2, 2))
+barplot(
+  sort(soc_stock_survival_vimp$importance, decreasing = FALSE),
+  horiz = TRUE, las = 1, border = "gray", col = "gray", xlab = "Variable importance"
+)
+grid(nx = NULL, ny = NA, col = "gray")
+dev.off()
+
+
+
+
+# Predict SOC stock of censored events using the survival function
+str(soc_stock_survival)
+idx_censored <- which(soc_stock_survival$yvar$endpoint == 0)
+i <- 3000
+soildata[idx_censored[i], ]
+# x11()
+par(mfrow = c(1, 2))
+# Survival
+plot(
+  x = soc_stock_survival$time.interest,
+  y = soc_stock_survival[["survival"]][idx_censored[i], ],
+  type = "b", xlab = "Time", ylab = "Survival", cex = 0.5,
+  ylim = c(0, 1), main = "Survival"
+)
+grid()
+abline(h = 0.5, col = "red", lty = 2)
+abline(v = soc_stock_survival$yvar$soc_stock_kgm2[idx_censored[i]], col = "blue", lty = 2)
+idx_min_50 <- which.min(abs(soc_stock_survival[["survival"]][idx_censored[i], ] - 0.5))
+new_soc_stock <- soc_stock_survival$time.interest[idx_min_50]
+abline(v = new_soc_stock, col = "purple", lty = 2)
+# Survival OOB
+plot(
+  x = soc_stock_survival$time.interest,
+  y = soc_stock_survival[["survival.oob"]][idx_censored[i], ],
+  type = "b", xlab = "Time", ylab = "Survival", cex = 0.5,
+  ylim = c(0, 1), main = "Survival OOB"
+)
+grid()
+abline(h = 0.5, col = "red", lty = 2)
+abline(v = soc_stock_survival$yvar$soc_stock_kgm2[idx_censored[i]], col = "blue", lty = 2)
+idx_min_50 <- which.min(abs(soc_stock_survival[["survival.oob"]][idx_censored[i], ] - 0.5))
+new_soc_stock <- soc_stock_survival$time.interest[idx_min_50]
+abline(v = new_soc_stock, col = "purple", lty = 2)
