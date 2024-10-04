@@ -42,3 +42,4 @@ tmp/*.csv
 data/*.txt
 res/fig/*.png
 res/tab/*.txt
+data/*.rds
