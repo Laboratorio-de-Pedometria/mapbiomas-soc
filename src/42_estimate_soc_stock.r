@@ -12,10 +12,6 @@ if (!require("randomForestSRC")) {
   install.packages("randomForestSRC")
   library(randomForestSRC)
 }
-if (!require("ranger")) {
-  install.packages("ranger")
-  library(ranger)
-}
 
 # Source helper functions
 source("src/00_helper_functions.r")
@@ -26,6 +22,12 @@ summary_soildata(soildata)
 # Layers: 10378
 # Events: 10378
 # Georeferenced events: 8311
+
+# Fix NAs
+soildata[order == "", order := NA_character_]
+soildata[suborder == "", suborder := NA_character_]
+soildata[lulc == "", lulc := NA_character_]
+soildata[br_state == "", br_state := NA_character_]
 
 # Missingness
 # Select all columns of soildata, except id, soc_stock_kgm2, and endpoint
@@ -83,12 +85,15 @@ file_path <- "res/fig/42_soc_stock_survival_vimp.png"
 png(file_path, width = 480 * 2, height = 480 * 2, res = 72 * 2)
 par(mar = c(4, 7, 2, 2))
 barplot(
-  sort(soc_stock_survival_vimp$importance, decreasing = FALSE),
+  sort(soc_stock_survival_vimp$importance[1:10], decreasing = FALSE),
   horiz = TRUE, las = 1, border = "gray", col = "gray", xlab = "Variable importance"
 )
 grid(nx = NULL, ny = NA, col = "gray")
 dev.off()
 
+
+
+# 
 
 
 
