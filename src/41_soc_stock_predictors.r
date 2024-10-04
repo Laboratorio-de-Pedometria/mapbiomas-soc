@@ -31,16 +31,38 @@ soildata_soc_stock <- soildata[
     # Profile wise predictor variables
     dataset_id = unique(dataset_id),
     year = as.integer(round(mean(data_coleta_ano, na.rm = TRUE))),
-    coord_x = mean(coord_x, na.rm = TRUE),
-    coord_y = mean(coord_y, na.rm = TRUE),
+    coord_x = mean(coord_x_utm, na.rm = TRUE),
+    coord_y = mean(coord_y_utm, na.rm = TRUE),
     br_state = unique(estado_id),
     max_depth = max(profund_inf),
     order = unique(ORDER),
     suborder = unique(SUBORDER),
-    lulc = unique(lulc)
+    stonesol = unique(STONESOL),
+    lulc = unique(lulc),
+    # Layer wise predictor variables
+    # Value of the topmost layer (camada_id == 1) of the profile
+    fines_1 = terrafina[camada_id == 1],
+    clay_1 = argila[camada_id == 1],
+    silt_1 = silte[camada_id == 1],
+    sand_1 = areia[camada_id == 1],
+    carbon_1 = carbono[camada_id == 1],
+    cec_1 = ctc[camada_id == 1],
+    ph_1 = ph[camada_id == 1],
+    dsi_1 = dsi[camada_id == 1],
+    depth_top_1 = profund_sup[camada_id == 1],
+    depth_mid_1 = (profund_sup[camada_id == 1] + profund_inf[camada_id == 1]) / 2,
+    depth_bottom_1 = profund_inf[camada_id == 1],
+    stony_1 = STONY[camada_id == 1],
+    organic_1 = ORGANIC[camada_id == 1],
+    ahrzn_1 = AHRZN[camada_id == 1],
+    bhrzn_1 = BHRZN[camada_id == 1],
+    ehrzn_1 = EHRZN[camada_id == 1],
+    cec_clay_1 = cec_clay_ratio[camada_id == 1],
+    silt_clay_1 = silt_clay_ratio[camada_id == 1]
   ),
   by = id
 ]
+print(soildata_soc_stock)
 
 # Set end point
 # If a profile has a max_depth of 30 cm, then set end_point to 1
