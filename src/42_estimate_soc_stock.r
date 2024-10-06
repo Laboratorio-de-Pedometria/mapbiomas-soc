@@ -50,9 +50,16 @@ colnames(soildata_mia)
 # ?randomForestSRC::rfsrc
 # Set maximum number of trees
 # num_trees <- ceiling(nrow(soildata_mia) * 0.25) # Result: 1509
+cols_skip <- c(
+  "id"
+  # "year",
+  # "dataset_id",
+  # "coord_x_isna", "coord_x_minf", "coord_x_pinf",
+  # "coord_y_isna", "coord_y_minf", "coord_y_pinf"
+)
 set.seed(1984)
 soc_stock_survival <- randomForestSRC::rfsrc(
-  Surv(soc_stock_kgm2, endpoint) ~ ., soildata_mia[, !"id"],
+  Surv(soc_stock_kgm2, endpoint) ~ ., soildata_mia[, !..cols_skip],
   ntree = 200, # Number of trees to grow
   nodesize = 15,
   nsplit = 10, # Non-negative integer specifying number of random splits for splitting a variable
@@ -81,11 +88,12 @@ print(soc_stock_survival_vimp)
 saveRDS(soc_stock_survival_vimp, "data/42_soc_stock_survival_vimp.rds")
 
 # Save figure with variable importance
+var_imp <- sort(soc_stock_survival_vimp$importance, decreasing = TRUE)[1:20]
 file_path <- "res/fig/42_soc_stock_survival_vimp.png"
 png(file_path, width = 480 * 2, height = 480 * 2, res = 72 * 2)
-par(mar = c(4, 7, 2, 2))
+par(mar = c(4, 9, 2, 2))
 barplot(
-  sort(soc_stock_survival_vimp$importance[1:10], decreasing = FALSE),
+  sort(var_imp, decreasing = FALSE),
   horiz = TRUE, las = 1, border = "gray", col = "gray", xlab = "Variable importance"
 )
 grid(nx = NULL, ny = NA, col = "gray")
@@ -93,15 +101,16 @@ dev.off()
 
 
 
-# 
+#
 
+which(apply(soc_stock_survival[["survival"]][idx_censored, ], 1, function(x) any(x < 0.5)))
 
 
 # Predict SOC stock of censored events using the survival function
 str(soc_stock_survival)
 idx_censored <- which(soc_stock_survival$yvar$endpoint == 0)
-i <- 3000
-soildata[idx_censored[i], ]
+i <- 157
+soildata[idx_censored[i], 1:10]
 # x11()
 par(mfrow = c(1, 2))
 # Survival
