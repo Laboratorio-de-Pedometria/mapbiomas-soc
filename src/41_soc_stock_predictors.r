@@ -115,6 +115,9 @@ soildata_soc_stock <- soildata[
   ),
   by = id
 ]
+# Estimate the maximum SOC stock in the top layer (0 to 30 cm) of each event assuming a constant
+# SOC density
+soildata_soc_stock[, round(max_stock := soc_stock_kgm2 / max_depth * 30, 1)]
 print(soildata_soc_stock)
 
 # Set end point
@@ -131,7 +134,6 @@ summary_soildata(soildata_soc_stock)
 # Events: 10378
 # Georeferenced events: 8311
 data.table::fwrite(soildata_soc_stock, "data/41_soildata_soc.txt", sep = "\t")
-
 
 # PREVIOUS /////////////////////////////////////////////////////////////////////////////////////////
 # # Agregar estoque de carbono na camada superficial (0 até 30 cm) de cada evento
