@@ -68,8 +68,20 @@ str(eventRO)
 eventRO[observacao_id == "RO2656", coord_x := -61.306907]
 eventRO[observacao_id == "RO2656", coord_y := -13.485739]
 
+# RO2953: -9.765833 -65.73528 (original)
+# The sample location is in Bolivia, close to the Brazilian border
+# It is possible that the authors of the data collected the soil samples in Bolivian territory,
+# for example, due to ease of access.
+# There is no additional information in the dataset to confirm this hypothesis.
+# The coordinates were changed to a location in Rondônia, Brazil.
+# -9.764905, -65.735686
+google_maps(eventRO[observacao_id == "RO2953", ])
+eventRO[observacao_id == "RO2953", coord_x := -65.735686]
+eventRO[observacao_id == "RO2953", coord_y := -9.764905]
+
 # Attribute sampling date to events with missing data
-eventRO[!is.na(data_coleta_ano), data_coleta_ano := 1996]
+target_year <- 1996
+eventRO[!is.na(data_coleta_ano), data_coleta_ano := target_year]
 
 # Download current version from FEBR: layers
 # ctb0033
@@ -141,14 +153,18 @@ extra_coords <- sf::st_coordinates(extra_coords)
 rondonia[EXTRA == TRUE & !is.na(coord_x), coord_x := extra_coords[, "X"]]
 rondonia[EXTRA == TRUE & !is.na(coord_x), coord_y := extra_coords[, "Y"]]
 rondonia[, EXTRA := NULL]
-nrow(rondonia) # 10 789 layers
-nrow(unique(rondonia[, "id"])) # 3061 events
+summary_soildata(rondonia)
+# Layers: 10789
+# Events: 3061
+# Georeferenced events: 2962
 
 # Read SoilData data processed in the previous script
 soildata <- data.table::fread("data/10_soildata_soc.txt", sep = "\t")
 soildata[, coord_datum_epsg := 4326]
-nrow(soildata) # 50 404 layers
-length(unique(soildata[, id])) # 13 977 events
+summary_soildata(soildata)
+# Layers: 50404
+# Events: 13977
+# Georeferenced events: 10946
 if (FALSE) {
   x11()
   plot(soildata[, c("coord_x", "coord_y")])
@@ -161,12 +177,10 @@ soildata <- soildata[dataset_id != "ctb0032", ]
 length(unique(soildata[, id])) # 11 063 events
 col_ro <- intersect(names(soildata), names(rondonia))
 soildata <- data.table::rbindlist(list(soildata, rondonia[, ..col_ro]), fill = TRUE)
-length(unique(soildata[, id])) # 14 124 events
-nrow(soildata) # 50 319 layers
-
-# Write data to disk
 summary_soildata(soildata)
 # Layers: 50319
 # Events: 14124
 # Georeferenced events: 10994
+
+# Write data to disk
 data.table::fwrite(soildata, "data/11_soildata_soc.txt", sep = "\t")
