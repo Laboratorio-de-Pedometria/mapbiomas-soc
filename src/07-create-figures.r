@@ -25,7 +25,7 @@ southamerica <- rnaturalearth::ne_countries(continent = c("south america", "euro
 southamerica <- southamerica[, "iso_a2"]
 
 # Read data processed in the previous script
-febr_data <- data.table::fread("mapbiomas-soc/data/06-febr-data.txt", dec = ",", sep = "\t")
+febr_data <- data.table::fread("data/06-febr-data.txt", dec = ",", sep = "\t")
 colnames(febr_data)
 nrow(unique(febr_data[, "id"])) # Result: 8904 events
 nrow(febr_data) # Result: 8904 layers
@@ -201,3 +201,10 @@ table(febr_data_sf[["biome"]])
 # Areal density of points per biome
 round(table(febr_data_sf[["biome"]]) / (as.numeric(sf::st_area(biomes)) / (1000 * 1000 * 1000)), 1)
 round(table(febr_data_sf[["biome"]]) / (2022 - 1985))
+
+
+febr_data <- data.table::fread("res/tab/2023-05-19-pontos-estoque-cos.csv", sep = ",")
+febr_data <- sf::st_as_sf(febr_data, coords = c("coord_x", "coord_y"), crs = 4326)
+x11()
+plot(febr_data["cos_estoque_gm2"])
+mapview::mapview(febr_data["cos_estoque_gm2"])
