@@ -23,7 +23,8 @@ summary_soildata(soildata)
 na_carbon <- soildata[is.na(carbono), .N, by = dataset_id]
 na_carbon[N > 50]
 
-# ctb0006
+# ctb0006 ##########################################################################################
+
 # ownCloud/febr-repo/publico/ctb0006/ctb0006-observacao.txt
 file_path <- path.expand("~/ownCloud/febr-repo/publico/ctb0006/ctb0006-observacao.txt")
 ctb0006_event <- data.table::fread(file_path, dec = ",")
@@ -98,6 +99,10 @@ print(ctb0006_layer)
 
 # Merge events and layers
 ctb0006 <- merge(ctb0006_event, ctb0006_layer, all = TRUE)
+summary_soildata(ctb0006)
+# Layers: 826
+# Events: 605
+# Georeferenced events: 605
 
 # Convert to sf and check if the data is correctly georeferenced
 if (FALSE) {
@@ -106,15 +111,118 @@ if (FALSE) {
 }
 
 # Replace the dataset in the soildata object
+summary_soildata(soildata)
+# Layers: 52545
+# Events: 15222
+# Georeferenced events: 12092
 soildata <- soildata[dataset_id != "ctb0006"]
+summary_soildata(soildata)
+# Layers: 52252
+# Events: 15150
+# Georeferenced events: 12020
 which_cols <- colnames(ctb0006) %in% colnames(soildata)
 soildata <- rbind(soildata, ctb0006[, ..which_cols])
-
-# Export cleaned data
 summary_soildata(soildata)
 # Layers: 53078
 # Events: 15755
 # Georeferenced events: 12625
+
+# ctb0025 ##########################################################################################
+# ownCloud/febr-repo/publico/ctb0025/ctb0025-observacao.txt
+file_path <- path.expand("~/ownCloud/febr-repo/publico/ctb0025/ctb0025-observacao.txt")
+ctb0025_event <- data.table::fread(file_path, dec = ",")
+colnames(ctb0025_event)
+print(ctb0025_event)
+
+# Observations date
+ctb0025_event[, observacao_data := as.Date(observacao_data, origin = "1900-01-01", format = "%Y-%m-%d")]
+ctb0025_event[, data_coleta_ano := as.integer(format(observacao_data, "%Y"))]
+
+# Check if there is more than one coord_datum_epsg
+ctb0025_event[, .N, by = coord_datum_epsg]
+# Transform the coordinate reference system to EPSG:4326
+ctb0025_event <- sf::st_as_sf(ctb0025_event, coords = c("coord_longitude", "coord_latitude"), crs = 4674)
+ctb0025_event <- sf::st_transform(ctb0025_event, crs = 4326)
+if (FALSE) {
+  mapview::mapview(ctb0025_event)
+}
+dt <- data.table::as.data.table(ctb0025_event)
+xy <- sf::st_coordinates(ctb0025_event)
+ctb0025_event <- cbind(dt, coord_x = xy[, 1], coord_y = xy[, 2])
+ctb0025_event[, geometry := NULL]
+
+# Prepare columns names
+colnames(soildata)
+colnames(ctb0025_event)
+ctb0025_event[, dataset_id := "ctb0025"]
+ctb0025_event[, id := paste0(dataset_id, "-", observacao_id)]
+# estado_sigla -> estado_id
+data.table::setnames(ctb0025_event, old = "estado_sigla", new = "estado_id")
+# amostra_area
+ctb0025_event[, amostra_area := NA]
+# taxon_sibcs_2006 -> taxon_sibcs
+data.table::setnames(ctb0025_event, old = "taxon_sibcs_2006", new = "taxon_sibcs")
+
+# ownCloud/febr-repo/publico/ctb0025/ctb0025-camada.txt
+file_path <- path.expand("~/ownCloud/febr-repo/publico/ctb0025/ctb0025-camada.txt")
+ctb0025_layer <- data.table::fread(file_path, na.strings = c("NA", "NaN", "-"), sep = "\t")
+print(ctb0025_layer)
+
+# Prepare columns
+colnames(soildata)
+colnames(ctb0025_layer)
+ctb0025_layer[, profund_sup := as.numeric(profund_sup)]
+ctb0025_layer[, profund_inf := as.numeric(profund_inf)]
+# terrafina_peneira -> terrafina
+data.table::setnames(ctb0025_layer, old = "terrafina_peneira", new = "terrafina")
+ctb0025_layer[, terrafina := as.numeric(terrafina)]
+# argila_naoh_densimetro -> argila
+data.table::setnames(ctb0025_layer, old = "argila_naoh_densimetro", new = "argila")
+ctb0025_layer[, argila := as.numeric(argila)]
+# silte_0002mm0050mm_calc -> silte
+data.table::setnames(ctb0025_layer, old = "silte_0002mm0050mm_calc", new = "silte")
+ctb0025_layer[, silte := as.numeric(silte)]
+# areia
+ctb0025_layer[, areia := as.numeric(areia_0200mm2000mm_calc) + as.numeric(areia_0050mm0200mm_peneira)]
+# carbono_cromo_xxx_mohr -> carbono
+data.table::setnames(ctb0025_layer, old = "carbono_cromo_xxx_mohr", new = "carbono")
+ctb0025_layer[, carbono := as.numeric(carbono)]
+# ctc_soma_calc -> ctc
+data.table::setnames(ctb0025_layer, old = "ctc_soma_calc", new = "ctc")
+ctb0025_layer[, ctc := as.numeric(ctc)]
+# ph_h2o_25_eletrodo -> ph
+data.table::setnames(ctb0025_layer, old = "ph_h2o_25_eletrodo", new = "ph")
+ctb0025_layer[, ph := as.numeric(ph)]
+# dsi
+ctb0025_layer[, dsi := NA_real_]
+
+# Merge events and layers
+ctb0025 <- merge(ctb0025_event, ctb0025_layer, all = TRUE)
+summary_soildata(ctb0025)
+# Layers: 669
+# Events: 237
+# Georeferenced events: 237
+
+# Replace the dataset in the soildata object
+summary_soildata(soildata)
+# Layers: 53078
+# Events: 15755
+# Georeferenced events: 12625
+
+soildata <- soildata[dataset_id != "ctb0025"]
+summary_soildata(soildata)
+# Layers: 52483
+# Events: 15592
+# Georeferenced events: 12462
+
+which_cols <- colnames(ctb0025) %in% colnames(soildata)
+soildata <- rbind(soildata, ctb0025[, ..which_cols])
+summary_soildata(soildata)
+# Layers: 53152
+# Events: 15829
+# Georeferenced events: 12699
+
+# Export cleaned data
 data.table::fwrite(soildata, "data/13_soildata_soc.txt", sep = "\t")
 
 # ctb0004
@@ -127,9 +235,6 @@ data.table::fwrite(soildata, "data/13_soildata_soc.txt", sep = "\t")
 # evento
 # camada
 
-# ctb0025
-# /home/alessandro/ownCloud/febr-repo/publico/ctb0025
-# /home/alessandro/ownCloud/febr-repo/publico/ctb0025/ctb0025-observacao.txt
-# /home/alessandro/ownCloud/febr-repo/publico/ctb0025/ctb0025-camada.txt
+
 
 
