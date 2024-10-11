@@ -72,6 +72,8 @@ print(ctb0006_layer)
 # Prepare columns names
 colnames(soildata)
 colnames(ctb0006_layer)
+ctb0006_layer[, profund_sup := as.numeric(profund_sup)]
+ctb0006_layer[, profund_inf := as.numeric(profund_inf)]
 data.table::setnames(ctb0006_layer, old = "terrafina_xxx", new = "terrafina")
 ctb0006_layer[, terrafina := as.numeric(terrafina)]
 # argila_xxx_xxx -> argila
