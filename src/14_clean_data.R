@@ -368,19 +368,3 @@ summary_soildata(soildata)
 
 # Export cleaned data
 data.table::fwrite(soildata, "data/13_soildata_soc.txt", sep = "\t")
-
-
-
-# ###############
-soildata[is.na(carbono), unique(id)] # 2191 layers
-
-# ctb0004
-# 2PACX-1vTH9FV04ZPJeHZ0fK7IypABKSGm9NoWZkBKGqjH_TjIdhBo8Er_Fy25IstZp2cb9_Ts8CQ_L4SC78TT
-# evento (dados)
-# camada (dados)
-
-# ctb0006
-# /home/alessandro/ownCloud/febr-repo/publico/ctb0006
-# /home/alessandro/ownCloud/febr-repo/publico/ctb0006/ctb0006-camada.txt
-# /home/alessandro/ownCloud/febr-repo/publico/ctb0006/ctb0006-observacao.txt
-
