@@ -196,7 +196,7 @@ summary_soildata <- function(x, na.rm = TRUE) {
 # Browse Google Maps:
 # https://www.google.com.br/maps/place/-9.765833,-65.73528
 # x is a data frame
-google_maps <- function (x, coords = c("coord_x", "coord_y")) {
+google_maps <- function(x, coords = c("coord_x", "coord_y")) {
   x <- x[, ..coords]
   x <- as.data.frame(x)
   x <- setNames(x, c("lon", "lat"))
