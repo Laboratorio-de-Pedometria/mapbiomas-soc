@@ -84,12 +84,18 @@ data_event <- data.table::as.data.table(data_event)
 data_event[coord_datum_epsg != target_crs & !is.na(coord_datum_epsg), coord_datum_epsg := target_crs]
 data.table::setnames(data_event, old = c("X", "Y"), new = c("coord_x", "coord_y"))
 data_event[, geometry := NULL]
-nrow(data_event) # 1709 events
+summary_soildata(data_event)
+# Layers: 1709
+# Events: 1709
+# Georeferenced events: 1709
 
 # Clean sampling date (just to make sure)
 data_event[data_coleta_ano < 1950, data_coleta_ano := NA_integer_]
 data_event[data_coleta_ano > as.integer(format(Sys.time(), "%Y")), data_coleta_ano := NA_integer_]
-nrow(data_event) # 1709 events
+summary_soildata(data_event)
+# Layers: 1709
+# Events: 1709
+# Georeferenced events: 1709
 
 # Layers
 files_layer <- list.files(
@@ -119,8 +125,10 @@ if (!"terrafina" %in% colnames(soildata_01)) {
 if (!"camada_nome" %in% colnames(soildata_01)) {
   soildata_01[, camada_nome := NA_character_]
 }
-nrow(unique(soildata_01[, c("dataset_id", "id")])) # 1098 events
-nrow(soildata_01) # 2226 layers
+summary_soildata(soildata_01)
+# Layers: 2226
+# Events: 1098
+# Georeferenced events: 1098
 
 # Read SoilData data processed in the previous scripts
 soildata_02 <- data.table::fread("data/11_soildata_soc.txt", sep = "\t")
@@ -131,6 +139,7 @@ if (FALSE) {
   x11()
   plot(brazil, reset = FALSE, main = "")
   points(soildata_02[, coord_x], soildata_02[, coord_y], cex = 0.5, pch = 20)
+  points(soildata_01[, coord_x], soildata_01[, coord_y], cex = 0.5, pch = 20, col = "red")
 }
 
 # Merge SoilData data with external data
@@ -140,12 +149,10 @@ idx <- match(colnames(soildata_02), colnames(soildata_01))
 idx01 <- na.exclude(idx)
 idx02 <- which(!is.na(idx))
 soildata <- rbind(soildata_02[, ..idx02], soildata_01[, ..idx01])
-nrow(unique(soildata[, "id"])) # 15 222 events
-nrow(soildata) # 52 545 layers
-
-# Write data to disk
 summary_soildata(soildata)
 # Layers: 52545
 # Events: 15222
 # Georeferenced events: 12092
+
+# Write data to disk
 data.table::fwrite(soildata, "data/12_soildata_soc.txt", sep = "\t")
