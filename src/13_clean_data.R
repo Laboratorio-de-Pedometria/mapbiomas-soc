@@ -14,25 +14,41 @@ source("src/00_helper_functions.r")
 
 # Read SoilData data processed in the previous script
 soildata <- data.table::fread("data/12_soildata_soc.txt", sep = "\t")
-nrow(soildata) # 52 545 layers
-nrow(unique(soildata[, "id"])) # 15 222 events
+summary_soildata(soildata)
+# Layers: 52545
+# Events: 15222
+# Georeferenced events: 12092
 
 # Clean datasets
 # ctb0001
+# Conteúdo de ferro do solo sob dois sistemas de cultivo na Estação Experimental Terras Baixas nos
+# anos de 2012 e 2013
 soildata <- soildata[dataset_id != "ctb0001", ]
 
 # ctb0009
-# title: Variáveis pedogeoquímicas e mineralógicas na identificação de fontes de sedimentos em uma
+# Variáveis pedogeoquímicas e mineralógicas na identificação de fontes de sedimentos em uma
 # bacia hidrográfica de encosta
-# description: Soil data() from roadsides and riversides. The data, however, is not yet available.
+# Contains soil data from roadsides and riversides. The data, however, is not yet available.
 soildata <- soildata[dataset_id != "ctb0009", ]
 
-# ctb0654 (duplicate of ctb0608)
+# ctb0026
+# Conteúdo de ferro do solo no ano de 1998
+soildata <- soildata[dataset_id != "ctb0026", ]
+
+# ctb0654 (exact duplicate of ctb0608)
+# Conjunto de dados do 'V Reunião de Classificação, Correlação e Aplicação de Levantamentos de Solo
+#  - guia de excursão de estudos de solos nos Estados de Pernambuco, Paraíba, Rio Grande do Norte,
+# Ceará e Bahia'
 soildata <- soildata[dataset_id != "ctb0654", ]
+
 # ctb0800 (many duplicates of ctb0702)
+# Estudos pedológicos e suas relações ambientais
 soildata <- soildata[dataset_id != "ctb0800", ]
-nrow(unique(soildata[, "id"])) # 14 962 events
-nrow(soildata) # 51 800 layers
+
+summary_soildata(soildata)
+# Layers: 51742
+# Events: 14904
+# Georeferenced events: 11775
 
 # Clean layers
 
@@ -41,7 +57,7 @@ nrow(soildata) # 51 800 layers
 # when the soil surface is moved to the top of organic layers.
 # We start by identifying layers with profund_sup == 0, carbono == NA, and H or O in camada_nome.
 # Then we correct the layer limits accordingly. Finally, we filter out layers with profund_sup < 0,
-# i.e. the organic topsoil layers (litter)..
+# i.e. the organic topsoil layers (litter).
 soildata[
   ,
   organic := any(profund_sup == 0 & is.na(carbono) &
@@ -54,8 +70,10 @@ soildata[organic == TRUE, profund_inf := profund_inf - min(profund_inf), by = id
 # Filter out layers with profund_sup < 0
 soildata <- soildata[profund_sup >= 0, ]
 soildata[, organic := NULL]
-nrow(unique(soildata[, "id"])) # 14 075 events
-nrow(soildata) # 50 487 layers
+summary_soildata(soildata)
+# Layers: 50429
+# Events: 14017
+# Georeferenced events: 11547
 
 # Layer limits
 # Some layers have equal values for profund_sup and profund_inf, generally the lowermost layer.
@@ -72,6 +90,8 @@ nrow(soildata[profund_sup == profund_inf]) # 69 layers
 # ATTENTION: SOME LAYERS HAVE THE DEPTH LIMITS EQUAL TO ZERO! THIS IS A PROBLEM THAT NEEDS TO BE
 # SOLVED IN THE FUTURE.
 soildata[profund_sup == profund_inf & profund_sup == 0, .(id, camada_nome, profund_sup, profund_inf)]
+soildata[id == "ctb0025-Perfil-22" & camada_nome == "Ap", profund_inf := 30]
+soildata[id == "ctb0025-Perfil-8" & camada_nome == "Ap", profund_inf := 20]
 
 # Layer id
 # Sort each event (id) by layer depth (profund_sup and profund_inf)
@@ -93,8 +113,10 @@ print(soildata[repeated == TRUE, .(id, camada_nome, profund_sup, profund_inf, ca
 print(soildata[id == "ctb0055-PR_4", .(id, camada_nome, profund_sup, profund_inf, carbono)])
 soildata <- soildata[repeated == FALSE, ]
 soildata[, repeated := NULL]
-nrow(unique(soildata[, "id"])) # 14 075 events
-nrow(soildata) # 49 772 layers
+summary_soildata(soildata)
+# Layers: 49714
+# Events: 14017
+# Georeferenced events: 11532
 
 # Soil end point (<= 30 cm)
 # The variable 'endpoint' identifies if the soil profile sampling and description went all the way
@@ -124,10 +146,12 @@ print(soildata[endpoint == 1, .(id, camada_nome, profund_sup, profund_inf, carbo
 # Filter out soil layers starting below a maximum depth of 30 cm
 # We work only with data from the first 30 cm and deeper layers that start at or before 30 cm.
 max_depth <- 30
-nrow(soildata[profund_sup >= max_depth, ]) # 27 590 layers with profund_sup >= 30
+nrow(soildata[profund_sup >= max_depth, ]) # 27532 layers with profund_sup >= 30
 soildata <- soildata[profund_sup >= 0 & profund_sup <= max_depth, ]
-nrow(unique(soildata[, "id"])) # 13 846 events
-nrow(soildata) # 26 011 layers
+summary_soildata(soildata)
+# Layers: 26011
+# Events: 13846
+# Georeferenced events: 11414
 
 # Adjacent layers
 # For each event (id), profund_inf of layer i should be equal to profund_sup of layer i + 1.
@@ -139,15 +163,19 @@ soildata[abs(diff) %in% 1:10, profund_inf := profund_inf + (diff * -1)]
 soildata[, diff10 := any(diff > 10), id]
 nrow(soildata[diff10 == TRUE, ]) # 336 layers
 soildata <- soildata[diff10 == FALSE | is.na(diff10), ]
-nrow(unique(soildata[, "id"])) # 13 736 events
-nrow(soildata) # 25 675 layers
+summary_soildata(soildata)
+# Layers: 25675
+# Events: 13736
+# Georeferenced events: 11378
 soildata[, diff := NULL]
 soildata[, diff10 := NULL]
 
 # Filter out layers with profund_sup == profund_inf
 soildata <- soildata[profund_sup < profund_inf, ]
-nrow(unique(soildata[, "id"])) # 13 707 events
-nrow(soildata) # 25 610 layers
+summary_soildata(soildata)
+# Layers: 25612
+# Events: 13707
+# Georeferenced events: 11354
 
 # Thickness
 # Compute layer thickness
@@ -160,8 +188,10 @@ soildata[, espessura := profund_inf - profund_sup]
 max_thickness <- 50
 nrow(soildata[espessura > max_thickness, ]) # 507 layers
 soildata <- soildata[espessura <= max_thickness, ]
-nrow(unique(soildata[, "id"])) # 13 615 events
-nrow(soildata) # 24 103 layers
+summary_soildata(soildata)
+# Layers: 25105
+# Events: 13616
+# Georeferenced events: 11286
 
 # Update layer id
 # Sort each event (id) by layer depth (profund_sup and profund_inf)
@@ -175,14 +205,16 @@ soildata[, camada_id := 1:.N, by = id]
 # subsurface horizons. 
 # Filter out whole events without a topsoil layer.
 soildata[, topsoil := any(profund_sup == 0), by = id]
-nrow(unique(soildata[topsoil != TRUE, "id"])) # 571 events
+nrow(unique(soildata[topsoil != TRUE, "id"])) # 570 events
 soildata <- soildata[topsoil == TRUE, ]
-nrow(unique(soildata[, "id"])) # 13 044 events
-nrow(soildata) # 24 142 layers
 soildata[, topsoil := NULL]
+summary_soildata(soildata)
+# Layers: 24145
+# Events: 13046
+# Georeferenced events: 10747
 
 # Fine earth
-# Correct samples with terrafina = 0 g/kg
+# Correct samples with terrafina == 0 g/kg
 # It is assumed that these are samples with missing data and that, when missing, the value of fine
 # earth is 1000 g/kg.
 nrow(soildata[terrafina == 0, ]) # 8 samples with terrafina == 0
@@ -314,7 +346,7 @@ soildata[id == "ctb0605-P-06" & camada_id == 2, dsi := 1.32]
 soildata_events <- soildata[!is.na(coord_x) & !is.na(coord_y) & !is.na(data_coleta_ano), id[1],
   by = c("dataset_id", "observacao_id", "coord_x", "coord_y", "data_coleta_ano")
 ]
-nrow(soildata_events) # 9653 events
+nrow(soildata_events) # 9655 events
 test_columns <- c("coord_x", "coord_y", "data_coleta_ano")
 duplo <- duplicated(soildata_events[, ..test_columns])
 sum(duplo) # 274 duplicated events
@@ -329,13 +361,26 @@ sum(duplo) # 201 duplicated events
 # Remove remaining duplicated events
 duplo <- soildata_events[duplo, V1]
 soildata <- soildata[!id %in% duplo, ] # remove duplicated events
-nrow(unique(soildata[, "id"])) # 11 751 events
-nrow(soildata) # 21 750 layers
-nrow(unique(soildata[!is.na(coord_x) & !is.na(coord_y), "id"])) # 9452 events
+summary_soildata(soildata)
+# Layers: 21753
+# Events: 11753
+# Georeferenced events: 9454
 
 # Export cleaned data
-summary_soildata(soildata)
-# Layers: 21750
-# Events: 11751
-# Georeferenced events: 9452
 data.table::fwrite(soildata, "data/13_soildata_soc.txt", sep = "\t")
+
+
+
+# ###############
+soildata[is.na(carbono), unique(id)] # 2191 layers
+
+# ctb0004
+# 2PACX-1vTH9FV04ZPJeHZ0fK7IypABKSGm9NoWZkBKGqjH_TjIdhBo8Er_Fy25IstZp2cb9_Ts8CQ_L4SC78TT
+# evento (dados)
+# camada (dados)
+
+# ctb0006
+# /home/alessandro/ownCloud/febr-repo/publico/ctb0006
+# /home/alessandro/ownCloud/febr-repo/publico/ctb0006/ctb0006-camada.txt
+# /home/alessandro/ownCloud/febr-repo/publico/ctb0006/ctb0006-observacao.txt
+
