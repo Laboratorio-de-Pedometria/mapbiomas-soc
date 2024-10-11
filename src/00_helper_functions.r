@@ -192,3 +192,14 @@ summary_soildata <- function(x, na.rm = TRUE) {
   cat("\nGeoreferenced events:", nrow(unique(x[!is.na(coord_x) & !is.na(coord_y), "id"])))
   cat("\n")
 }
+
+# Browse Google Maps:
+# https://www.google.com.br/maps/place/-9.765833,-65.73528
+# x is a data frame
+google_maps <- function (x, coords = c("coord_x", "coord_y")) {
+  x <- x[, ..coords]
+  x <- as.data.frame(x)
+  x <- setNames(x, c("lon", "lat"))
+  x <- paste0("https://www.google.com.br/maps/place/", x$lat, ",", x$lon)
+  browseURL(x)
+}
