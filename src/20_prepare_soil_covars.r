@@ -17,8 +17,10 @@ source("src/00_helper_functions.r")
 
 # Read data processed in the previous script
 soildata <- data.table::fread("data/13_soildata_soc.txt", sep = "\t")
-nrow(unique(soildata[, "id"])) # 11 751 events
-nrow(soildata) # 21 750 layers
+summary_soildata(soildata)
+# Layers: 21753
+# Events: 11753
+# Georeferenced events: 9454
 
 # Correct layer depth and name
 soildata[
