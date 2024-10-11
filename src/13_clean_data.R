@@ -20,6 +20,13 @@ nrow(unique(soildata[, "id"])) # 15 222 events
 # Clean datasets
 # ctb0001
 soildata <- soildata[dataset_id != "ctb0001", ]
+
+# ctb0009
+# title: Variáveis pedogeoquímicas e mineralógicas na identificação de fontes de sedimentos em uma
+# bacia hidrográfica de encosta
+# description: Soil data() from roadsides and riversides. The data, however, is not yet available.
+soildata <- soildata[dataset_id != "ctb0009", ]
+
 # ctb0654 (duplicate of ctb0608)
 soildata <- soildata[dataset_id != "ctb0654", ]
 # ctb0800 (many duplicates of ctb0702)
