@@ -82,8 +82,10 @@ ctb0004_layer[, camada_id := camada_nome]
 data.table::setnames(ctb0004_layer, old = "ID da amostra", new = "amostra_id")
 # Profundidade inicial [cm] -> profund_sup
 data.table::setnames(ctb0004_layer, old = "Profundidade inicial [cm]", new = "profund_sup")
+ctb0004_layer[, profund_sup := as.numeric(profund_sup)]
 # Profundidade final [cm] -> profund_inf
 data.table::setnames(ctb0004_layer, old = "Profundidade final [cm]", new = "profund_inf")
+ctb0004_layer[, profund_inf := as.numeric(profund_inf)]
 # terrafina
 ctb0004_layer[, terrafina := 1000]
 # Clay -> argila
@@ -301,8 +303,10 @@ ctb0007_layer[, camada_id := camada_nome]
 data.table::setnames(ctb0007_layer, old = "ID da amostra", new = "amostra_id")
 # Profundidade inicial [cm] -> profund_sup
 data.table::setnames(ctb0007_layer, old = "Profundidade inicial [cm]", new = "profund_sup")
+ctb0007_layer[, profund_sup := as.numeric(profund_sup)]
 # Profundidade final [cm] -> profund_inf
 data.table::setnames(ctb0007_layer, old = "Profundidade final [cm]", new = "profund_inf")
+ctb0007_layer[, profund_inf := as.numeric(profund_inf)]
 # terrafina
 ctb0007_layer[, terrafina := 1000]
 # Argila -> argila
@@ -408,8 +412,10 @@ ctb0011_layer[, camada_id := camada_nome]
 ctb0011_layer[, amostra_id := NA]
 # Limite Superior [cm] -> profund_sup
 data.table::setnames(ctb0011_layer, old = "Limite Superior [cm]", new = "profund_sup")
+ctb0011_layer[, profund_sup := as.numeric(profund_sup)]
 # Limite Inferior [cm] -> profund_inf
 data.table::setnames(ctb0011_layer, old = "Limite Inferior [cm]", new = "profund_inf")
+ctb0011_layer[, profund_inf := as.numeric(profund_inf)]
 # Terra fina [g/kg] -> terrafina
 data.table::setnames(ctb0011_layer, old = "Terra fina [g/kg]", new = "terrafina")
 # Argila [g/kg] -> argila
@@ -534,8 +540,10 @@ ctb0017_layer[, camada_id := camada_nome]
 data.table::setnames(ctb0017_layer, old = "ID da amostra", new = "amostra_id")
 # Profundidade inicial [cm] -> profund_sup
 data.table::setnames(ctb0017_layer, old = "Profundidade inicial [cm]", new = "profund_sup")
+ctb0017_layer[, profund_sup := as.numeric(profund_sup)]
 # Profundidade final [cm] -> profund_inf
 data.table::setnames(ctb0017_layer, old = "Profundidade final [cm]", new = "profund_inf")
+ctb0017_layer[, profund_inf := as.numeric(profund_inf)]
 # Terra fina (mm) [%] -> terrafina
 data.table::setnames(ctb0017_layer, old = "Terra fina (mm) [%]", new = "terrafina")
 ctb0017_layer[, terrafina := as.numeric(terrafina) * 10]
