@@ -24,14 +24,12 @@ na_carbon <- soildata[is.na(carbono), .N, by = dataset_id]
 na_carbon[N > 50]
 
 # ctb0004 ##########################################################################################
-
 # Google Sheet
-# Spreadsheet ID: 2PACX-1vTH9FV04ZPJeHZ0fK7IypABKSGm9NoWZkBKGqjH_TjIdhBo8Er_Fy25IstZp2cb9_Ts8CQ_L4SC78TT
+gs <- "17vSVemrAdkXL7il6x0729rd_fy7i9fga3uxdjwuUWWw"
 
 # evento
-# GID: 1628657862
-sheet_path <- "https://docs.google.com/spreadsheets/u/1/d/17vSVemrAdkXL7il6x0729rd_fy7i9fga3uxdjwuUWWw/export?format=tsv&id=17vSVemrAdkXL7il6x0729rd_fy7i9fga3uxdjwuUWWw&gid=1628657862"
-ctb0004_event <- data.table::fread(sheet_path, dec = ",", sep = "\t")
+gid <- 1628657862
+ctb0004_event <- google_sheet(gs, gid)
 colnames(ctb0004_event)
 print(ctb0004_event)
 
@@ -67,9 +65,8 @@ data.table::setnames(ctb0004_event, old = "Ano (coleta)", new = "data_coleta_ano
 data.table::setnames(ctb0004_event, old = "Datum (coord)", new = "coord_datum_epsg")
 
 # camada
-# GID: 771766248
-sheet_path <- "https://docs.google.com/spreadsheets/u/1/d/17vSVemrAdkXL7il6x0729rd_fy7i9fga3uxdjwuUWWw/export?format=tsv&id=17vSVemrAdkXL7il6x0729rd_fy7i9fga3uxdjwuUWWw&gid=771766248"
-ctb0004_layer <- data.table::fread(sheet_path, dec = ",", sep = "\t")
+gid <- 771766248
+ctb0004_layer <- google_sheet(gs, gid)
 colnames(ctb0004_layer)
 print(ctb0004_layer)
 
@@ -116,24 +113,22 @@ summary_soildata(ctb0004)
 
 # Replace the dataset in the soildata object
 summary_soildata(soildata)
-# Layers: 53152
-# Events: 15829
-# Georeferenced events: 12699
+# Layers: 52545
+# Events: 15222
+# Georeferenced events: 12092
 
 soildata <- soildata[dataset_id != "ctb0004"]
 summary_soildata(soildata)
-# Layers: 53080
-# Events: 15793
-# Georeferenced events: 12663
+# Layers: 52473
+# Events: 15186
+# Georeferenced events: 12056
 
 which_cols <- colnames(ctb0004) %in% colnames(soildata)
 soildata <- rbind(soildata, ctb0004[, ..which_cols])
 summary_soildata(soildata)
-# Layers: 53172
-# Events: 15833
-# Georeferenced events: 12703
-
-soildata[dataset_id == "ctb0006"]
+# Layers: 52565
+# Events: 15226
+# Georeferenced events: 12096
 
 # ctb0006 ##########################################################################################
 
@@ -224,31 +219,126 @@ if (FALSE) {
 
 # Replace the dataset in the soildata object
 summary_soildata(soildata)
-# Layers: 52545
-# Events: 15222
-# Georeferenced events: 12092
+# Layers: 52565
+# Events: 15226
+# Georeferenced events: 12096
 soildata <- soildata[dataset_id != "ctb0006"]
 summary_soildata(soildata)
-# Layers: 52252
-# Events: 15150
-# Georeferenced events: 12020
+# Layers: 52272
+# Events: 15154
+# Georeferenced events: 12024
 which_cols <- colnames(ctb0006) %in% colnames(soildata)
 soildata <- rbind(soildata, ctb0006[, ..which_cols])
 summary_soildata(soildata)
-# Layers: 53078
-# Events: 15755
-# Georeferenced events: 12625
+# Layers: 53098
+# Events: 15759
+# Georeferenced events: 12629
 
 # ctb0007 ##########################################################################################
 
 # Google Sheet
-# Spreadsheet ID: 2PACX-1vRRdwHsH2a0NW411E_ur_Grxw-1hv1bMvIz0FvUkeyKKDhrnKWzF1YgxKL8IM_vEeudomFc2ugGYVIf
+# Spreadsheet ID:
+gs <- "1yH3S0lFCCGFQ2JupPH_5KAoleBA-v5zoU7RRlfzvNyo"
 
 # evento
-# GID: 1628657862
+gid <- 1628657862
+ctb0007_event <- google_sheet(gs, gid)
+print(ctb0007_event)
+colnames(ctb0007_event)
+
+# Check if there is more than one CRS
+# There actually are no coordinates in this dataset
+ctb0007_event[, .N, by = "Datum (coord)"]
+
+# Prepare columns
+colnames(soildata)
+colnames(ctb0007_event)
+ctb0007_event[, dataset_id := "ctb0007"]
+# ID do evento -> observacao_id
+data.table::setnames(ctb0007_event, old = "ID do evento", new = "observacao_id")
+ctb0007_event[, id := paste0(dataset_id, "-", observacao_id)]
+# Longitude -> coord_x
+data.table::setnames(ctb0007_event, old = "Longitude", new = "coord_x")
+# Latitude -> coord_y
+data.table::setnames(ctb0007_event, old = "Latitude", new = "coord_y")
+# Precisão (coord) [m] -> coord_precisao
+data.table::setnames(ctb0007_event, old = "Precisão (coord) [m]", new = "coord_precisao")
+# Fonte (coord) -> coord_fonte
+data.table::setnames(ctb0007_event, old = "Fonte (coord)", new = "coord_fonte")
+# Estado (UF) -> estado_id
+data.table::setnames(ctb0007_event, old = "Estado (UF)", new = "estado_id")
+ctb0007_event[, estado_id := "RS"]
+# Área amostrada [m^2] -> amostra_area
+data.table::setnames(ctb0007_event, old = "Área amostrada [m^2]", new = "amostra_area")
+# taxon_sibcs
+ctb0007_event[, taxon_sibcs := NA_character_]
+# Ano (coleta) -> data_coleta_ano
+data.table::setnames(ctb0007_event, old = "Ano (coleta)", new = "data_coleta_ano")
+# Datum (coord) -> coord_datum_epsg
+data.table::setnames(ctb0007_event, old = "Datum (coord)", new = "coord_datum_epsg")
+str(ctb0007_event, 1)
 
 # camada
-# GID: 771766248
+gid <- 771766248
+ctb0007_layer <- google_sheet(gs, gid)
+print(ctb0007_layer)
+colnames(ctb0007_layer)
+
+# Prepare columns
+colnames(soildata)
+colnames(ctb0007_layer)
+# ID do evento -> observacao_id
+data.table::setnames(ctb0007_layer, old = "ID do evento", new = "observacao_id")
+# ID da camada -> camada_nome
+data.table::setnames(ctb0007_layer, old = "ID da camada", new = "camada_nome")
+ctb0007_layer[, camada_id := camada_nome]
+# ID da amostra -> amostra_id
+data.table::setnames(ctb0007_layer, old = "ID da amostra", new = "amostra_id")
+# Profundidade inicial [cm] -> profund_sup
+data.table::setnames(ctb0007_layer, old = "Profundidade inicial [cm]", new = "profund_sup")
+# Profundidade final [cm] -> profund_inf
+data.table::setnames(ctb0007_layer, old = "Profundidade final [cm]", new = "profund_inf")
+# terrafina
+ctb0007_layer[, terrafina := 1000]
+# Argila -> argila
+data.table::setnames(ctb0007_layer, old = "Argila", new = "argila")
+# Silte -> silte
+data.table::setnames(ctb0007_layer, old = "Silte", new = "silte")
+# Areia -> areia
+data.table::setnames(ctb0007_layer, old = "Areia", new = "areia")
+# MO -> carbono
+data.table::setnames(ctb0007_layer, old = "MO", new = "carbono")
+ctb0007_layer[, carbono := carbono * 0.58]
+# CTC pH7 -> ctc
+data.table::setnames(ctb0007_layer, old = "CTC pH7", new = "ctc")
+# pH em H_2O -> ph
+data.table::setnames(ctb0007_layer, old = "pH em H_2O", new = "ph")
+# dsi
+ctb0007_layer[, dsi := NA_real_]
+
+# Merge events and layers
+ctb0007 <- merge(ctb0007_event, ctb0007_layer, all = TRUE)
+summary_soildata(ctb0007)
+# Layers: 24
+# Events: 12
+# Georeferenced events: 0
+
+# Replace the dataset in the soildata object
+summary_soildata(soildata)
+# Layers: 53098
+# Events: 15759
+# Georeferenced events: 12629
+soildata <- soildata[dataset_id != "ctb0007"]
+summary_soildata(soildata)
+# Layers: 53074
+# Events: 15747
+# Georeferenced events: 12617
+which_cols <- colnames(ctb0007) %in% colnames(soildata)
+soildata <- rbind(soildata, ctb0007[, ..which_cols])
+summary_soildata(soildata)
+# Layers: 53098
+# Events: 15759
+# Georeferenced events: 12617
 
 # ctb0008 ##########################################################################################
 # wait list
