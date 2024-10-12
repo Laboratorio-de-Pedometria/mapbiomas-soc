@@ -16,11 +16,11 @@ if (!require("sf")) {
 source("src/00_helper_functions.r")
 
 # Read data processed in the previous script
-soildata <- data.table::fread("data/13_soildata_soc.txt", sep = "\t")
+soildata <- data.table::fread("data/14_soildata_soc.txt", sep = "\t")
 summary_soildata(soildata)
-# Layers: 21753
-# Events: 11753
-# Georeferenced events: 9454
+# Layers: 22063
+# Events: 11720
+# Georeferenced events: 9386
 
 # Correct layer depth and name
 soildata[
@@ -59,6 +59,10 @@ rm(soildata_sf)
 
 # SiBCS
 # ORDER and SUBORDER (multivariate)
+soildata[, taxon_sibcs := toupper(taxon_sibcs)]
+soildata[, taxon_sibcs := gsub("Á", "A", taxon_sibcs)]
+soildata[, taxon_sibcs := gsub("Í", "I", taxon_sibcs)]
+soildata[, taxon_sibcs := gsub("Ú", "U", taxon_sibcs)]
 soildata[taxon_sibcs == "", taxon_sibcs := "NA NA NA NA"]
 sibcs <- strsplit(soildata[["taxon_sibcs"]], " ")
 sibcs <- lapply(sibcs, function(x) {
@@ -181,7 +185,7 @@ summary(soildata$silt_clay_ratio)
 
 # Write data to disk
 summary_soildata(soildata)
-# Layers: 21750
-# Events: 11751
-# Georeferenced events: 9452
+# Layers: 22063
+# Events: 11720
+# Georeferenced events: 9386
 data.table::fwrite(soildata, "data/20_soildata_soc.txt", sep = "\t")
