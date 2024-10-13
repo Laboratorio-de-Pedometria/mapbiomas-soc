@@ -203,3 +203,16 @@ google_maps <- function(x, coords = c("coord_x", "coord_y")) {
   x <- paste0("https://www.google.com.br/maps/place/", x$lat, ",", x$lon)
   browseURL(x)
 }
+# Read Google Sheet
+google_sheet <- function(gs, gid) {
+  sheet_path <- paste0(
+    "https://docs.google.com/spreadsheets/u/1/d/",
+    gs,
+    "/export?format=tsv&id=",
+    gs,
+    "&gid=",
+    gid
+  )
+  dt <- data.table::fread(sheet_path, dec = ",", sep = "\t")
+  return(dt)
+}

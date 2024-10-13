@@ -114,6 +114,7 @@ for (i in seq_along(files_layer)) {
   data.table::setnames(data_layer[[i]], old = rename[, 1], new = rename[, 2], skip_absent = TRUE)
 }
 data_layer <- data.table::rbindlist(data_layer, fill = TRUE)
+data_layer[, camada_nome := camada_id]
 nrow(data_layer) # 2419 layers
 
 # Merge data from events and layers
@@ -122,9 +123,9 @@ colnames(soildata_01)
 if (!"terrafina" %in% colnames(soildata_01)) {
   soildata_01[, terrafina := NA_real_]
 }
-if (!"camada_nome" %in% colnames(soildata_01)) {
-  soildata_01[, camada_nome := NA_character_]
-}
+# if (!"camada_nome" %in% colnames(soildata_01)) {
+#   soildata_01[, camada_nome := NA_character_]
+# }
 summary_soildata(soildata_01)
 # Layers: 2226
 # Events: 1098
