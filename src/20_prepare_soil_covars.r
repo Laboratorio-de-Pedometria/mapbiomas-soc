@@ -18,9 +18,9 @@ source("src/00_helper_functions.r")
 # Read data processed in the previous script
 soildata <- data.table::fread("data/14_soildata_soc.txt", sep = "\t")
 summary_soildata(soildata)
-# Layers: 22063
-# Events: 11720
-# Georeferenced events: 9386
+# Layers: 27649
+# Events: 14880
+# Georeferenced events: 12537
 
 # Correct layer depth and name
 soildata[
@@ -185,7 +185,7 @@ summary(soildata$silt_clay_ratio)
 
 # Write data to disk
 summary_soildata(soildata)
-# Layers: 22063
-# Events: 11720
-# Georeferenced events: 9386
+# Layers: 27649
+# Events: 14880
+# Georeferenced events: 12537
 data.table::fwrite(soildata, "data/20_soildata_soc.txt", sep = "\t")
