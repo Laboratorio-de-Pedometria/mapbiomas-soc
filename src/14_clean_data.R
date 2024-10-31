@@ -15,15 +15,19 @@ source("src/00_helper_functions.r")
 # Read SoilData data processed in the previous script
 soildata <- data.table::fread("data/13_soildata_soc.txt", sep = "\t")
 summary_soildata(soildata)
-# Layers: 55036
-# Events: 16872
-# Georeferenced events: 13724
+# Layers: 58324
+# Events: 17505
+# Georeferenced events: 14085
 
 # Clean datasets
 # ctb0001
 # Conteúdo de ferro do solo sob dois sistemas de cultivo na Estação Experimental Terras Baixas nos
 # anos de 2012 e 2013
 soildata <- soildata[dataset_id != "ctb0001", ]
+
+# ctb0002
+# Classificação taxonômica do solo em Pinheiral, RJ
+soildata <- soildata[dataset_id != "ctb0002", ]
 
 # ctb0009
 # Variáveis pedogeoquímicas e mineralógicas na identificação de fontes de sedimentos em uma
@@ -40,6 +44,10 @@ soildata <- soildata[dataset_id != "ctb0026", ]
 # métodos de determinação
 soildata <- soildata[dataset_id != "ctb0029", ]
 
+# ctb0042
+# Alteração do pH do solo por influência da diluição, tipo de solvente e tempo de contato
+soildata <- soildata[dataset_id != "ctb0042", ]
+
 # ctb0654 (exact duplicate of ctb0608)
 # Conjunto de dados do 'V Reunião de Classificação, Correlação e Aplicação de Levantamentos de Solo
 #  - guia de excursão de estudos de solos nos Estados de Pernambuco, Paraíba, Rio Grande do Norte,
@@ -51,39 +59,67 @@ soildata <- soildata[dataset_id != "ctb0654", ]
 soildata <- soildata[dataset_id != "ctb0800", ]
 
 summary_soildata(soildata)
-# Layers: 54062
-# Events: 16393
-# Georeferenced events: 13246
+# Layers: 57189
+# Events: 16865
+# Georeferenced events: 13450
 
-# Clean layers
+# Clean layers #####################################################################################
 
-# Filter out layers with missing data on profund_sup and profund_inf
-soildata[is.na(profund_sup) | is.na(profund_inf), .N]
+# LAYER ORDER
+soildata <- soildata[order(dataset_id, observacao_id, profund_sup, profund_inf)]
+
+# MISSING DEPTH
+# Check if there are layers missing profund_sup or profund_inf
+soildata[, na_depth := is.na(profund_sup) | is.na(profund_inf)]
+soildata[na_depth == TRUE, .(id, camada_nome, profund_sup, profund_inf)]
+soildata[na_depth == TRUE, .N, by = dataset_id]
+# filter out layers with missing depth
 soildata <- soildata[!is.na(profund_sup) & !is.na(profund_inf), ]
 summary_soildata(soildata)
-# Layers: 52355
-# Events: 14932
-# Georeferenced events: 12442
+# Layers: 55970
+# Events: 15884
+# Georeferenced events: 13392
 
-# Organic topsoil
-# Some topsoil layers are organic layers that do not have a measurement of carbon. This can occur
-# when the soil surface is moved to the top of organic layers.
-# We start by identifying layers with profund_sup == 0, carbono == NA, and H or O in camada_nome.
-# Then we correct the layer limits accordingly. Finally, we filter out layers with profund_sup < 0,
-# i.e. the organic topsoil layers (litter).
-soildata[
-  ,
-  organic := any(profund_sup == 0 & is.na(carbono) &
-    grepl("H|O", camada_nome, ignore.case = TRUE)),
-  by = id
-]
+# ORGANIC TOPSOIL
+# Some topsoil layers are organic layers that do not have a measurement of carbon.
+# Some of these organic layers have negative limits but others have positive limits.
+# We start by identifying layers with carbono == NA and H or O in camada_nome.
+soildata[id == "ctb0770-100" & camada_nome == "B21H", camada_nome := "B21h"]
+soildata[, organic_topsoil := any(is.na(carbono) & grepl("H|O", camada_nome)), by = id]
+View(soildata[organic_topsoil == TRUE, .(id, camada_nome, profund_sup, profund_inf, carbono)])
 summary_soildata(soildata[organic == TRUE])
 # Layers: 1068
 # Events: 162
 # Georeferenced events: 104
-print(soildata[organic == TRUE, .(id, camada_nome, profund_sup, profund_inf, carbono)])
+# Then we filter out all layers with carbono == NA and H or O in camada_nome.
+soildata <- soildata[!(is.na(carbono) & grepl("H|O", camada_nome))]
+# Reset the limits of layers of a profile when there is an organic layer
+soildata[organic_topsoil == TRUE, profund_sup := profund_sup - min(profund_sup), by = id]
+soildata[organic_topsoil == TRUE, profund_inf := profund_inf - min(profund_sup), by = id]
+View(soildata[organic_topsoil == TRUE, .(id, camada_nome, profund_sup, profund_inf, carbono)])
+
+# Finally, we filter out all layers with profund_sup < 0.
+soildata[profund_sup < 0, .(id, camada_nome, profund_sup, profund_inf, carbono)]
+
+
+
+View(soildata[
+  is.na(carbono) & grepl("H|O", camada_nome), .(id, camada_nome, profund_sup, profund_inf, carbono)
+])
+
+soildata[id == "ctb0753-94"]
+
+soildata[
+  ,
+  organic := any(profund_sup == 0 & is.na(carbono) & grepl("H|O", camada_nome, ignore.case = TRUE)),
+  by = id
+]
+
+View(soildata[organic == TRUE, .(id, camada_nome, profund_sup, profund_inf, carbono)])
+# Reset the limits of layers of a profile when there is an organic layer
 soildata[organic == TRUE, profund_sup := profund_sup - min(profund_inf), by = id]
 soildata[organic == TRUE, profund_inf := profund_inf - min(profund_inf), by = id]
+View(soildata[organic == TRUE, .(id, camada_nome, profund_sup, profund_inf, carbono)])
 
 # Filter out layers with profund_sup < 0
 print(soildata[profund_sup < 0, .N, by = dataset_id])
@@ -91,16 +127,20 @@ print(soildata[profund_sup < 0, id])
 soildata <- soildata[profund_sup >= 0, ]
 soildata[, organic := NULL]
 summary_soildata(soildata)
-# Layers: 52185
-# Events: 14932
-# Georeferenced events: 12442
+# Layers: 55460
+# Events: 15754
+# Georeferenced events: 13263
 
-# Layer limits
+# LAYER LIMITS
 # Some layers have equal values for profund_sup and profund_inf, generally the lowermost layer.
 # This occurs because soil sampling and description ended at the top of the layer, producing a
 # censoring effect. We add a fixed depth (plus_depth) to the lowermost layer when camada_nome has
 # an R, D, or C. Otherwise, we keep the layer limits as they are.
-nrow(soildata[profund_sup == profund_inf]) # 220 layers
+nrow(soildata[profund_sup == profund_inf]) # 224 layers
+soildata[, equal_depth := any(profund_sup == profund_inf), by = id]
+soildata[equal_depth == TRUE, .(id, camada_nome, profund_sup, profund_inf)]
+
+
 plus_depth <- 20
 soildata[
   profund_sup == profund_inf & grepl("R|D|C", camada_nome),
