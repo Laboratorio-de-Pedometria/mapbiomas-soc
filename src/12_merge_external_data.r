@@ -45,7 +45,7 @@ files_event <- list.files(
   pattern = "-evento.txt$",
   full.names = TRUE, recursive = TRUE
 )
-length(files_event) # 8 data sets
+length(files_event) # 7 data sets
 print(files_event)
 data_event <- list()
 for (i in seq_along(files_event)) {
@@ -56,7 +56,7 @@ for (i in seq_along(files_event)) {
   data.table::setnames(data_event[[i]], old = rename[, 1], new = rename[, 2], skip_absent = TRUE)
 }
 data_event <- data.table::rbindlist(data_event, fill = TRUE)
-nrow(data_event) # 1709 events
+nrow(data_event) # 1662 events
 
 # Standardize coordinate reference system
 target_crs <- 4326
@@ -85,17 +85,17 @@ data_event[coord_datum_epsg != target_crs & !is.na(coord_datum_epsg), coord_datu
 data.table::setnames(data_event, old = c("X", "Y"), new = c("coord_x", "coord_y"))
 data_event[, geometry := NULL]
 summary_soildata(data_event)
-# Layers: 1709
-# Events: 1709
-# Georeferenced events: 1709
+# Layers: 1662
+# Events: 1662
+# Georeferenced events: 1662
 
 # Clean sampling date (just to make sure)
 data_event[data_coleta_ano < 1950, data_coleta_ano := NA_integer_]
 data_event[data_coleta_ano > as.integer(format(Sys.time(), "%Y")), data_coleta_ano := NA_integer_]
 summary_soildata(data_event)
-# Layers: 1709
-# Events: 1709
-# Georeferenced events: 1709
+# Layers: 1662
+# Events: 1662
+# Georeferenced events: 1662
 
 # Layers
 files_layer <- list.files(
@@ -103,7 +103,7 @@ files_layer <- list.files(
   pattern = "-camada.txt$",
   full.names = TRUE, recursive = TRUE
 )
-length(files_layer) # 8 data sets
+length(files_layer) # 7 data sets
 print(files_layer)
 data_layer <- list()
 for (i in seq_along(files_layer)) {
@@ -115,7 +115,7 @@ for (i in seq_along(files_layer)) {
 }
 data_layer <- data.table::rbindlist(data_layer, fill = TRUE)
 data_layer[, camada_nome := camada_id]
-nrow(data_layer) # 2419 layers
+nrow(data_layer) # 2134 layers
 
 # Merge data from events and layers
 soildata_01 <- merge(data_event, data_layer, by = c("dataset_id", "id"))
@@ -127,9 +127,9 @@ if (!"terrafina" %in% colnames(soildata_01)) {
 #   soildata_01[, camada_nome := NA_character_]
 # }
 summary_soildata(soildata_01)
-# Layers: 2226
-# Events: 1098
-# Georeferenced events: 1098
+# Layers: 1941
+# Events: 1051
+# Georeferenced events: 1051
 
 # Read SoilData data processed in the previous scripts
 soildata_02 <- data.table::fread("data/11_soildata_soc.txt", sep = "\t")
@@ -151,9 +151,9 @@ idx01 <- na.exclude(idx)
 idx02 <- which(!is.na(idx))
 soildata <- rbind(soildata_02[, ..idx02], soildata_01[, ..idx01])
 summary_soildata(soildata)
-# Layers: 52545
-# Events: 15222
-# Georeferenced events: 12092
+# Layers: 52260
+# Events: 15175
+# Georeferenced events: 12045
 
 # Write data to disk
 data.table::fwrite(soildata, "data/12_soildata_soc.txt", sep = "\t")
