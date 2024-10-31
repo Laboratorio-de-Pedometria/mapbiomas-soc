@@ -3,3 +3,4 @@ data/*.rds
 res/fig/*.png
 res/tab/*.txt
 tmp/*.csv
+res/fig/*.png
