@@ -75,7 +75,7 @@ eventRO[observacao_id == "RO2656", coord_y := -13.485739]
 # There is no additional information in the dataset to confirm this hypothesis.
 # The coordinates were changed to a location in Rondônia, Brazil.
 # -9.764905, -65.735686
-google_maps(eventRO[observacao_id == "RO2953", ])
+# google_maps(eventRO[observacao_id == "RO2953", ])
 eventRO[observacao_id == "RO2953", coord_x := -65.735686]
 eventRO[observacao_id == "RO2953", coord_y := -9.764905]
 
