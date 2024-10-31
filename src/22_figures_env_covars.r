@@ -8,15 +8,29 @@ rm(list = ls())
 if (!require("data.table")) {
   install.packages("data.table")
 }
+if (!require("geobr")) {
+  install.packages("geobr")
+  library("geobr")
+}
+if (!require("mapview")) {
+  install.packages("mapview")
+  library("mapview")
+}
+
+# Source helper functions
+source("src/00_helper_functions.r")
 
 # Read data processed in the previous script
 soildata <- data.table::fread("data/21_soildata_soc.txt", sep = "\t", na.strings = c("NA", ""))
-nrow(unique(soildata[, "id"])) # Result: 11 751 events
-nrow(soildata) # Result: 21 750 layers
+summary_soildata(soildata)
+# Layers: 27649
+# Events: 14880
+# Georeferenced events: 12537
 
-# Figure
+# FIGURE
 # Distribution of events through land use/land cover classes
 lulc_classes <- soildata[, lulc[1], by = id]
+# lulc_classes[is.na(V1), V1 := "NA"]
 lulc_classes <- table(lulc_classes[, V1], useNA = "always")
 dev.off()
 png("res/fig/bulk-density-lulc-classes.png", width = 480 * 5, height = 480 * 3, res = 72 * 3)
@@ -28,15 +42,15 @@ barplot(lulc_classes,
 grid(nx = FALSE, ny = NULL, col = "gray")
 dev.off()
 
-# Figure
+# FIGURE
 # Geolocalized events missing data on SoilGrids and MapBiomas
-na_sg <- nrow(soildata[is.na(clay_0_5cm) & !is.na(coord_x) & !is.na(coord_y), clay_0_5cm[1], by = .(id)])
-print(na_sg) # 274 events
-na_mb <- nrow(soildata[is.na(lulc) & !is.na(coord_x) & !is.na(coord_y) & data_coleta_ano >= 1985,
-  lulc[1],
-  by = .(id)
-])
-print(na_mb) # 4 events
+na_sg <- soildata[is.na(clay_0_5cm) & !is.na(coord_x) & !is.na(coord_y), .N, by = id]
+na_sg <- nrow(na_sg)
+print(na_sg) # 303 events
+na_mb <- soildata[is.na(lulc) & !is.na(coord_x) & !is.na(coord_y) & data_ano >= 1985, ]
+na_mb[, .(id, camada_nome, data_ano, coord_y, coord_x, carbono)]
+na_mb <- nrow(na_mb)
+print(na_mb) # 3 events
 brazil <- geobr::read_country()
 biomas <- geobr::read_biomes()[-7, "name_biome"]
 dev.off()
@@ -46,7 +60,7 @@ plot(biomas,
   main = "", key.pos = 1, key.length = 1
 )
 points(soildata[
-  is.na(lulc) & !is.na(coord_x) & !is.na(coord_y) & data_coleta_ano >= 1985,
+  is.na(lulc) & !is.na(coord_x) & !is.na(coord_y) & data_ano >= 1985,
   c("coord_x", "coord_y")
 ], col = "blue")
 points(soildata[is.na(clay_0_5cm) & !is.na(coord_x) & !is.na(coord_y), c("coord_x", "coord_y")],
