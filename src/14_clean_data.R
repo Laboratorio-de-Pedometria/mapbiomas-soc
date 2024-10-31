@@ -86,7 +86,7 @@ summary_soildata(soildata)
 # We start by identifying layers with carbono == NA and H or O in camada_nome.
 soildata[id == "ctb0770-100" & camada_nome == "B21H", camada_nome := "B21h"]
 soildata[, organic_topsoil := any(is.na(carbono) & grepl("H|O", camada_nome)), by = id]
-View(soildata[organic_topsoil == TRUE, .(id, camada_nome, profund_sup, profund_inf, carbono)])
+soildata[organic_topsoil == TRUE, .(id, camada_nome, profund_sup, profund_inf, carbono)]
 summary_soildata(soildata[organic_topsoil == TRUE])
 # Layers: 1055
 # Events: 160
@@ -98,7 +98,7 @@ soildata <- soildata[!(is.na(carbono) & grepl("H|O", camada_nome))]
 # Reset the limits of layers of a profile when there is an organic layer
 soildata[organic_topsoil == TRUE, profund_sup := profund_sup - min(profund_sup), by = id]
 soildata[organic_topsoil == TRUE, profund_inf := profund_inf - min(profund_sup), by = id]
-View(soildata[organic_topsoil == TRUE, .(id, camada_nome, profund_sup, profund_inf, carbono)])
+print(soildata[organic_topsoil == TRUE, .(id, camada_nome, profund_sup, profund_inf, carbono)])
 
 # Finally, we filter out all layers with profund_sup < 0.
 # Currently, all layers with profund_sup < 0 are from ctb0054
@@ -117,7 +117,7 @@ summary_soildata(soildata)
 # (plus_depth).
 nrow(soildata[profund_sup == profund_inf]) # 224 layers
 soildata[, equal_depth := any(profund_sup == profund_inf), by = id]
-View(soildata[equal_depth == TRUE, .(id, camada_nome, profund_sup, profund_inf)])
+print(soildata[equal_depth == TRUE, .(id, camada_nome, profund_sup, profund_inf)])
 
 # Add a fixed depth to R, D, and C layers with equal depth limits
 plus_depth <- 20
@@ -127,7 +127,7 @@ soildata[
 ]
 nrow(soildata[profund_sup == profund_inf]) # 66 layers
 soildata[, equal_depth := any(profund_sup == profund_inf), by = id]
-View(soildata[equal_depth == TRUE, .(id, camada_nome, profund_sup, profund_inf)])
+print(soildata[equal_depth == TRUE, .(id, camada_nome, profund_sup, profund_inf)])
 
 # Some events from dataset_id = ctb0033 have a single layer and the depth limit is equal to zero.
 # We remove these layers.
@@ -140,7 +140,7 @@ soildata <- soildata[
   !(dataset_id == "ctb0033" & profund_sup == profund_inf & profund_sup == 0 & n_layers == 1)
 ]
 nrow(soildata[profund_sup == profund_inf]) # 58 layers
-View(soildata[equal_depth == TRUE, .(id, camada_nome, profund_sup, profund_inf)])
+print(soildata[equal_depth == TRUE, .(id, camada_nome, profund_sup, profund_inf)])
 
 # Some events with profund_sup == profund_inf and profund_sup == 0 are from ctb0631.
 # Actually, these layers have not a depth limit recorded. So we set them to NA.
@@ -150,7 +150,7 @@ soildata[
 ]
 soildata <- soildata[!(dataset_id == "ctb0631" & profund_sup == profund_inf & profund_sup == 0)]
 nrow(soildata[profund_sup == profund_inf]) # 35 layers
-View(soildata[equal_depth == TRUE, .(id, camada_nome, profund_sup, profund_inf)])
+print(soildata[equal_depth == TRUE, .(id, camada_nome, profund_sup, profund_inf)])
 
 # For some datasets, we add a fixed depth to the lowermost layer
 # ctb0691, ctb0787, ctb0675, ctb0603, ctb0645, ctb0033, ctb0678, ctb0691
@@ -180,7 +180,7 @@ soildata[
 ]
 nrow(soildata[profund_sup == profund_inf]) # 19 layers
 soildata[, equal_depth := any(profund_sup == profund_inf), by = id]
-View(soildata[equal_depth == TRUE, .(id, camada_nome, profund_sup, profund_inf, carbono)])
+print(soildata[equal_depth == TRUE, .(id, camada_nome, profund_sup, profund_inf, carbono)])
 
 # For some datasets, we add a fixed depth to the uppermost layer
 soildata[id == "ctb0775-9" & camada_nome == "B21", profund_sup := 100]
@@ -246,44 +246,38 @@ print(soildata[endpoint == 1, .(id, camada_nome, profund_sup, profund_inf, carbo
 # Maximum layer depth
 # Filter out soil layers starting below a maximum depth of 30 cm
 # We work only with data from the first 30 cm and deeper layers that start at or before 30 cm.
-# max_depth <- 30
-# nrow(soildata[profund_sup >= max_depth, ]) # 27654 layers with profund_sup >= 30
-# soildata <- soildata[profund_sup >= 0 & profund_sup <= max_depth, ]
-# summary_soildata(soildata)
-# Layers: 27717
-# Events: 14783
-# Georeferenced events: 12331
+max_depth <- 30
+nrow(soildata[profund_sup >= max_depth, ]) # 27654 layers with profund_sup >= 30
+soildata <- soildata[profund_sup >= 0 & profund_sup <= max_depth, ]
+summary_soildata(soildata)
+# Layers: 29282
+# Events: 15702
+# Georeferenced events: 13256
 
 # Adjacent layers
-
-# ADD MISSING LAYER
-
-
-
-
-
 # For each event (id), profund_inf of layer i should be equal to profund_sup of layer i + 1.
 # For records with abs(diff) %in% 1:10, set profund_inf = profund_inf + (diff * -1)
 # Filter out records for which abs(diff) > 10
 soildata[, diff := profund_inf - data.table::shift(profund_sup, type = "lead"), by = id]
-nrow(soildata[abs(diff) %in% 1:10, ]) # 1948 layers
+nrow(soildata[abs(diff) %in% 1:10, ]) # 2152 layers
 soildata[abs(diff) %in% 1:10, profund_inf := profund_inf + (diff * -1)]
 soildata[, diff10 := any(diff > 10), id]
-nrow(soildata[diff10 == TRUE, ]) # 336 layers
+nrow(soildata[diff10 == TRUE, ]) # 343 layers
 soildata <- soildata[diff10 == FALSE | is.na(diff10), ]
 summary_soildata(soildata)
-# Layers: 27381
-# Events: 14673
-# Georeferenced events: 12295
+# Layers: 28939
+# Events: 15588
+# Georeferenced events: 13216
 soildata[, diff := NULL]
 soildata[, diff10 := NULL]
 
+# (MAYBE THIS CAN BE REMOVED)
 # Filter out layers with profund_sup == profund_inf
 soildata <- soildata[profund_sup < profund_inf, ]
 summary_soildata(soildata)
-# Layers: 27318
-# Events: 14644
-# Georeferenced events: 12271
+# Layers: 28924
+# Events: 15588
+# Georeferenced events: 13216
 
 # Thickness
 # Compute layer thickness
@@ -294,7 +288,7 @@ soildata[, espessura := profund_inf - profund_sup]
 # Some of these layers are below 30 cm depth or result form typing errors: a common recommendation
 # of soil description and sampling manuals is to use a maximum layers thickness of 50 cm
 max_thickness <- 50
-nrow(soildata[espessura > max_thickness, ]) # 512 layers
+nrow(soildata[espessura > max_thickness, ]) # 693 layers
 # soildata <- soildata[espessura <= max_thickness, ]
 
 # Update layer id
@@ -313,9 +307,8 @@ soildata[, camada_id := 1:.N, by = id]
 # sampled. 
 # Filter out whole events without a topsoil layer.
 soildata[, topsoil := any(profund_sup == 0), by = id]
-nrow(unique(soildata[topsoil != TRUE, "id"])) # 553 events
+nrow(unique(soildata[topsoil != TRUE, "id"])) # 550 events
 print(soildata[topsoil != TRUE, .N, by = dataset_id])
-
 # For each soil profile (id) in dataset_id == "ctb0033", identify the minimum value of profund_sup.
 # If the minimum value is between 0 and 10 cm, add that value to profund_sup and profund_inf of all
 # layers in that soil profile.
@@ -335,9 +328,9 @@ soildata[, topsoil := any(profund_sup == 0), by = id]
 soildata <- soildata[topsoil == TRUE, ]
 soildata[, topsoil := NULL]
 summary_soildata(soildata)
-# Layers: 26375
-# Events: 14091
-# Georeferenced events: 11749
+# Layers: 27985
+# Events: 15038
+# Georeferenced events: 12695
 
 # Fine earth
 # Correct samples with terrafina == 0 g/kg
@@ -364,9 +357,9 @@ nrow(soildata[esqueleto == 1000, ]) # 0 layers with esqueleto == 1000
 nrow(soildata[esqueleto > 1000, ]) # 1 layers with esqueleto == 1000
 soildata <- soildata[is.na(esqueleto) | esqueleto < 1000, ]
 summary_soildata(soildata)
-# Layers: 26374
-# Events: 14091
-# Georeferenced events: 11749
+# Layers: 27984
+# Events: 15038
+# Georeferenced events: 12695
 
 # Clean camada_nome
 soildata[, camada_nome := as.character(camada_nome)]
@@ -417,7 +410,7 @@ sort(unique(soildata[, camada_nome]))
 # Filter out layers with camada_nome == "R", creating a new variable called soil. This variable is
 # used to identify layers with soil (1) and rock (0). Then we set the bulk density of these rock
 # layers to +Inf.
-nrow(soildata[camada_nome == "R", ]) # 78 R layers
+nrow(soildata[camada_nome == "R", ]) # 82 R layers
 # soildata <- soildata[camada_nome != "R", ]
 # soildata[, soil := 1]
 # soildata[camada_nome == "R", soil := 0]
@@ -477,26 +470,26 @@ soildata[id == "ctb0605-P-06" & camada_id == 2, dsi := 1.32]
 soildata_events <- soildata[!is.na(coord_x) & !is.na(coord_y) & !is.na(data_ano), id[1],
   by = c("dataset_id", "observacao_id", "coord_x", "coord_y", "data_ano")
 ]
-nrow(soildata_events) # 11748 events
+nrow(soildata_events) # 12647 events
 test_columns <- c("coord_x", "coord_y", "data_ano")
 duplo <- duplicated(soildata_events[, ..test_columns])
-sum(duplo) # 261 duplicated events
+sum(duplo) # 201 duplicated events
 
 # Jitter the coordinates of the duplicated events belonging to the following datasets:
-# ctb0004, ctb0010, ctb0017, ctb0025, ctb0033, ctb0054, ctb0832, ctb0800, ctb0631, ctb0585
-ctb <- c("ctb0004", "ctb0010", "ctb0017", "ctb0025", "ctb0033", "ctb0054", "ctb0832", "ctb0800",
- "ctb0631", "ctb0585")
+soildata_events[duplo, unique(dataset_id)]
+# ctb0010, ctb0017, ctb0033, ctb0832, ctb0631, ctb0585
+ctb <- c("ctb0010", "ctb0017", "ctb0033", "ctb0832", "ctb0631", "ctb0585")
 soildata_events[duplo & dataset_id %in% ctb, coord_x := coord_x + runif(.N, -0.00001, 0.00001)]
 duplo <- duplicated(soildata_events[, ..test_columns])
-sum(duplo) # 174 duplicated events
+sum(duplo) # 158 duplicated events
 
 # Remove remaining duplicated events
 duplo <- soildata_events[duplo, V1]
 soildata <- soildata[!id %in% duplo, ] # remove duplicated events
 summary_soildata(soildata)
-# Layers: 26023
-# Events: 13917
-# Georeferenced events: 11575
+# Layers: 27649
+# Events: 14880
+# Georeferenced events: 12537
 
 # Export cleaned data
 data.table::fwrite(soildata, "data/14_soildata_soc.txt", sep = "\t")
