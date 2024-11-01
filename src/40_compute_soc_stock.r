@@ -15,27 +15,31 @@ source("src/00_helper_functions.r")
 # Read data processed in the previous script
 soildata <- data.table::fread("data/30_soildata_soc.txt", sep = "\t")
 summary_soildata(soildata)
-# Layers: 21750
-# Events: 11751
-# Georeferenced events: 9452
+# Layers: 27649
+# Events: 14880
+# Georeferenced events: 12537
 
 # Filter out soil layers missing data on soil organic carbon
 is_na_carbono <- is.na(soildata[["carbono"]])
-sum(is_na_carbono) # Result: 2188 layers
+sum(is_na_carbono) # Result: 1957 layers
 soildata <- soildata[!is_na_carbono, ]
-nrow(unique(soildata[, "id"])) # Result: 10 635 events
-nrow(soildata) # Result: 19 562 layers
+summary_soildata(soildata)
+# Layers: 25692
+# Events: 14045
+# Georeferenced events: 11889
 
 # Topsoil --> BECAUSE WE REMOVED LAYERS WITH MISSING DATA ON SOIL ORGANIC CARBON
 # For each event (id), check if there is a layer with profund_sup == 0. Filter out events without a
 # topsoil layer. This procedure was performed before: it is repeated here because layers missing
 # data on soil organic carbon were removed (there may be other reasons too).
 soildata[, topsoil := any(profund_sup == 0), by = id]
-nrow(unique(soildata[topsoil == FALSE, "id"])) # 70 events
+nrow(unique(soildata[topsoil == FALSE, "id"])) # 78 events
 soildata <- soildata[topsoil == TRUE, ]
-nrow(unique(soildata[, "id"])) # 10 565 events
-nrow(soildata) # 19 461 layers
 soildata[, topsoil := NULL]
+summary_soildata(soildata)
+# Layers: 25579
+# Events: 13967
+# Georeferenced events: 11850
 
 # Empty layers --> ALSO BECAUSE WE REMOVED LAYERS WITH MISSING DATA ON SOIL ORGANIC CARBON
 # Is there any soil profile (id) missing an intermediate layer? A missing intermediate layer occurs
@@ -43,11 +47,13 @@ soildata[, topsoil := NULL]
 # are complementary/extra observations that sampled only the topsoil and the subsoil, e.g. 0-20 and
 # 60-80 cm. They are interval censored. For further analysis, we drop the lowermost layers.
 soildata[, empty_layer := shift(profund_inf, type = "lag") != profund_sup, by = id]
-nrow(unique(soildata[empty_layer == TRUE, "id"])) # Result: 1376 events
+nrow(unique(soildata[empty_layer == TRUE, "id"])) # Result: 1382 events
 soildata <- soildata[empty_layer == FALSE | is.na(empty_layer), ]
 soildata <- soildata[, empty_layer := NULL]
-nrow(unique(soildata[, "id"])) # Result: 10 565 events
-nrow(soildata) # Result: 18 085 layers
+summary_soildata(soildata)
+# Layers: 24197
+# Events: 13967
+# Georeferenced events: 11850
 
 # Layer limits
 # Resetting the limits of each layer according to the target depth range (0 and 30 cm).
@@ -60,10 +66,12 @@ soildata[profund_sup > target_layer[2], profund_sup := target_layer[2]]
 soildata[profund_inf > target_layer[2], profund_inf := target_layer[2]]
 # Recompute layer thickness
 soildata[, espessura := profund_inf - profund_sup]
-nrow(soildata[espessura <= 0, ]) # 1102 layers with thickness <= 0 --> remove them
+nrow(soildata[espessura <= 0, ]) # 2302 layers with thickness <= 0 --> remove them
 soildata <- soildata[espessura > 0, ]
-nrow(unique(soildata[, "id"])) # Result: 10 565 events
-nrow(soildata) # Result: 16 983 layers
+summary_soildata(soildata)
+# Layers: 21895
+# Events: 13967
+# Georeferenced events: 11850
 
 # Volume of coarse fragments
 # The volume of coarse fragments is calculated as the volume of the skeleton divided by the density
@@ -90,27 +98,67 @@ if (FALSE) {
 
 # Remove data from Technosols and Anthrosols
 # Solo construído no aterro encerrado da Caturrita, Santa Maria (RS)
-soildata <- soildata[dataset_id != "ctb0036", ]
+# soildata <- soildata[dataset_id != "ctb0036", ]
 # Projeto Parque Frei Veloso - Levantamento Detalhado dos Solos do Campus da Ilha do Fundão UFRJ
-soildata <- soildata[dataset_id != "ctb0599", ]
+# soildata <- soildata[dataset_id != "ctb0599", ]
 # Projeto Caldeirão: caracterização e gênese das Terras Pretas de Índio na Amazônia
-soildata <- soildata[dataset_id != "ctb0018", ]
-nrow(unique(soildata[, "id"])) # Result: 10 378 events
-nrow(soildata) # Result: 16 743 layers
+# soildata <- soildata[dataset_id != "ctb0018", ]
+# nrow(unique(soildata[, "id"])) # Result: 10 378 events
+# nrow(soildata) # Result: 16 743 layers
 
 # Layers per event
 # Count the number of layers per event (id)
 soildata[, n := .N, by = "id"]
 table(soildata[, n])
 #    1    2    3    4    5 
-# 5402 7392 3519  420   10 
+# 7806 9012 4638  424   15 
 soildata[, n := NULL]
+
+# Aggregate soil organic carbon stock in the topsoil (0 to 30 cm) of each event
+colnames(soildata)
+soc_stock <- soildata[
+  !is.na(soc_stock_kgm2) &
+    espessura > 0 &
+    !is.na(coord_x) &
+    !is.na(coord_y) &
+    !is.na(data_ano),
+  .(
+    soc_stock_tha = round(sum(soc_stock_kgm2, na.rm = TRUE) * 10),
+    sampling_year = as.integer(round(mean(data_ano, na.rm = TRUE))),
+    coord_x = mean(coord_x, na.rm = TRUE),
+    coord_y = mean(coord_y, na.rm = TRUE)
+  ),
+  by = id
+]
+
+# Summary
+summary_soildata(soc_stock)
+# Layers: 10677
+# Events: 10677
+# Georeferenced events: 10677
+
+# Write data to disk
+file_path <- "~/Insync/MapBiomas Solo/Trainning samples/"
+file_path <- paste0(file_path, format(Sys.time(), "%Y-%m-%d"), "-points-soc-stock-tha.csv")
+file_path <- path.expand(file_path)
+data.table::fwrite(soc_stock[, .(id, soc_stock_tha, sampling_year, coord_x, coord_y)], file_path)
+
+
+
+
+
+
+
+
+
+
+
 
 # Write data to disk
 summary_soildata(soildata)
-# Layers: 16743
-# Events: 10378
-# Georeferenced events: 8311
+# Layers: 21895
+# Events: 13967
+# Georeferenced events: 11850
 data.table::fwrite(soildata, "data/40_soildata_soc.txt", sep = "\t")
 
 # PREVIOUS /////////////////////////////////////////////////////////////////////////////////////////
