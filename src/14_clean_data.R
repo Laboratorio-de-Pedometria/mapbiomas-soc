@@ -73,6 +73,7 @@ soildata <- soildata[order(dataset_id, observacao_id, profund_sup, profund_inf)]
 soildata[, na_depth := is.na(profund_sup) | is.na(profund_inf)]
 soildata[na_depth == TRUE, .(id, camada_nome, profund_sup, profund_inf)]
 soildata[na_depth == TRUE, .N, by = dataset_id]
+soildata[, na_depth := NULL]
 # filter out layers with missing depth
 soildata <- soildata[!is.na(profund_sup) & !is.na(profund_inf), ]
 summary_soildata(soildata)
@@ -140,6 +141,7 @@ soildata <- soildata[
   !(dataset_id == "ctb0033" & profund_sup == profund_inf & profund_sup == 0 & n_layers == 1)
 ]
 nrow(soildata[profund_sup == profund_inf]) # 58 layers
+soildata[, n_layers := NULL]
 print(soildata[equal_depth == TRUE, .(id, camada_nome, profund_sup, profund_inf)])
 
 # Some events with profund_sup == profund_inf and profund_sup == 0 are from ctb0631.
@@ -323,6 +325,7 @@ soildata[
   dataset_id == "ctb0033" & min_profund_sup > 0,
   profund_inf := profund_inf + min_profund_sup
 ]
+soildata[, min_profund_sup := NULL]
 # Recompute
 soildata[, topsoil := any(profund_sup == 0), by = id]
 soildata <- soildata[topsoil == TRUE, ]
