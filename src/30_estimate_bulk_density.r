@@ -16,14 +16,24 @@ if (!require("ranger")) {
 source("src/00_helper_functions.r")
 
 # Read data from disk
-soildata <- data.table::fread("data/21_soildata_soc.txt", sep = "\t", na.strings = c("NA", ""))
-nrow(unique(soildata[, "id"])) # Result: 11 751 events
-nrow(soildata) # Result: 21 750 layers
+soildata <- data.table::fread("data/21_soildata_soc.txt")
+summary_soildata(soildata)
+# Layers: 27649
+# Events: 14880
+# Georeferenced events: 12537
+
+# ALREADY MOVED TO A PREVIOUS SCRIPT
+soildata[, n_layers := NULL]
+soildata[, na_depth := NULL]
+soildata[, min_profund_sup := NULL]
+
+# DELETE POSSIBLE INCONSISTENCIES
+soildata[dsi > 2.5, dsi := NA_real_]
 
 # Identify layers missing soil bulk density data
 is_na_dsi <- is.na(soildata[["dsi"]])
-nrow(soildata[is.na(dsi), ]) # Result: 19 036 layers
-nrow(unique(soildata[is.na(dsi), "id"])) # Result: 10 476 events
+nrow(soildata[is.na(dsi), ]) # Result: 22486 layers
+nrow(unique(soildata[is.na(dsi), "id"])) # Result: 12517 events
 
 # SOIL COVARIATES
 # Endpoint (MUST BE CORRECTED IN PREVIOUS SCRIPT)
@@ -33,9 +43,13 @@ soildata[is.na(endpoint), endpoint := 0]
 colnames(soildata)
 not_covars <- c(
   "dsi",
-  "observacao_id", "coord_x", "coord_y", "coord_precisao", "coord_fonte", "amostra_area",
-   "amostra_id", "camada_nome",
-  "data_coleta_ano", "id", "coord_datum_epsg", "taxon_sibcs", "esqueleto"
+  "observacao_id", "id", 
+  "coord_x", "coord_y", "coord_precisao", "coord_fonte", "coord_datum", "amostra_area", "pais_id",
+  "amostra_id", "camada_nome",
+  "data_ano",
+  "taxon_sibcs",
+  "esqueleto",
+  "endpoint"
 )
 covars_names <- colnames(soildata)[!colnames(soildata) %in% not_covars]
 print(covars_names)
@@ -190,7 +204,6 @@ grid(nx = NULL, ny = FALSE, col = "gray")
 dev.off()
 names(dsi_model_variable[dsi_model_variable < variable_importance_threshold])
 
-
 # Figure: Plot fitted versus observed values
 # Set color of points as a function of the absolute error, that is, abs(y - x). The absolute error
 # ranges from 0 to 1.
@@ -217,8 +230,8 @@ dev.off()
 dsi_digits <- 2
 tmp <- predict(dsi_model, data = covariates[is_na_dsi, ])
 soildata[is_na_dsi, dsi := round(tmp$predictions, dsi_digits)]
-nrow(unique(soildata[, "id"])) # Result: 11 751
-nrow(soildata) # Result: 21 750
+nrow(unique(soildata[, "id"])) # Result: 14880
+nrow(soildata) # Result: 27649
 
 # Figure. Distribution of soil bulk density data
 png("res/fig/bulk_density_histogram.png", width = 480 * 3, height = 480 * 3, res = 72 * 3)
@@ -243,7 +256,7 @@ dev.off()
 # Write data to disk
 soildata[, abs_error := NULL]
 summary_soildata(soildata)
-# Layers: 21750
-# Events: 11751
-# Georeferenced events: 9452
+# Layers: 27649
+# Events: 14880
+# Georeferenced events: 12537
 data.table::fwrite(soildata, "data/30_soildata_soc.txt", sep = "\t")
