@@ -61,8 +61,10 @@ rm(soildata_sf)
 # ORDER and SUBORDER (multivariate)
 soildata[, taxon_sibcs := toupper(taxon_sibcs)]
 soildata[, taxon_sibcs := gsub("Á", "A", taxon_sibcs)]
+soildata[, taxon_sibcs := gsub("Ê", "E", taxon_sibcs)]
 soildata[, taxon_sibcs := gsub("Í", "I", taxon_sibcs)]
 soildata[, taxon_sibcs := gsub("Ú", "U", taxon_sibcs)]
+soildata[, taxon_sibcs := gsub("Ó", "O", taxon_sibcs)]
 soildata[taxon_sibcs == "", taxon_sibcs := "NA NA NA NA"]
 sibcs <- strsplit(soildata[["taxon_sibcs"]], " ")
 sibcs <- lapply(sibcs, function(x) {
@@ -82,6 +84,15 @@ soildata[SUBORDER == "NA", SUBORDER := NA_character_]
 # If categories in ORDER and SUBORDER have less than 15 observations, replace its values with NA
 soildata[, ORDER := ifelse(.N < 15, NA_character_, ORDER), by = ORDER]
 soildata[, SUBORDER := ifelse(.N < 15, NA_character_, SUBORDER), by = SUBORDER]
+soildata[ORDER == "PVA", ORDER := "ARGISSOLO"] # Correct a typo
+soildata[ORDER == "PVA", SUBORDER := NA_character_] # Correct a typo
+soildata[ORDER == "PODZOLICO", ORDER := "ARGISSOLO"] # Correct a typo
+soildata[ORDER == "PODZOLICO", SUBORDER := NA_character_] # Correct a typo
+soildata[ORDER == "CA", ORDER := "CAMBISSOLO"] # Correct a typo
+soildata[ORDER == "CA", SUBORDER := NA_character_] # Correct a typo
+soildata[SUBORDER == "A", SUBORDER := NA_character_] # Correct a typo
+soildata[SUBORDER == "QUARTZARENICORTICO", SUBORDER := "QUARTZARENICO"] # Correct a typo
+soildata[SUBORDER == "TB", SUBORDER := NA_character_] # Correct a typo
 summary(soildata[, as.factor(ORDER)])
 summary(soildata[, as.factor(SUBORDER)])
 
@@ -163,6 +174,12 @@ summary(soildata[, as.factor(EHRZN)])
 soildata <- soildata[order(id, camada_id)]
 soildata[, dsi_upper := shift(dsi, type = "lag"), by = id]
 soildata[, dsi_lower := shift(dsi, type = "lead"), by = id]
+
+# Fine earth of the upper and lower layer
+soildata[, fine_upper := shift(terrafina, type = "lag"), by = id]
+soildata[, fine_lower := shift(terrafina, type = "lead"), by = id]
+summary(soildata[, fine_upper])
+summary(soildata[, fine_lower])
 
 # DENSIC
 # Dense horizon (bivariate)
