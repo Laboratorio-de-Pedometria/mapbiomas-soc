@@ -71,7 +71,7 @@ soildata <- soildata[order(dataset_id, observacao_id, profund_sup, profund_inf)]
 # MISSING DEPTH
 # Check if there are layers missing profund_sup or profund_inf
 soildata[, na_depth := is.na(profund_sup) | is.na(profund_inf)]
-soildata[na_depth == TRUE, .(id, camada_nome, profund_sup, profund_inf)]
+soildata[na_depth == TRUE, .(id, camada_nome, profund_sup, profund_inf, carbono)
 soildata[na_depth == TRUE, .N, by = dataset_id]
 soildata[, na_depth := NULL]
 # filter out layers with missing depth
@@ -148,7 +148,7 @@ print(soildata[equal_depth == TRUE, .(id, camada_nome, profund_sup, profund_inf)
 # Actually, these layers have not a depth limit recorded. So we set them to NA.
 soildata[
   dataset_id == "ctb0631" & profund_sup == profund_inf & profund_sup == 0,
-  .(id, camada_nome, profund_sup, profund_inf)
+  .(id, camada_nome, profund_sup, profund_inf, carbono)
 ]
 soildata <- soildata[!(dataset_id == "ctb0631" & profund_sup == profund_inf & profund_sup == 0)]
 nrow(soildata[profund_sup == profund_inf]) # 35 layers
@@ -340,6 +340,7 @@ summary_soildata(soildata)
 # It is assumed that these are samples with missing data and that, when missing, the value of fine
 # earth is 1000 g/kg.
 nrow(soildata[terrafina == 0, ]) # 24 samples with terrafina == 0
+print(soildata[terrafina == 0, .(id, camada_nome, profund_sup, profund_inf, terrafina)])
 soildata[terrafina == 0, terrafina := 1000]
 
 # Soil skeleton
