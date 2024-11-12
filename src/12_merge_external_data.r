@@ -146,10 +146,12 @@ if (FALSE) {
 # Merge SoilData data with external data
 soildata_01[, observacao_id := id]
 soildata_01[, id := paste0(dataset_id, "-", id)]
-idx <- match(colnames(soildata_02), colnames(soildata_01))
-idx01 <- na.exclude(idx)
-idx02 <- which(!is.na(idx))
-soildata <- rbind(soildata_02[, ..idx02], soildata_01[, ..idx01])
+soildata <- rbind(soildata_01, soildata_02, fill = TRUE)
+# The following code is deleterious: it removed key columns from the second data set
+# idx <- match(colnames(soildata_02), colnames(soildata_01))
+# idx01 <- na.exclude(idx)
+# idx02 <- which(!is.na(idx))
+# soildata <- rbind(soildata_02[, ..idx02], soildata_01[, ..idx01])
 summary_soildata(soildata)
 # Layers: 52260
 # Events: 15175
