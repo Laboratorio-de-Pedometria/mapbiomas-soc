@@ -245,7 +245,10 @@ soildata[
 sum(soildata[["endpoint"]], na.rm = TRUE) # 336 events with endpoint <= 30 cm
 print(soildata[endpoint == 1, .(id, camada_nome, profund_sup, profund_inf, carbono)])
 
-# Maximum layer depth
+
+# Aqui
+
+
 # Filter out soil layers starting below a maximum depth of 30 cm
 # We work only with data from the first 30 cm and deeper layers that start at or before 30 cm.
 max_depth <- 30
@@ -306,7 +309,7 @@ soildata[, camada_id := 1:.N, by = id]
 # ctb0033 has 851 events without a topsoil layer. This is because, for many soil profiles, soil
 # samples for laboratory were not collected from the entire soil horizon. This seems to be due to 
 # the presence of a thin organic layer at the soil surface or coarse fragments that were not
-# sampled. 
+# sampled.
 # Filter out whole events without a topsoil layer.
 soildata[, topsoil := any(profund_sup == 0), by = id]
 nrow(unique(soildata[topsoil != TRUE, "id"])) # 550 events
