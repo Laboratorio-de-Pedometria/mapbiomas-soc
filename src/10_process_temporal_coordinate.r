@@ -7,9 +7,11 @@ rm(list = ls())
 # Install and load required packages
 if (!require("data.table")) {
   install.packages("data.table")
+  library(data.table)
 }
 if (!require("dataverse")) {
   install.packages("dataverse")
+  library(dataverse)
 }
 
 # Source helper functions
