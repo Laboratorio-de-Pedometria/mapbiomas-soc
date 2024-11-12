@@ -341,7 +341,7 @@ summary_soildata(soildata)
 # It is assumed that these are samples with missing data and that, when missing, the value of fine
 # earth is 1000 g/kg.
 nrow(soildata[terrafina == 0, ]) # 24 samples with terrafina == 0
-print(soildata[terrafina == 0, .(id, camada_nome, profund_sup, profund_inf, terrafina)])
+print(soildata[terrafina == 0, .(id, camada_nome, profund_sup, profund_inf, terrafina, argila)])
 soildata[terrafina == 0, terrafina := 1000]
 
 # Soil skeleton
@@ -411,11 +411,11 @@ soildata[grepl("Leito", camada_nome, ignore.case = TRUE), camada_nome := "SAND"]
 sort(unique(soildata[, camada_nome]))
 
 # R layers
-# Filter out layers with camada_nome == "R", creating a new variable called soil. 
+# Filter out layers with camada_nome == "R", creating a new variable called soil.
 # Filter out layers with camada_nome == "R", creating a new variable called soil. This variable is
 # used to identify layers with soil (1) and rock (0). Then we set the bulk density of these rock
 # layers to +Inf.
-nrow(soildata[camada_nome == "R", ]) # 82 R layers
+# nrow(soildata[camada_nome == "R", ]) # 82 R layers
 # soildata <- soildata[camada_nome != "R", ]
 # soildata[, soil := 1]
 # soildata[camada_nome == "R", soil := 0]
@@ -439,12 +439,26 @@ nrow(soildata[camada_nome == "R", ]) # 82 R layers
 # nrow(soildata) # 21 687 layers
 
 # Particle size distribution
-# Start by checking if all three fractions are present and, if so, check if their sum is 100%
-# of 1000 g/kg -- the later is the standard! If sum(psd) != 1000, adjust all three values.
-soildata[, psd := argila + silte + areia]
-soildata[psd != 1000, argila := round(argila / psd * 1000)]
-soildata[psd != 1000, silte := round(silte / psd * 1000)]
-soildata[psd != 1000, areia := round(areia / psd * 1000)]
+# Transform the particle size fractions from g/kg to %. Then check if their sum is 100%
+soildata[, argila := round(argila / 10)]
+soildata[, silte := round(silte / 10)]
+soildata[, areia := round(areia / 10)]
+soildata[, psd := round(argila + silte + areia)]
+# Se a soma das três frações diferir de 100% em até 5%, ajustar o valor da fração de silte.
+soildata[abs(psd - 100) %in% 1:5, .N] # 2277 layers
+soildata[abs(psd - 100) %in% 1:5, silte := 100 - argila - areia]
+soildata[, psd := round(argila + silte + areia)]
+# Salvar as camadas com soma diferente de 100% em um arquivo
+write.table(soildata[
+  psd != 100,
+  .(dataset_id, observacao_id, camada_nome, terrafina, argila, silte, areia, psd)
+], "res/tab/psd_not_100_percent.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+# ATENÇÃO! O CÓDIGO ABAIXO SOBRESCREVE TODAS AS CAMADAS COM SOMA DIFERENTE DE 100%.
+soildata[psd != 100, argila := round(argila / psd * 100)]
+soildata[psd != 100, areia := round(areia / psd * 100)]
+soildata[psd != 100, silte := 100 - argila - areia]
+soildata[, psd := round(argila + silte + areia)]
+soildata[psd != 100, psd]
 soildata[, psd := NULL]
 
 # Correct bulk density values
