@@ -15,20 +15,24 @@ source("src/00_helper_functions.r")
 # Read SoilData data processed in the previous script
 soildata <- data.table::fread("data/14_soildata_soc.txt", sep = "\t")
 summary_soildata(soildata)
-# Layers: 29465
-# Events: 15499
-# Georeferenced events: 13151
+# Layers: 52947
+# Events: 15423
+# Georeferenced events: 13111
 
 # Create a data.table with the particle size distribution
-psd_data <- soildata[, .(id, coord_x, coord_y, profund_sup, profund_inf, argila, silte, areia)]
+psd_data <- soildata[
+  !is.na(argila) & !is.na(silte) & !is.na(areia) & !is.na(coord_x) & !is.na(coord_y),
+  .(id, coord_x, coord_y, profund_sup, profund_inf, argila, silte, areia)
+]
 psd_data[, depth_mid := profund_sup + (profund_inf - profund_sup) / 2, by = .I]
-psd_data[, has_psd := is.na(argila) + is.na(silte) + is.na(areia) == 0, by = id]
-psd_data[, has_coord := is.na(coord_x) + is.na(coord_y) == 0, by = id]
-print(psd_data)
+summary_soildata(psd_data)
+# Layers: 38584
+# Events: 11494
+# Georeferenced events: 11494
 
 # Compute the clay content at 5, 15, and 25 cm depth
 psd_data <- psd_data[
-  has_psd == TRUE & has_coord == TRUE,
+  ,
   .(
     coord_x = mean(coord_x, na.rm = TRUE),
     coord_y = mean(coord_y, na.rm = TRUE),
@@ -45,7 +49,6 @@ psd_data <- psd_data[
   by = id
 ]
 
-soildata[id %in% psd_data[clay10_20 < 0, id]]
 
 # Check the sum of the particle size distribution
 psd_data[, psd0_10 := clay0_10 + silt0_10 + sand0_10]
