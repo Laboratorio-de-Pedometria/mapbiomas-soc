@@ -245,19 +245,17 @@ soildata[
 sum(soildata[["endpoint"]], na.rm = TRUE) # 336 events with endpoint <= 30 cm
 print(soildata[endpoint == 1, .(id, camada_nome, profund_sup, profund_inf, carbono)])
 
-
-# Aqui
-
-
-# Filter out soil layers starting below a maximum depth of 30 cm
-# We work only with data from the first 30 cm and deeper layers that start at or before 30 cm.
-max_depth <- 30
-nrow(soildata[profund_sup >= max_depth, ]) # 27654 layers with profund_sup >= 30
-soildata <- soildata[profund_sup >= 0 & profund_sup <= max_depth, ]
-summary_soildata(soildata)
-# Layers: 29282
-# Events: 15702
-# Georeferenced events: 13256
+if (FALSE) { # AVOID THIS FOR NOW ##################################################################
+  # Filter out soil layers starting below a maximum depth of 30 cm
+  # We work only with data from the first 30 cm and deeper layers that start at or before 30 cm.
+  max_depth <- 30
+  nrow(soildata[profund_sup >= max_depth, ]) # 27654 layers with profund_sup >= 30
+  soildata <- soildata[profund_sup >= 0 & profund_sup <= max_depth, ]
+  summary_soildata(soildata)
+  # Layers: 29282
+  # Events: 15702
+  # Georeferenced events: 13256
+}
 
 # Adjacent layers
 # For each event (id), profund_inf of layer i should be equal to profund_sup of layer i + 1.
