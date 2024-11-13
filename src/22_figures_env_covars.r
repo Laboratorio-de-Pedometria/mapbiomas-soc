@@ -23,9 +23,9 @@ source("src/00_helper_functions.r")
 # Read data processed in the previous script
 soildata <- data.table::fread("data/21_soildata_soc.txt", sep = "\t", na.strings = c("NA", ""))
 summary_soildata(soildata)
-# Layers: 27649
-# Events: 14880
-# Georeferenced events: 12537
+# Layers: 29465
+# Events: 15499
+# Georeferenced events: 13151
 
 # FIGURE
 # Distribution of events through land use/land cover classes
@@ -46,7 +46,7 @@ dev.off()
 # Geolocalized events missing data on SoilGrids and MapBiomas
 na_sg <- soildata[is.na(clay_0_5cm) & !is.na(coord_x) & !is.na(coord_y), .N, by = id]
 na_sg <- nrow(na_sg)
-print(na_sg) # 303 events
+print(na_sg) # 306 events
 na_mb <- soildata[is.na(lulc) & !is.na(coord_x) & !is.na(coord_y) & data_ano >= 1985, ]
 na_mb[, .(id, camada_nome, data_ano, coord_y, coord_x, carbono)]
 na_mb <- nrow(na_mb)
