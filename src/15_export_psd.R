@@ -54,7 +54,7 @@ if (FALSE) {
 
 # Write data to disk
 folder_path <- "~/Insync/MapBiomas Solo/Trainning samples/"
-file_name <- "-clay-silt-sand-percent.csv"
+file_name <- "-clay-silt-sand-log-ratio.csv"
 # List existing files in the folder_path and get the last one. Then read it.
 existing_files <- list.files(path = folder_path, pattern = file_name)
 last_file <- existing_files[length(existing_files)]
