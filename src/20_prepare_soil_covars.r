@@ -15,21 +15,21 @@ if (!require("sf")) {
 # Source helper functions
 source("src/00_helper_functions.r")
 
-# Read data processed in the previous script
+# Read data produced in the previous processing script
 soildata <- data.table::fread("data/14_soildata_soc.txt", sep = "\t")
 summary_soildata(soildata)
-# Layers: 27649
-# Events: 14880
-# Georeferenced events: 12537
+# Layers: 29465
+# Events: 15499
+# Georeferenced events: 13151
 
 # Correct layer depth and name
-soildata[
-  dataset_id == "ctb0829" & observacao_id == "P92" & camada_nome == "A",
-  profund_inf := 8
-]
+# soildata[
+#   dataset_id == "ctb0829" & observacao_id == "P92" & camada_nome == "A",
+#   profund_inf := 8
+# ]
 soildata[
   dataset_id == "ctb0636" & observacao_id == "Perfil-03" & profund_sup == 0,
-  camada_nome := "A1"
+  camada_nome := ifelse("Ao", "A1", camada_nome)
 ]
 
 # Prepare predictors
@@ -93,8 +93,8 @@ soildata[ORDER == "CA", SUBORDER := NA_character_] # Correct a typo
 soildata[SUBORDER == "A", SUBORDER := NA_character_] # Correct a typo
 soildata[SUBORDER == "QUARTZARENICORTICO", SUBORDER := "QUARTZARENICO"] # Correct a typo
 soildata[SUBORDER == "TB", SUBORDER := NA_character_] # Correct a typo
-summary(soildata[, as.factor(ORDER)])
-summary(soildata[, as.factor(SUBORDER)])
+soildata[, .N, by = ORDER]
+soildata[, .N, by = SUBORDER]
 
 # STONESOL
 # Soil classes known for having a skeleton (bivariate)
@@ -107,7 +107,7 @@ soildata[SUBORDER == "LITOLICO", STONESOL := "TRUE"]
 soildata[SUBORDER == "REGOLITICO", STONESOL := "TRUE"]
 soildata[SUBORDER == "QUARTZARENICO", STONESOL := "FALSE"]
 soildata[SUBORDER == "HAPLICO", STONESOL := "FALSE"]
-summary(soildata[, as.factor(STONESOL)])
+soildata[, .N, by = STONESOL]
 
 # STONY
 # Soil layers known for having concretions, nodules, rock fragments, rock-like pedogenic layers, and
@@ -119,7 +119,7 @@ soildata[grepl("F", camada_nome, ignore.case = FALSE), STONY := "TRUE"]
 soildata[grepl("^R$", camada_nome, ignore.case = FALSE, perl = TRUE), esqueleto := 1000]
 soildata[grepl("R", camada_nome, ignore.case = TRUE), STONY := "TRUE"]
 soildata[grepl("u", camada_nome, ignore.case = FALSE), STONY := "TRUE"]
-summary(soildata[, as.factor(STONY)])
+soildata[, .N, by = STONY]
 
 # ORGANIC
 # Organic layers (bivariate)
@@ -128,7 +128,7 @@ soildata[carbono < 80, ORGANIC := "FALSE"]
 soildata[carbono >= 80, ORGANIC := "TRUE"]
 soildata[grepl("o", camada_nome, ignore.case = TRUE), ORGANIC := "TRUE"]
 soildata[grepl("H", camada_nome, ignore.case = FALSE), ORGANIC := "TRUE"]
-summary(soildata[, as.factor(ORGANIC)])
+soildata[, .N, by = ORGANIC]
 
 # AHRZN
 # A horizon (bivariate)
@@ -137,7 +137,7 @@ soildata[camada_nome != "???", AHRZN := "FALSE"]
 soildata[grepl("A", camada_nome, ignore.case = FALSE), AHRZN := "TRUE"]
 unique(soildata[AHRZN == "TRUE", camada_nome])
 unique(soildata[AHRZN == "FALSE", camada_nome])
-summary(soildata[, as.factor(AHRZN)])
+soildata[, .N, by = AHRZN]
 
 # BHRZN
 # B horizon (bivariate)
@@ -146,7 +146,7 @@ soildata[camada_nome != "???", BHRZN := "FALSE"]
 soildata[grepl("B", camada_nome, ignore.case = FALSE), BHRZN := "TRUE"]
 unique(soildata[BHRZN == "TRUE", camada_nome])
 unique(soildata[BHRZN == "FALSE", camada_nome])
-summary(soildata[, as.factor(BHRZN)])
+soildata[, .N , by = BHRZN]
 
 # Dense horizon
 soildata[grepl("t", camada_nome), BHRZN_DENSE := TRUE]
@@ -155,7 +155,7 @@ soildata[grepl("pl", camada_nome), BHRZN_DENSE := TRUE]
 soildata[grepl("n", camada_nome), BHRZN_DENSE := TRUE]
 soildata[is.na(BHRZN_DENSE), BHRZN_DENSE := FALSE]
 soildata[camada_nome == "???", BHRZN_DENSE := NA]
-summary(soildata$BHRZN_DENSE)
+soildata[, .N, by = BHRZN_DENSE]
 
 # EHRZN
 # E horizon (bivariate)
@@ -164,7 +164,7 @@ soildata[camada_nome != "???", EHRZN := "FALSE"]
 soildata[grepl("E", camada_nome, ignore.case = FALSE), EHRZN := "TRUE"]
 unique(soildata[EHRZN == "TRUE", camada_nome])
 unique(soildata[EHRZN == "FALSE", camada_nome])
-summary(soildata[, as.factor(EHRZN)])
+soildata[, .N, by = EHRZN]
 
 # Bulk density of upper and lower layer
 # First, sort the data by soil event (id) and soil layer (camada_id).
@@ -174,6 +174,8 @@ summary(soildata[, as.factor(EHRZN)])
 soildata <- soildata[order(id, camada_id)]
 soildata[, dsi_upper := shift(dsi, type = "lag"), by = id]
 soildata[, dsi_lower := shift(dsi, type = "lead"), by = id]
+summary(soildata[, dsi_upper])
+summary(soildata[, dsi_lower])
 
 # Fine earth of the upper and lower layer
 soildata[, fine_upper := shift(terrafina, type = "lag"), by = id]
@@ -188,21 +190,21 @@ soildata[grepl("v", camada_nome), DENSIC := TRUE]
 soildata[grepl("n", camada_nome), DENSIC := TRUE]
 soildata[is.na(DENSIC), DENSIC := FALSE]
 soildata[camada_nome == "???", DENSIC := NA]
-summary(soildata$DENSIC)
+soildata[, .N, by = DENSIC]
 
 # cec/clay ratio
 # Cation exchange capacity (ctc) to clay ratio
 soildata[ctc > 0 & argila > 0, cec_clay_ratio := ctc / argila]
-summary(soildata$cec_clay_ratio)
+summary(soildata[, cec_clay_ratio])
 
 # silt/clay ratio
 # Silt to clay ratio
 soildata[silte > 0 & argila > 0, silt_clay_ratio := silte / argila]
-summary(soildata$silt_clay_ratio)
+summary(soildata[, silt_clay_ratio])
 
 # Write data to disk
 summary_soildata(soildata)
-# Layers: 27649
-# Events: 14880
-# Georeferenced events: 12537
+# Layers: 29465
+# Events: 15499
+# Georeferenced events: 13151
 data.table::fwrite(soildata, "data/20_soildata_soc.txt", sep = "\t")
