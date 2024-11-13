@@ -27,10 +27,20 @@ psd_data <- soildata[
 psd_data[, depth := profund_sup + (profund_inf - profund_sup) / 2, by = .I]
 psd_data[, profund_sup := NULL]
 psd_data[, profund_inf := NULL]
-data.table::setnames(psd_data, old = "argila", new = "clay")
-data.table::setnames(psd_data, old = "silte", new = "silt")
-data.table::setnames(psd_data, old = "areia", new = "sand")
-data.table::setcolorder(psd_data, c("id", "coord_x", "coord_y", "depth", "clay", "silt", "sand"))
+
+# Compute additive log ratio transformation
+psd_data[, log_clay_sand := log(argila / areia)]
+psd_data[, log_silt_sand := log(silte / areia)]
+summary(psd_data[, .(log_clay_sand, log_silt_sand)])
+
+# Remove original columns
+psd_data[, c("argila", "silte", "areia") := NULL]
+
+# Rename columns
+data.table::setcolorder(
+  psd_data,
+  c("id", "coord_x", "coord_y", "depth", "log_clay_sand", "log_silt_sand")
+)
 summary_soildata(psd_data)
 # Layers: 20979
 # Events: 11473
@@ -39,7 +49,7 @@ summary_soildata(psd_data)
 # Plot using mapview
 if (FALSE) {
   psd_data_sf <- sf::st_as_sf(psd_data, coords = c("coord_x", "coord_y"), crs = 4326)
-  mapview::mapview(psd_data_sf, zcol = "clay")
+  mapview::mapview(psd_data_sf, zcol = "log_clay_sand")
 }
 
 # Write data to disk
