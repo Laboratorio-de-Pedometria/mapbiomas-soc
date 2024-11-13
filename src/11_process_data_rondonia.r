@@ -146,7 +146,7 @@ amount <- 200
 extra_coords <- rondonia[EXTRA == TRUE & !is.na(coord_x), c("id", "coord_x", "coord_y")]
 extra_coords <- sf::st_as_sf(extra_coords, coords = c("coord_x", "coord_y"), crs = 4326)
 extra_coords <- sf::st_transform(extra_coords, crs = 32720)
-set.seed(32720)
+set.seed(1984)
 extra_coords <- sf::st_jitter(extra_coords, amount = amount)
 extra_coords <- sf::st_transform(extra_coords, crs = 4326)
 extra_coords <- sf::st_coordinates(extra_coords)
