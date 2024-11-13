@@ -15,9 +15,9 @@ source("src/00_helper_functions.r")
 # Read SoilData data processed in the previous script
 soildata <- data.table::fread("data/13_soildata_soc.txt", sep = "\t")
 summary_soildata(soildata)
-# Layers: 58324
-# Events: 17505
-# Georeferenced events: 14085
+# Layers: 60151
+# Events: 18124
+# Georeferenced events: 14699
 
 # Clean datasets
 # ctb0001
@@ -59,9 +59,9 @@ soildata <- soildata[dataset_id != "ctb0654", ]
 soildata <- soildata[dataset_id != "ctb0800", ]
 
 summary_soildata(soildata)
-# Layers: 57189
-# Events: 16865
-# Georeferenced events: 13450
+# Layers: 59016
+# Events: 17484
+# Georeferenced events: 14064
 
 # Clean layers #####################################################################################
 
@@ -71,21 +71,23 @@ soildata <- soildata[order(dataset_id, observacao_id, profund_sup, profund_inf)]
 # MISSING DEPTH
 # Check if there are layers missing profund_sup or profund_inf
 soildata[, na_depth := is.na(profund_sup) | is.na(profund_inf)]
-soildata[na_depth == TRUE, .(id, camada_nome, profund_sup, profund_inf, carbono)
+soildata[na_depth == TRUE, .(id, camada_nome, profund_sup, profund_inf, carbono)]
 soildata[na_depth == TRUE, .N, by = dataset_id]
 soildata[, na_depth := NULL]
 # filter out layers with missing depth
 soildata <- soildata[!is.na(profund_sup) & !is.na(profund_inf), ]
 summary_soildata(soildata)
-# Layers: 55970
-# Events: 15884
-# Georeferenced events: 13392
+# Layers: 57797
+# Events: 16503
+# Georeferenced events: 14006
 
 # ORGANIC TOPSOIL
 # Some topsoil layers are organic layers that do not have a measurement of carbon.
 # Some of these organic layers have negative limits but others have positive limits.
 # We start by identifying layers with carbono == NA and H or O in camada_nome.
-soildata[id == "ctb0770-100" & camada_nome == "B21H", camada_nome := "B21h"]
+soildata[
+  id == "ctb0770-100" & camada_nome == "B21H", camada_nome := ifelse("B21H", "B21h", camada_nome)
+]
 soildata[, organic_topsoil := any(is.na(carbono) & grepl("H|O", camada_nome)), by = id]
 soildata[organic_topsoil == TRUE, .(id, camada_nome, profund_sup, profund_inf, carbono)]
 summary_soildata(soildata[organic_topsoil == TRUE])
@@ -107,16 +109,16 @@ soildata[profund_sup < 0, .(id, camada_nome, profund_sup, profund_inf, carbono)]
 soildata <- soildata[profund_sup >= 0, ]
 soildata[, organic_topsoil := NULL]
 summary_soildata(soildata)
-# Layers: 55790
-# Events: 15883
-# Georeferenced events: 13392
+# Layers: 57617
+# Events: 16502
+# Georeferenced events: 14006
 
 # LAYER LIMITS
 # Some layers have equal values for profund_sup and profund_inf.
 # This may occur when the soil profile sampling and description ended at the top of the layer,
 # producing a censoring effect. If the layer has a name containing R, D, or C, we add a fixed depth
 # (plus_depth).
-nrow(soildata[profund_sup == profund_inf]) # 224 layers
+nrow(soildata[profund_sup == profund_inf]) # 222 layers
 soildata[, equal_depth := any(profund_sup == profund_inf), by = id]
 print(soildata[equal_depth == TRUE, .(id, camada_nome, profund_sup, profund_inf)])
 
@@ -192,9 +194,9 @@ soildata <- soildata[equal_depth == FALSE]
 nrow(soildata[profund_sup == profund_inf]) # 0 layers
 soildata[, equal_depth := NULL]
 summary_soildata(soildata)
-# Layers: 55703
-# Events: 15851
-# Georeferenced events: 13367
+# Layers: 57530
+# Events: 16470
+# Georeferenced events: 13981
 
 # Layer id
 # Sort each event (id) by layer depth (profund_sup and profund_inf)
@@ -217,9 +219,9 @@ print(soildata[id == "ctb0055-PR_4", .(id, camada_nome, profund_sup, profund_inf
 soildata <- soildata[repeated == FALSE, ]
 soildata[, repeated := NULL]
 summary_soildata(soildata)
-# Layers: 55001
-# Events: 15851
-# Georeferenced events: 13352
+# Layers: 56828
+# Events: 16470
+# Georeferenced events: 13966
 
 # Soil end point (<= 30 cm)
 # The variable 'endpoint' identifies if the soil profile sampling and description went all the way
@@ -442,8 +444,11 @@ soildata[, argila := round(argila / 10)]
 soildata[, silte := round(silte / 10)]
 soildata[, areia := round(areia / 10)]
 soildata[, psd := round(argila + silte + areia)]
-# Se a soma das três frações diferir de 100% em até 5%, ajustar o valor da fração de silte.
+# If the sum of the three fractions is different from 100%, adjust their values, adding the
+# difference to the silt fraction.
 soildata[abs(psd - 100) %in% 1:5, .N] # 1278 layers
+soildata[abs(psd - 100) %in% 1:5, argila := round(argila / psd * 100)]
+soildata[abs(psd - 100) %in% 1:5, areia := round(areia / psd * 100)]
 soildata[abs(psd - 100) %in% 1:5, silte := 100 - argila - areia]
 soildata[, psd := round(argila + silte + areia)]
 # Salvar as camadas com soma diferente de 100% em um arquivo
@@ -496,6 +501,7 @@ sum(duplo) # 201 duplicated events
 soildata_events[duplo, unique(dataset_id)]
 # ctb0010, ctb0017, ctb0033, ctb0832, ctb0631, ctb0585
 ctb <- c("ctb0010", "ctb0017", "ctb0033", "ctb0832", "ctb0631", "ctb0585")
+set.seed(1984)
 soildata_events[duplo & dataset_id %in% ctb, coord_x := coord_x + runif(.N, -0.00001, 0.00001)]
 duplo <- duplicated(soildata_events[, ..test_columns])
 sum(duplo) # 158 duplicated events

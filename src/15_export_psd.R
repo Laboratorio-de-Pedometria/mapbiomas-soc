@@ -39,11 +39,19 @@ summary_soildata(psd_data)
 # Plot using mapview
 if (FALSE) {
   psd_data_sf <- sf::st_as_sf(psd_data, coords = c("coord_x", "coord_y"), crs = 4326)
-  mapview::mapview(psd_data_sf, zcol = "argila")
+  mapview::mapview(psd_data_sf, zcol = "clay")
 }
 
 # Write data to disk
-file_path <- "~/Insync/MapBiomas Solo/Trainning samples/"
-file_path <- paste0(file_path, format(Sys.time(), "%Y-%m-%d"), "-clay-silt-sand-percent.csv")
-file_path <- path.expand(file_path)
-data.table::fwrite(psd_data, file_path)
+folder_path <- "~/Insync/MapBiomas Solo/Trainning samples/"
+file_name <- "-clay-silt-sand-percent.csv"
+# List existing files in the folder_path and get the last one. Then read it.
+existing_files <- list.files(path = folder_path, pattern = file_name)
+last_file <- existing_files[length(existing_files)]
+last_psd_data <- data.table::fread(paste0(folder_path, last_file))
+# Check if last_psd_data == psd_data. If not, write psd_data to disk.
+if (!identical(last_psd_data, psd_data)) {
+  file_path <- paste0(folder_path, format(Sys.time(), "%Y-%m-%d"), file_name)
+  file_path <- path.expand(file_path)
+  data.table::fwrite(psd_data, file_path)
+}
