@@ -464,6 +464,25 @@ soildata[, psd := round(argila + silte + areia)]
 soildata[psd != 100, psd]
 soildata[, psd := NULL]
 
+# Check if there is any size fraction equal to 0
+# clay
+psd_data[argila == 0, .(id, coord_x, coord_y, depth, argila)]
+psd_data[dataset_id == "ctb0020" & argila == 0, silte := silte - 1]
+psd_data[dataset_id == "ctb0020" & argila == 0, argila := 1]
+psd_data[dataset_id == "ctb0053" & argila == 0, silte := silte - 1]
+psd_data[dataset_id == "ctb0053" & argila == 0, argila := 1]
+# We have not checked the other cases, but we assume that the same problem occurs in these cases.
+psd_data[argila == 0, silte := silte - 1]
+psd_data[argila == 0, argila := 1]
+# sand
+psd_data[areia == 0, .(id, coord_x, coord_y, depth, areia)]
+psd_data[areia == 0, silte := silte - 1]
+psd_data[areia == 0, areia := 1]
+# silt
+psd_data[silte == 0, .(id, coord_x, coord_y, depth, silte)]
+psd_data[silte == 0, areia := areia - 1]
+psd_data[silte == 0, silte := 1]
+
 # Correct bulk density values
 soildata[id == "ctb0562-Perfil-13" & camada_id == 2, dsi := ifelse(2.6, 0.86, dsi)]
 soildata[id == "ctb0562-Perfil-14" & camada_id == 1, dsi := ifelse(2.53, 1.09, dsi)]
