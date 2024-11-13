@@ -503,6 +503,9 @@ soildata[id == "ctb0702-P-46" & camada_id == 1, dsi := ifelse(2.08, 1.08, dsi)] 
 soildata[id == "ctb0572-Perfil-063" & camada_id == 2, dsi := ifelse(0.34, 1.84, dsi)]
 soildata[id == "ctb0605-P-06" & camada_id == 2, dsi := ifelse(0.31, 1.32, dsi)]
 
+# Endpoint
+soildata[is.na(endpoint), endpoint := 0]
+
 # Clean events
 
 # Identify duplicated events
