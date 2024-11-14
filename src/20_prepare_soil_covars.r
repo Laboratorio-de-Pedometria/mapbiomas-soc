@@ -116,7 +116,8 @@ soildata[, STONY := NA_character_]
 soildata[camada_nome != "UNKNOWN", STONY := "FALSE"]
 soildata[grepl("c", camada_nome, ignore.case = FALSE), STONY := "TRUE"]
 soildata[grepl("F", camada_nome, ignore.case = FALSE), STONY := "TRUE"]
-soildata[grepl("^R$", camada_nome, ignore.case = FALSE, perl = TRUE), esqueleto := 1000]
+# REMOVE
+# soildata[grepl("^R$", camada_nome, ignore.case = FALSE, perl = TRUE), esqueleto := 1000]
 soildata[grepl("R", camada_nome, ignore.case = TRUE), STONY := "TRUE"]
 soildata[grepl("u", camada_nome, ignore.case = FALSE), STONY := "TRUE"]
 soildata[, .N, by = STONY]
@@ -208,3 +209,4 @@ summary_soildata(soildata)
 # Events: 15499
 # Georeferenced events: 13151
 data.table::fwrite(soildata, "data/20_soildata_soc.txt", sep = "\t")
+
