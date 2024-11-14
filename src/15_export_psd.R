@@ -25,16 +25,34 @@ psd_data <- soildata[
   .(id, coord_x, coord_y, profund_sup, profund_inf, argila, silte, areia)
 ]
 psd_data[, depth := profund_sup + (profund_inf - profund_sup) / 2, by = .I]
-psd_data[, profund_sup := NULL]
-psd_data[, profund_inf := NULL]
+
+# Drop rows with depth > 40 cm
+psd_data <- psd_data[depth <= 40]
+summary_soildata(psd_data)
+# Layers: 19652
+# Events: 11449
+# Georeferenced events: 11449
 
 # Compute additive log ratio transformation
 psd_data[, log_clay_sand := log(argila / areia)]
 psd_data[, log_silt_sand := log(silte / areia)]
 summary(psd_data[, .(log_clay_sand, log_silt_sand)])
 
-# Remove original columns
-psd_data[, c("argila", "silte", "areia") := NULL]
+# Prepare figures
+dev.off()
+file_path <- "res/fig/psd_histogram.png"
+png(file_path, width = 480 * 3, height = 480 * 2, res = 72 * 2)
+par(mfrow = c(2, 3))
+hist(psd_data$argila, main = "Clay", xlab = "Clay (%)", col = "gray")
+hist(psd_data$silte, main = "Silt", xlab = "Silt (%)", col = "gray")
+hist(psd_data$areia, main = "Sand", xlab = "Sand (%)", col = "gray")
+hist(psd_data$log_clay_sand, main = "log(Clay/Sand)", xlab = "log(Clay/Sand)", col = "gray")
+hist(psd_data$log_silt_sand, main = "log(Silt/Sand)", xlab = "log(Silt/Sand)", col = "gray")
+hist(psd_data$depth, main = "Depth", xlab = "Depth (cm)", col = "gray")
+dev.off()
+
+# Drop unnecessary columns
+psd_data[, c("argila", "silte", "areia", "profund_sup", "profund_inf") := NULL]
 
 # Rename columns
 data.table::setcolorder(
@@ -42,9 +60,9 @@ data.table::setcolorder(
   c("id", "coord_x", "coord_y", "depth", "log_clay_sand", "log_silt_sand")
 )
 summary_soildata(psd_data)
-# Layers: 20979
-# Events: 11473
-# Georeferenced events: 11473
+# Layers: 19652
+# Events: 11449
+# Georeferenced events: 11449
 
 # Plot using mapview
 if (FALSE) {
