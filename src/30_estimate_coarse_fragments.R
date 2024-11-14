@@ -1,5 +1,5 @@
 # title: SoilData - Soil Organic Carbon Stock
-# subtitle: Estimate soil bulk density
+# subtitle: Estimate the proportion of coarse fragments
 # author: Alessandro Samuel-Rosa and Taciara Zborowski Horst
 # data: 2024 CC-BY
 rm(list = ls())
@@ -7,52 +7,50 @@ rm(list = ls())
 # Install and load required packages
 if (!require("data.table")) {
   install.packages("data.table")
+  library("data.table")
 }
 if (!require("ranger")) {
   install.packages("ranger")
+  library("ranger")
 }
 
 # Source helper functions
 source("src/00_helper_functions.r")
 
-# Read data from disk
-soildata <- data.table::fread("data/21_soildata_soc.txt")
+# Read data from previous processing script
+file_path <- "data/21_soildata_soc.txt"
+soildata <- data.table::fread(file_path)
 summary_soildata(soildata)
-# Layers: 27649
-# Events: 14880
-# Georeferenced events: 12537
+# Layers: 29465
+# Events: 15499
+# Georeferenced events: 13151
 
-# ALREADY MOVED TO A PREVIOUS SCRIPT
-soildata[, n_layers := NULL]
-soildata[, na_depth := NULL]
-soildata[, min_profund_sup := NULL]
-
-# DELETE POSSIBLE INCONSISTENCIES
-soildata[dsi > 2.5, dsi := NA_real_]
-
-# Identify layers missing soil bulk density data
-is_na_dsi <- is.na(soildata[["dsi"]])
-nrow(soildata[is.na(dsi), ]) # Result: 22486 layers
-nrow(unique(soildata[is.na(dsi), "id"])) # Result: 12517 events
-
-# SOIL COVARIATES
-# Endpoint (MUST BE CORRECTED IN PREVIOUS SCRIPT)
-soildata[is.na(endpoint), endpoint := 0]
+# CLASSIFICATION
+# Identify soil layers w/o skeleton
+soildata[, esqueleto := round(esqueleto / 10)]
+soildata[, has_skeleton := ifelse(esqueleto > 0, TRUE, FALSE)]
+soildata[, .N, by = has_skeleton]
+is_na_skeleton <- is.na(soildata[["has_skeleton"]])
+sum(is_na_skeleton) # 4141
 
 # Set covariates
 colnames(soildata)
-not_covars <- c(
-  "dsi",
-  "observacao_id", "id", 
-  "coord_x", "coord_y", "coord_precisao", "coord_fonte", "coord_datum", "amostra_area", "pais_id",
-  "amostra_id", "camada_nome",
-  "data_ano",
-  "taxon_sibcs",
-  "esqueleto",
-  "endpoint"
+covars_names <- c(
+  "dataset_id", "estado_id", "coord_x_utm", "coord_y_utm",
+  "profund_sup", "profund_inf", "espessura",
+  # "ph",
+  "ctc", "argila", "silte", "areia", "carbono",
+  "ORDER", "SUBORDER", "STONESOL",
+  "STONY", "ORGANIC", "AHRZN", "BHRZN", "BHRZN_DENSE", "EHRZN", "DENSIC",
+  # "fine_upper", "fine_lower",
+  "cec_clay_ratio", "silt_clay_ratio",
+  "bdod_0_5cm", "bdod_15_30cm", "bdod_5_15cm",
+  "cfvo_0_5cm",  "cfvo_15_30cm", "cfvo_5_15cm",
+  "clay_0_5cm", "clay_15_30cm", "clay_5_15cm",
+  "sand_0_5cm",  "sand_15_30cm", "sand_5_15cm",
+  "soc_0_5cm", "soc_15_30cm", "soc_5_15cm",
+  "lulc"
 )
-covars_names <- colnames(soildata)[!colnames(soildata) %in% not_covars]
-print(covars_names)
 
 # Missing value imputation
 # Use the missingness-in-attributes (MIA) approach with +/- Inf, with the indicator for missingness
@@ -62,6 +60,53 @@ covariates <- imputation(soildata[, ..covars_names],
 )
 covariates <- data.table::as.data.table(covariates)
 print(covariates)
+
+set.seed(1984)
+skeleton_model <- ranger::ranger(
+  y = soildata[!is_na_skeleton, has_skeleton],
+  x = covariates[!is_na_skeleton, ],
+  importance = "impurity",
+  replace = TRUE,
+  verbose = TRUE
+)
+print(skeleton_model)
+
+idx <- skeleton_model$predictions != soildata[!is_na_skeleton, has_skeleton]
+sum(idx) # 3058
+View(soildata[!is_na_skeleton, ][
+  idx,
+  .(id, camada_nome, profund_sup, profund_inf, esqueleto, has_skeleton)
+])
+
+
+# Figure: Variable importance
+# Plot only those with relative importance >= 0.01
+variable_importance_threshold <- 0.01
+skeleton_model_variable <- sort(skeleton_model$variable.importance)
+skeleton_model_variable <- round(skeleton_model_variable / max(skeleton_model_variable), 2)
+file_path <- "res/fig/skeleton_classification_variable_importance.png"
+dev.off()
+png(file_path, width = 480 * 3, height = 480 * 4, res = 72 * 3)
+par(mar = c(4, 6, 1, 1) + 0.1)
+barplot(skeleton_model_variable[skeleton_model_variable >= variable_importance_threshold],
+  horiz = TRUE, las = 1,
+  col = "gray", border = "gray",
+  xlab = "Relative importance >= 0.01", cex.names = 0.5
+)
+grid(nx = NULL, ny = FALSE, col = "gray")
+dev.off()
+
+# Predict presence/absence of skeleton
+tmp <- predict(skeleton_model, data = covariates[is_na_skeleton, ])
+soildata[is_na_skeleton, has_skeleton := tmp$predictions]
+summary_soildata(soildata)
+# Layers: 29465
+# Events: 15499
+# Georeferenced events: 13151
+
+soildata[is_na_skeleton & has_skeleton == 1, .(id, camada_nome)]
+
+
 
 # Prepare grid of hyperparameters
 # num.trees, mtry, min.node.size and max.depth
@@ -79,8 +124,8 @@ for (i in 1:nrow(hyperparameters)) {
   print(hyperparameters[i, ])
   set.seed(1984)
   model <- ranger::ranger(
-    y = soildata[!is_na_dsi, dsi],
-    x = covariates[!is_na_dsi, ],
+    y = soildata[!is_na_skeleton, has_skeleton],
+    x = covariates[!is_na_skeleton, ],
     num.trees = hyperparameters$num_trees[i],
     mtry = hyperparameters$mtry[i],
     min.node.size = hyperparameters$min_node_size[i],
