@@ -209,4 +209,3 @@ summary_soildata(soildata)
 # Events: 15499
 # Georeferenced events: 13151
 data.table::fwrite(soildata, "data/20_soildata_soc.txt", sep = "\t")
-
