@@ -15,9 +15,9 @@ source("src/00_helper_functions.r")
 # Read SoilData data processed in the previous script
 soildata <- data.table::fread("data/14_soildata_soc.txt", sep = "\t")
 summary_soildata(soildata)
-# Layers: 29465
-# Events: 15499
-# Georeferenced events: 13151
+# Layers: 29752
+# Events: 15643
+# Georeferenced events: 13295
 
 # Create a data.table with the particle size distribution
 psd_data <- soildata[
@@ -29,9 +29,9 @@ psd_data[, depth := profund_sup + (profund_inf - profund_sup) / 2, by = .I]
 # Drop rows with depth > 40 cm
 psd_data <- psd_data[depth <= 40]
 summary_soildata(psd_data)
-# Layers: 19652
-# Events: 11449
-# Georeferenced events: 11449
+# Layers: 19939
+# Events: 11593
+# Georeferenced events: 11593
 
 # Compute additive log ratio transformation
 psd_data[, log_clay_sand := log(argila / areia)]
@@ -60,9 +60,9 @@ data.table::setcolorder(
   c("id", "coord_x", "coord_y", "depth", "log_clay_sand", "log_silt_sand")
 )
 summary_soildata(psd_data)
-# Layers: 19652
-# Events: 11449
-# Georeferenced events: 11449
+# Layers: 19939
+# Events: 11593
+# Georeferenced events: 11593
 
 # Plot using mapview
 if (FALSE) {
