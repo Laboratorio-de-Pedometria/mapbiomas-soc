@@ -338,11 +338,19 @@ summary_soildata(soildata)
 
 # Fine earth
 # Correct samples with terrafina == 0 g/kg
-# It is assumed that these are samples with missing data and that, when missing, the value of fine
-# earth is 1000 g/kg.
-nrow(soildata[terrafina == 0, ]) # 24 samples with terrafina == 0
+# When terrafina == 0, we set the fine earth content to 1000 g/kg.
+soildata[terrafina == 0, .N] # 10 samples with terrafina == 0
 print(soildata[terrafina == 0, .(id, camada_nome, profund_sup, profund_inf, terrafina, argila)])
 soildata[terrafina == 0, terrafina := 1000]
+
+# Fine earth in R layers
+# R layers are consolidated rock layers. These layers should have terrafina == NA_real.
+soildata[grepl("R", camada_nome) & !is.na(terrafina), .N] # 107 layers with R in camada_nome
+soildata[grepl("R", camada_nome) & !is.na(terrafina), .(id, camada_nome, terrafina)]
+soildata[camada_nome == "R", terrafina := NA_real_]
+soildata[camada_nome == "2R", terrafina := NA_real_]
+soildata[camada_nome == "IIR", terrafina := NA_real_]
+soildata[grepl("R", camada_nome) & !is.na(terrafina), .(id, camada_nome, terrafina)]
 
 # Soil skeleton
 # In some soil samples, the fine earth and skeleton concentration data are inverted. This is quite
@@ -502,6 +510,9 @@ soildata[id == "ctb0811-2" & camada_id == 3, dsi := ifelse(0.34, 1.64, dsi)]
 soildata[id == "ctb0702-P-46" & camada_id == 1, dsi := ifelse(2.08, 1.08, dsi)] # check document
 soildata[id == "ctb0572-Perfil-063" & camada_id == 2, dsi := ifelse(0.34, 1.84, dsi)]
 soildata[id == "ctb0605-P-06" & camada_id == 2, dsi := ifelse(0.31, 1.32, dsi)]
+
+# Endpoint
+soildata[is.na(endpoint), endpoint := 0]
 
 # Clean events
 
