@@ -16,43 +16,37 @@ if (!require("ranger")) {
 source("src/00_helper_functions.r")
 
 # Read data from disk
-soildata <- data.table::fread("data/21_soildata_soc.txt")
+soildata <- data.table::fread("data/30_soildata_soc.txt")
 summary_soildata(soildata)
-# Layers: 27649
-# Events: 14880
-# Georeferenced events: 12537
-
-# ALREADY MOVED TO A PREVIOUS SCRIPT
-soildata[, n_layers := NULL]
-soildata[, na_depth := NULL]
-soildata[, min_profund_sup := NULL]
+# Layers: 29465
+# Events: 15499
+# Georeferenced events: 13151
 
 # DELETE POSSIBLE INCONSISTENCIES
 soildata[dsi > 2.5, dsi := NA_real_]
 
 # Identify layers missing soil bulk density data
 is_na_dsi <- is.na(soildata[["dsi"]])
-nrow(soildata[is.na(dsi), ]) # Result: 22486 layers
-nrow(unique(soildata[is.na(dsi), "id"])) # Result: 12517 events
-
-# SOIL COVARIATES
-# Endpoint (MUST BE CORRECTED IN PREVIOUS SCRIPT)
-soildata[is.na(endpoint), endpoint := 0]
+nrow(soildata[is.na(dsi), ]) # Result: 24302 layers
+nrow(unique(soildata[is.na(dsi), "id"])) # Result: 13147 events
 
 # Set covariates
 colnames(soildata)
-not_covars <- c(
-  "dsi",
-  "observacao_id", "id", 
-  "coord_x", "coord_y", "coord_precisao", "coord_fonte", "coord_datum", "amostra_area", "pais_id",
-  "amostra_id", "camada_nome",
-  "data_ano",
-  "taxon_sibcs",
-  "esqueleto",
-  "endpoint"
+covars_names <- c(
+  "dataset_id", "estado_id", "coord_x_utm", "coord_y_utm",
+  "profund_sup", "profund_inf", "espessura",
+  "ph", "ctc", "argila", "silte", "areia", "carbono",
+  "ORDER", "SUBORDER", "STONESOL",
+  "STONY", "ORGANIC", "AHRZN", "BHRZN", "BHRZN_DENSE", "EHRZN", "DENSIC",
+  "fine_upper", "fine_lower", "dsi_upper", "dsi_lower",
+  "cec_clay_ratio", "silt_clay_ratio",
+  "bdod_0_5cm", "bdod_15_30cm", "bdod_5_15cm",
+  "cfvo_0_5cm",  "cfvo_15_30cm", "cfvo_5_15cm",
+  "clay_0_5cm", "clay_15_30cm", "clay_5_15cm",
+  "sand_0_5cm",  "sand_15_30cm", "sand_5_15cm",
+  "soc_0_5cm", "soc_15_30cm", "soc_5_15cm",
+  "lulc"
 )
-covars_names <- colnames(soildata)[!colnames(soildata) %in% not_covars]
-print(covars_names)
 
 # Missing value imputation
 # Use the missingness-in-attributes (MIA) approach with +/- Inf, with the indicator for missingness
@@ -113,10 +107,11 @@ for (i in 1:nrow(hyperparameters)) {
 Sys.time() - t0
 
 # Export the results to a TXT file
-data.table::fwrite(hyper_results, "res/tab/bulk_density_hyperparameter_tunning.txt", sep = "\t")
+file_path <- "res/tab/bulk_density_hyperparameter_tunning.txt"
+data.table::fwrite(hyper_results, file_path, sep = "\t")
 if (FALSE) {
   # Read the results from disk
-  hyper_results <- data.table::fread("res/tab/bulk_density_hyperparameter_tunning.txt", sep = "\t")
+  hyper_results <- data.table::fread(file_path, sep = "\t")
 }
 
 # Assess results
@@ -230,8 +225,8 @@ dev.off()
 dsi_digits <- 2
 tmp <- predict(dsi_model, data = covariates[is_na_dsi, ])
 soildata[is_na_dsi, dsi := round(tmp$predictions, dsi_digits)]
-nrow(unique(soildata[, "id"])) # Result: 14880
-nrow(soildata) # Result: 27649
+nrow(unique(soildata[, "id"])) # Result: 15499
+nrow(soildata) # Result: 29465
 
 # Figure. Distribution of soil bulk density data
 png("res/fig/bulk_density_histogram.png", width = 480 * 3, height = 480 * 3, res = 72 * 3)
@@ -256,7 +251,7 @@ dev.off()
 # Write data to disk
 soildata[, abs_error := NULL]
 summary_soildata(soildata)
-# Layers: 27649
-# Events: 14880
-# Georeferenced events: 12537
-data.table::fwrite(soildata, "data/30_soildata_soc.txt", sep = "\t")
+# Layers: 29465
+# Events: 15499
+# Georeferenced events: 13151
+data.table::fwrite(soildata, "data/31_soildata_soc.txt", sep = "\t")
