@@ -18,9 +18,9 @@ source("src/00_helper_functions.r")
 # Read data produced in the previous processing script
 soildata <- data.table::fread("data/14_soildata_soc.txt", sep = "\t")
 summary_soildata(soildata)
-# Layers: 29465
-# Events: 15499
-# Georeferenced events: 13151
+# Layers: 29752
+# Events: 15643
+# Georeferenced events: 13295
 
 # Correct layer depth and name
 # soildata[
@@ -29,7 +29,7 @@ summary_soildata(soildata)
 # ]
 soildata[
   dataset_id == "ctb0636" & observacao_id == "Perfil-03" & profund_sup == 0,
-  camada_nome := ifelse("Ao", "A1", camada_nome)
+  camada_nome := ifelse(camada_nome == "Ao", "A1", camada_nome)
 ]
 
 # Prepare predictors
@@ -205,7 +205,7 @@ summary(soildata[, silt_clay_ratio])
 
 # Write data to disk
 summary_soildata(soildata)
-# Layers: 29465
-# Events: 15499
-# Georeferenced events: 13151
+# Layers: 29752
+# Events: 15643
+# Georeferenced events: 13295
 data.table::fwrite(soildata, "data/20_soildata_soc.txt", sep = "\t")
