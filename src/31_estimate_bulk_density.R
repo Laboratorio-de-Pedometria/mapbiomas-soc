@@ -18,34 +18,37 @@ source("src/00_helper_functions.r")
 # Read data from disk
 soildata <- data.table::fread("data/30_soildata_soc.txt")
 summary_soildata(soildata)
-# Layers: 29465
-# Events: 15499
-# Georeferenced events: 13151
+# Layers: 29752
+# Events: 15643
+# Georeferenced events: 13295
 
 # DELETE POSSIBLE INCONSISTENCIES
 soildata[dsi > 2.5, dsi := NA_real_]
 
 # Identify layers missing soil bulk density data
 is_na_dsi <- is.na(soildata[["dsi"]])
-nrow(soildata[is.na(dsi), ]) # Result: 24302 layers
-nrow(unique(soildata[is.na(dsi), "id"])) # Result: 13147 events
+nrow(soildata[is.na(dsi), ]) # Result: [1] 24 layers
+nrow(unique(soildata[is.na(dsi), "id"])) # Result: 13291 events
 
 # Set covariates
 colnames(soildata)
 covars_names <- c(
-  "dataset_id", "estado_id", "coord_x_utm", "coord_y_utm",
+  "estado_id", "coord_x_utm", "coord_y_utm",
   "profund_sup", "profund_inf", "espessura",
   "ph", "ctc", "argila", "silte", "areia", "carbono",
   "ORDER", "SUBORDER", "STONESOL",
   "STONY", "ORGANIC", "AHRZN", "BHRZN", "BHRZN_DENSE", "EHRZN", "DENSIC",
-  "fine_upper", "fine_lower", "dsi_upper", "dsi_lower",
+  "fine_upper", "fine_lower",
   "cec_clay_ratio", "silt_clay_ratio",
   "bdod_0_5cm", "bdod_15_30cm", "bdod_5_15cm",
   "cfvo_0_5cm",  "cfvo_15_30cm", "cfvo_5_15cm",
   "clay_0_5cm", "clay_15_30cm", "clay_5_15cm",
   "sand_0_5cm",  "sand_15_30cm", "sand_5_15cm",
   "soc_0_5cm", "soc_15_30cm", "soc_5_15cm",
-  "lulc"
+  "lulc",
+  "aspect", "aspect_cosine", "aspect_sine", "convergence", "cti", "dev_magnitude", "dev_scale",
+  "dx", "dxx", "dxy", "dy", "dyy", "eastness", "elev_stdev", "geom", "northness", "pcurv",
+  "rough_magnitude", "roughness", "slope", "spi"
 )
 
 # Missing value imputation
@@ -184,16 +187,17 @@ if (any(soildata[!is_na_dsi, abs_error] >= abs_error_tolerance)) {
 }
 
 # Figure: Variable importance
-# Plot only those with relative importance >= 0.01
-variable_importance_threshold <- 0.01
+# Plot only those with relative importance >= 0.03
+variable_importance_threshold <- 0.03
 dsi_model_variable <- sort(dsi_model$variable.importance)
 dsi_model_variable <- round(dsi_model_variable / max(dsi_model_variable), 2)
+dev.off()
 png("res/fig/bulk_density_variable_importance.png", width = 480 * 3, height = 480 * 4, res = 72 * 3)
 par(mar = c(4, 6, 1, 1) + 0.1)
 barplot(dsi_model_variable[dsi_model_variable >= variable_importance_threshold],
   horiz = TRUE, las = 1,
   col = "gray", border = "gray",
-  xlab = "Relative importance >= 0.01", cex.names = 0.5
+  xlab = paste("Relative importance >=", variable_importance_threshold), cex.names = 0.5
 )
 grid(nx = NULL, ny = FALSE, col = "gray")
 dev.off()
@@ -202,9 +206,10 @@ names(dsi_model_variable[dsi_model_variable < variable_importance_threshold])
 # Figure: Plot fitted versus observed values
 # Set color of points as a function of the absolute error, that is, abs(y - x). The absolute error
 # ranges from 0 to 1.
-color_breaks <- seq(0, 1, by = 0.2)
+color_breaks <- seq(0, abs_error_tolerance, length.out = 6)
 color_class <- cut(soildata[!is_na_dsi, abs_error], breaks = color_breaks, include.lowest = TRUE)
 color_palette <- RColorBrewer::brewer.pal(length(color_breaks) - 1, "Purples")
+dev.off()
 png("res/fig/bulk_density_observed_versus_oob.png", width = 480 * 3, height = 480 * 3, res = 72 * 3)
 par(mar = c(4, 4.5, 2, 2) + 0.1)
 plot(
@@ -225,8 +230,8 @@ dev.off()
 dsi_digits <- 2
 tmp <- predict(dsi_model, data = covariates[is_na_dsi, ])
 soildata[is_na_dsi, dsi := round(tmp$predictions, dsi_digits)]
-nrow(unique(soildata[, "id"])) # Result: 15499
-nrow(soildata) # Result: 29465
+nrow(unique(soildata[, "id"])) # Result: 15643
+nrow(soildata) # Result: 29752
 
 # Figure. Distribution of soil bulk density data
 png("res/fig/bulk_density_histogram.png", width = 480 * 3, height = 480 * 3, res = 72 * 3)
@@ -251,7 +256,7 @@ dev.off()
 # Write data to disk
 soildata[, abs_error := NULL]
 summary_soildata(soildata)
-# Layers: 29465
-# Events: 15499
-# Georeferenced events: 13151
+# Layers: 29752
+# Events: 15643
+# Georeferenced events: 13295
 data.table::fwrite(soildata, "data/31_soildata_soc.txt", sep = "\t")
