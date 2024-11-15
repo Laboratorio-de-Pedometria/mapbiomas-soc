@@ -15,9 +15,9 @@ source("src/00_helper_functions.r")
 # Read SoilData data processed in the previous script
 soildata <- data.table::fread("data/13_soildata_soc.txt", sep = "\t")
 summary_soildata(soildata)
-# Layers: 60151
-# Events: 18124
-# Georeferenced events: 14699
+# Layers: 60451
+# Events: 18269
+# Georeferenced events: 14844
 
 # Clean datasets
 # ctb0001
@@ -59,9 +59,9 @@ soildata <- soildata[dataset_id != "ctb0654", ]
 soildata <- soildata[dataset_id != "ctb0800", ]
 
 summary_soildata(soildata)
-# Layers: 59016
-# Events: 17484
-# Georeferenced events: 14064
+# Layers: 59316
+# Events: 17629
+# Georeferenced events: 14209
 
 # Clean layers #####################################################################################
 
@@ -77,16 +77,17 @@ soildata[, na_depth := NULL]
 # filter out layers with missing depth
 soildata <- soildata[!is.na(profund_sup) & !is.na(profund_inf), ]
 summary_soildata(soildata)
-# Layers: 57797
-# Events: 16503
-# Georeferenced events: 14006
+# Layers: 58097
+# Events: 16648
+# Georeferenced events: 14151
 
 # ORGANIC TOPSOIL
 # Some topsoil layers are organic layers that do not have a measurement of carbon.
 # Some of these organic layers have negative limits but others have positive limits.
 # We start by identifying layers with carbono == NA and H or O in camada_nome.
 soildata[
-  id == "ctb0770-100" & camada_nome == "B21H", camada_nome := ifelse("B21H", "B21h", camada_nome)
+  id == "ctb0770-100" & camada_nome == "B21H",
+  camada_nome := ifelse(camada_nome == "B21H", "B21h", camada_nome)
 ]
 soildata[, organic_topsoil := any(is.na(carbono) & grepl("H|O", camada_nome)), by = id]
 soildata[organic_topsoil == TRUE, .(id, camada_nome, profund_sup, profund_inf, carbono)]
@@ -109,9 +110,9 @@ soildata[profund_sup < 0, .(id, camada_nome, profund_sup, profund_inf, carbono)]
 soildata <- soildata[profund_sup >= 0, ]
 soildata[, organic_topsoil := NULL]
 summary_soildata(soildata)
-# Layers: 57617
-# Events: 16502
-# Georeferenced events: 14006
+# Layers: 57917
+# Events: 16647
+# Georeferenced events: 14151
 
 # LAYER LIMITS
 # Some layers have equal values for profund_sup and profund_inf.
@@ -194,9 +195,9 @@ soildata <- soildata[equal_depth == FALSE]
 nrow(soildata[profund_sup == profund_inf]) # 0 layers
 soildata[, equal_depth := NULL]
 summary_soildata(soildata)
-# Layers: 57530
-# Events: 16470
-# Georeferenced events: 13981
+# Layers: 57830
+# Events: 16615
+# Georeferenced events: 14126
 
 # Layer id
 # Sort each event (id) by layer depth (profund_sup and profund_inf)
@@ -219,9 +220,9 @@ print(soildata[id == "ctb0055-PR_4", .(id, camada_nome, profund_sup, profund_inf
 soildata <- soildata[repeated == FALSE, ]
 soildata[, repeated := NULL]
 summary_soildata(soildata)
-# Layers: 56828
-# Events: 16470
-# Georeferenced events: 13966
+# Layers: 57128
+# Events: 16615
+# Georeferenced events: 14111
 
 # Soil end point (<= 30 cm)
 # The variable 'endpoint' identifies if the soil profile sampling and description went all the way
@@ -253,9 +254,9 @@ max_depth <- 30
 nrow(soildata[profund_sup >= max_depth, ]) # 30349 layers with profund_sup >= 30
 soildata <- soildata[profund_sup >= 0 & profund_sup <= max_depth, ]
 summary_soildata(soildata)
-# Layers: 31098
-# Events: 16321
-# Georeferenced events: 13870
+# Layers: 31387
+# Events: 16466
+# Georeferenced events: 14015
 
 # Adjacent layers
 # For each event (id), profund_inf of layer i should be equal to profund_sup of layer i + 1.
@@ -268,9 +269,9 @@ soildata[, diff10 := any(diff > 10), id]
 nrow(soildata[diff10 == TRUE, ]) # 343 layers
 soildata <- soildata[diff10 == FALSE | is.na(diff10), ]
 summary_soildata(soildata)
-# Layers: 30755
-# Events: 16207
-# Georeferenced events: 13830
+# Layers: 31044
+# Events: 16352
+# Georeferenced events: 13975
 soildata[, diff := NULL]
 soildata[, diff10 := NULL]
 
@@ -278,9 +279,9 @@ soildata[, diff10 := NULL]
 # Filter out layers with profund_sup == profund_inf
 soildata <- soildata[profund_sup < profund_inf, ]
 summary_soildata(soildata)
-# Layers: 30740
-# Events: 16207
-# Georeferenced events: 13830
+# Layers: 31029
+# Events: 16352
+# Georeferenced events: 13975
 
 # Thickness
 # Compute layer thickness
@@ -332,9 +333,9 @@ soildata[, topsoil := any(profund_sup == 0), by = id]
 soildata <- soildata[topsoil == TRUE, ]
 soildata[, topsoil := NULL]
 summary_soildata(soildata)
-# Layers: 29801
-# Events: 15657
-# Georeferenced events: 13309
+# Layers: 30090
+# Events: 15802
+# Georeferenced events: 13454
 
 # Fine earth
 # Correct samples with terrafina == 0 g/kg
@@ -370,9 +371,9 @@ nrow(soildata[esqueleto == 1000, ]) # 0 layers with esqueleto == 1000
 nrow(soildata[esqueleto > 1000, ]) # 1 layers with esqueleto == 1000
 soildata <- soildata[is.na(esqueleto) | esqueleto < 1000, ]
 summary_soildata(soildata)
-# Layers: 29800
-# Events: 15657
-# Georeferenced events: 13309
+# Layers: 30089
+# Events: 15802
+# Georeferenced events: 13454
 
 # Clean camada_nome
 soildata[, camada_nome := as.character(camada_nome)]
@@ -414,6 +415,7 @@ soildata[grepl("A9", camada_nome), camada_nome := "A"]
 soildata[grepl("D", camada_nome), camada_nome := "R"]
 soildata[is.na(camada_nome), camada_nome := "???"]
 soildata[camada_nome == "", camada_nome := "???"]
+soildata[is.na(camada_nome), camada_nome := "???"]
 soildata[grepl("AREIA", camada_nome, ignore.case = TRUE), camada_nome := "SAND"]
 soildata[grepl("Leito", camada_nome, ignore.case = TRUE), camada_nome := "SAND"]
 sort(unique(soildata[, camada_nome]))
@@ -492,24 +494,24 @@ soildata[silte == 0, areia := areia - 1]
 soildata[silte == 0, silte := 1]
 
 # Correct bulk density values
-soildata[id == "ctb0562-Perfil-13" & camada_id == 2, dsi := ifelse(2.6, 0.86, dsi)]
-soildata[id == "ctb0562-Perfil-14" & camada_id == 1, dsi := ifelse(2.53, 1.09, dsi)]
-soildata[id == "ctb0562-Perfil-14" & camada_id == 2, dsi := ifelse(2.6, 0.9, dsi)]
-soildata[id == "ctb0608-15-V-RCC" & camada_id == 3, dsi := ifelse(0.42, 1.94, dsi)]
-soildata[id == "ctb0631-Perfil-17" & camada_id == 3, dsi := ifelse(0.14, 1.1, dsi)]
-soildata[id == "ctb0700-15" & camada_id == 1, dsi := ifelse(2.53, 1.6, dsi)]
-soildata[id == "ctb0700-15" & camada_id == 2, dsi := ifelse(2.56, 1.49, dsi)]
-soildata[id == "ctb0771-26" & camada_id == 1, dsi := ifelse(2.59, 1.32, dsi)]
+soildata[id == "ctb0562-Perfil-13" & camada_id == 2, dsi := ifelse(dsi == 2.6, 0.86, dsi)]
+soildata[id == "ctb0562-Perfil-14" & camada_id == 1, dsi := ifelse(dsi == 2.53, 1.09, dsi)]
+soildata[id == "ctb0562-Perfil-14" & camada_id == 2, dsi := ifelse(dsi == 2.6, 0.9, dsi)]
+soildata[id == "ctb0608-15-V-RCC" & camada_id == 3, dsi := ifelse(dsi == 0.42, 1.94, dsi)]
+soildata[id == "ctb0631-Perfil-17" & camada_id == 3, dsi := ifelse(dsi == 0.14, 1.1, dsi)]
+soildata[id == "ctb0700-15" & camada_id == 1, dsi := ifelse(dsi == 2.53, 1.6, dsi)]
+soildata[id == "ctb0700-15" & camada_id == 2, dsi := ifelse(dsi == 2.56, 1.49, dsi)]
+soildata[id == "ctb0771-26" & camada_id == 1, dsi := ifelse(dsi == 2.59, 1.32, dsi)]
 # soildata[id == "ctb0771-26" & camada_id == 2, dsi := 1.37]
-soildata[id == "ctb0777-1" & camada_id == 1, dsi := ifelse(2.65, 1.35, dsi)]
+soildata[id == "ctb0777-1" & camada_id == 1, dsi := ifelse(dsi == 2.65, 1.35, dsi)]
 # soildata[id == "ctb0777-1" & camada_id == 2, dsi := 1.29]
-soildata[id == "ctb0787-1" & camada_id == 2, dsi := ifelse(2.58, 1.35, dsi)]
-soildata[id == "ctb0787-4" & camada_id == 1, dsi := ifelse(2.35, 1.35, dsi)]
-soildata[id == "ctb0787-4" & camada_id == 2, dsi := ifelse(1.3, 1.27, dsi)]
-soildata[id == "ctb0811-2" & camada_id == 3, dsi := ifelse(0.34, 1.64, dsi)]
-soildata[id == "ctb0702-P-46" & camada_id == 1, dsi := ifelse(2.08, 1.08, dsi)] # check document
-soildata[id == "ctb0572-Perfil-063" & camada_id == 2, dsi := ifelse(0.34, 1.84, dsi)]
-soildata[id == "ctb0605-P-06" & camada_id == 2, dsi := ifelse(0.31, 1.32, dsi)]
+soildata[id == "ctb0787-1" & camada_id == 2, dsi := ifelse(dsi == 2.58, 1.35, dsi)]
+soildata[id == "ctb0787-4" & camada_id == 1, dsi := ifelse(dsi == 2.35, 1.35, dsi)]
+soildata[id == "ctb0787-4" & camada_id == 2, dsi := ifelse(dsi == 1.3, 1.27, dsi)]
+soildata[id == "ctb0811-2" & camada_id == 3, dsi := ifelse(dsi == 0.34, 1.64, dsi)]
+soildata[id == "ctb0702-P-46" & camada_id == 1, dsi := ifelse(dsi == 2.08, 1.08, dsi)] # check document
+soildata[id == "ctb0572-Perfil-063" & camada_id == 2, dsi := ifelse(dsi == 0.34, 1.84, dsi)]
+soildata[id == "ctb0605-P-06" & camada_id == 2, dsi := ifelse(dsi == 0.31, 1.32, dsi)]
 
 # Endpoint
 soildata[is.na(endpoint), endpoint := 0]
@@ -522,10 +524,10 @@ soildata[is.na(endpoint), endpoint := 0]
 soildata_events <- soildata[!is.na(coord_x) & !is.na(coord_y) & !is.na(data_ano), id[1],
   by = c("dataset_id", "observacao_id", "coord_x", "coord_y", "data_ano")
 ]
-nrow(soildata_events) # 13309 events
+nrow(soildata_events) # 13454 events
 test_columns <- c("coord_x", "coord_y", "data_ano")
 duplo <- duplicated(soildata_events[, ..test_columns])
-sum(duplo) # 201 duplicated events
+sum(duplo) # 202 duplicated events
 
 # Jitter the coordinates of the duplicated events belonging to the following datasets:
 soildata_events[duplo, unique(dataset_id)]
@@ -534,15 +536,15 @@ ctb <- c("ctb0010", "ctb0017", "ctb0033", "ctb0832", "ctb0631", "ctb0585")
 set.seed(1984)
 soildata_events[duplo & dataset_id %in% ctb, coord_x := coord_x + runif(.N, -0.00001, 0.00001)]
 duplo <- duplicated(soildata_events[, ..test_columns])
-sum(duplo) # 158 duplicated events
+sum(duplo) # 159 duplicated events
 
 # Remove remaining duplicated events
 duplo <- soildata_events[duplo, V1]
 soildata <- soildata[!id %in% duplo, ] # remove duplicated events
 summary_soildata(soildata)
-# Layers: 29465
-# Events: 15499
-# Georeferenced events: 13151
+# Layers: 29752
+# Events: 15643
+# Georeferenced events: 13295
 
 # Export cleaned data
 data.table::fwrite(soildata, "data/14_soildata_soc.txt", sep = "\t")
