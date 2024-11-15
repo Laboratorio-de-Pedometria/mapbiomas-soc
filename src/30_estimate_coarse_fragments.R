@@ -146,7 +146,7 @@ hyper_best <- hyper_best[min_node_size == max(min_node_size), ]
 print(hyper_best)
 
 # Hard code the best hyperparameters for the model
-hyper_best <- data.frame(num_trees = 800, mtry = 16, min_node_size = 1, max_depth = 40)
+hyper_best <- data.frame(num_trees = 800, mtry = 16, min_node_size = 2, max_depth = 30)
 
 # Fit the best model
 t0 <- Sys.time()
@@ -185,7 +185,7 @@ if (FALSE) {
 }
 
 # Check absolute error
-abs_error_tolerance <- 10
+abs_error_tolerance <- 20
 soildata[
   !is_na_skeleton,
   abs_error := abs(soildata[!is_na_skeleton, esqueleto] - skeleton_model$predictions)
@@ -200,7 +200,7 @@ if (any(soildata[!is_na_skeleton, abs_error] >= abs_error_tolerance)) {
 }
 
 # Figure: Variable importance
-variable_importance_threshold <- 0.05
+variable_importance_threshold <- 0.02
 skeleton_model_variable <- sort(skeleton_model$variable.importance)
 skeleton_model_variable <- round(skeleton_model_variable / max(skeleton_model_variable), 2)
 dev.off()
@@ -216,7 +216,7 @@ dev.off()
 names(skeleton_model_variable[skeleton_model_variable < variable_importance_threshold])
 
 # Figure: Plot fitted versus observed values
-color_breaks <- seq(0, 10, by = 2)
+color_breaks <- seq(0, abs_error_tolerance, length.out = 5)
 color_class <- cut(soildata[!is_na_skeleton, abs_error], breaks = color_breaks, include.lowest = TRUE)
 color_palette <- RColorBrewer::brewer.pal(length(color_breaks) - 1, "Purples")
 dev.off()
@@ -241,8 +241,8 @@ dev.off()
 skeleton_digits <- 0
 tmp <- predict(skeleton_model, data = covariates[is_na_skeleton, ])
 soildata[is_na_skeleton, esqueleto := round(tmp$predictions, skeleton_digits)]
-nrow(unique(soildata[, "id"])) # Result: 15499
-nrow(soildata) # Result: 29465
+nrow(unique(soildata[, "id"])) # Result: 15643
+nrow(soildata) # Result: 29752
 
 # Figure. Distribution of soil skeleton data
 dev.off()
@@ -266,7 +266,7 @@ dev.off()
 # Write data to disk
 soildata[, abs_error := NULL]
 summary_soildata(soildata)
-# Layers: 29465
-# Events: 15499
-# Georeferenced events: 13151
+# Layers: 29752
+# Events: 15643
+# Georeferenced events: 13295
 data.table::fwrite(soildata, "data/30_soildata_soc.txt", sep = "\t")
