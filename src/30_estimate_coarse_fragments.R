@@ -25,20 +25,18 @@ summary_soildata(soildata)
 # Events: 15499
 # Georeferenced events: 13151
 
-# CLASSIFICATION
-# Identify soil layers w/o skeleton
+# Identify soil layers missing the proportion of coarse fragments
 soildata[, esqueleto := round(esqueleto / 10)]
-soildata[, has_skeleton := ifelse(esqueleto > 0, TRUE, FALSE)]
-soildata[, .N, by = has_skeleton]
-is_na_skeleton <- is.na(soildata[["has_skeleton"]])
-sum(is_na_skeleton) # 4141
+is_na_skeleton <- is.na(soildata[["esqueleto"]])
+sum(is_na_skeleton) # 4141 layers
 
 # Set covariates
 colnames(soildata)
 covars_names <- c(
-  "dataset_id", "estado_id", "coord_x_utm", "coord_y_utm",
+  # "dataset_id",
+  "estado_id", "coord_x_utm", "coord_y_utm",
   "profund_sup", "profund_inf", "espessura",
-  # "ph",
+  "ph",
   "ctc", "argila", "silte", "areia", "carbono",
   "ORDER", "SUBORDER", "STONESOL",
   "STONY", "ORGANIC", "AHRZN", "BHRZN", "BHRZN_DENSE", "EHRZN", "DENSIC",
@@ -49,7 +47,10 @@ covars_names <- c(
   "clay_0_5cm", "clay_15_30cm", "clay_5_15cm",
   "sand_0_5cm",  "sand_15_30cm", "sand_5_15cm",
   "soc_0_5cm", "soc_15_30cm", "soc_5_15cm",
-  "lulc"
+  "lulc",
+  "aspect", "aspect_cosine", "aspect_sine", "convergence", "cti", "dev_magnitude", "dev_scale",
+  "dx", "dxx", "dxy", "dy", "dyy", "eastness", "elev_stdev", "geom", "northness", "pcurv",
+  "rough_magnitude", "roughness", "slope", "spi"
 )
 
 # Missing value imputation
@@ -60,53 +61,6 @@ covariates <- imputation(soildata[, ..covars_names],
 )
 covariates <- data.table::as.data.table(covariates)
 print(covariates)
-
-set.seed(1984)
-skeleton_model <- ranger::ranger(
-  y = soildata[!is_na_skeleton, has_skeleton],
-  x = covariates[!is_na_skeleton, ],
-  importance = "impurity",
-  replace = TRUE,
-  verbose = TRUE
-)
-print(skeleton_model)
-
-idx <- skeleton_model$predictions != soildata[!is_na_skeleton, has_skeleton]
-sum(idx) # 3058
-View(soildata[!is_na_skeleton, ][
-  idx,
-  .(id, camada_nome, profund_sup, profund_inf, esqueleto, has_skeleton)
-])
-
-
-# Figure: Variable importance
-# Plot only those with relative importance >= 0.01
-variable_importance_threshold <- 0.01
-skeleton_model_variable <- sort(skeleton_model$variable.importance)
-skeleton_model_variable <- round(skeleton_model_variable / max(skeleton_model_variable), 2)
-file_path <- "res/fig/skeleton_classification_variable_importance.png"
-dev.off()
-png(file_path, width = 480 * 3, height = 480 * 4, res = 72 * 3)
-par(mar = c(4, 6, 1, 1) + 0.1)
-barplot(skeleton_model_variable[skeleton_model_variable >= variable_importance_threshold],
-  horiz = TRUE, las = 1,
-  col = "gray", border = "gray",
-  xlab = "Relative importance >= 0.01", cex.names = 0.5
-)
-grid(nx = NULL, ny = FALSE, col = "gray")
-dev.off()
-
-# Predict presence/absence of skeleton
-tmp <- predict(skeleton_model, data = covariates[is_na_skeleton, ])
-soildata[is_na_skeleton, has_skeleton := tmp$predictions]
-summary_soildata(soildata)
-# Layers: 29465
-# Events: 15499
-# Georeferenced events: 13151
-
-soildata[is_na_skeleton & has_skeleton == 1, .(id, camada_nome)]
-
-
 
 # Prepare grid of hyperparameters
 # num.trees, mtry, min.node.size and max.depth
@@ -124,7 +78,7 @@ for (i in 1:nrow(hyperparameters)) {
   print(hyperparameters[i, ])
   set.seed(1984)
   model <- ranger::ranger(
-    y = soildata[!is_na_skeleton, has_skeleton],
+    y = soildata[!is_na_skeleton, esqueleto],
     x = covariates[!is_na_skeleton, ],
     num.trees = hyperparameters$num_trees[i],
     mtry = hyperparameters$mtry[i],
@@ -133,7 +87,7 @@ for (i in 1:nrow(hyperparameters)) {
     replace = TRUE,
     verbose = TRUE
   )
-  observed <- soildata[!is_na_dsi, dsi]
+  observed <- soildata[!is_na_skeleton, esqueleto]
   predicted <- model$predictions
   error <- observed - predicted
   residual <- mean(observed) - observed
@@ -158,16 +112,18 @@ for (i in 1:nrow(hyperparameters)) {
 Sys.time() - t0
 
 # Export the results to a TXT file
-data.table::fwrite(hyper_results, "res/tab/bulk_density_hyperparameter_tunning.txt", sep = "\t")
+file_path <- "res/tab/skeleton_ranger_hyperparameter_tunning.txt"
+data.table::fwrite(hyper_results, file_path, sep = "\t")
 if (FALSE) {
   # Read the results from disk
-  hyper_results <- data.table::fread("res/tab/bulk_density_hyperparameter_tunning.txt", sep = "\t")
+  hyper_results <- data.table::fread(file_path, sep = "\t")
 }
 
 # Assess results
 # What is the Spearman correlation between hyperparameters and model performance metrics?
 correlation <- round(cor(hyper_results, method = "spearman"), 2)
-data.table::fwrite(correlation, "res/tab/bulk_density_hyperparameter_correlation.txt", sep = "\t")
+file_path <- "res/tab/skeleton_ranger_hyperparameter_correlation.txt"
+data.table::fwrite(correlation, file_path, sep = "\t")
 print(correlation[1:4, 5:9])
 
 # Sort the results by RMSE
@@ -189,13 +145,16 @@ hyper_best <- hyper_best[mtry == min(mtry), ]
 hyper_best <- hyper_best[min_node_size == max(min_node_size), ]
 print(hyper_best)
 
+# Hard code the best hyperparameters for the model
+hyper_best <- data.frame(num_trees = 800, mtry = 16, min_node_size = 1, max_depth = 40)
+
 # Fit the best model
 t0 <- Sys.time()
 set.seed(2001)
-dsi_model <- ranger::ranger(
-  y = soildata[!is_na_dsi, dsi],
-  x = covariates[!is_na_dsi, ],
-  num.trees = hyper_best$num_trees,
+skeleton_model <- ranger::ranger(
+  y = soildata[!is_na_skeleton, esqueleto],
+  x = covariates[!is_na_skeleton, ],
+  num.trees = hyper_best$num_trees,  
   mtry = hyper_best$mtry,
   min.node.size = hyper_best$min_node_size,
   max.depth = hyper_best$max_depth,
@@ -204,104 +163,110 @@ dsi_model <- ranger::ranger(
   verbose = TRUE
 )
 Sys.time() - t0
-print(dsi_model)
+print(skeleton_model)
 
 # Compute regression model statistics and write to disk
-dsi_model_stats <- error_statistics(soildata[!is_na_dsi, dsi], dsi_model$predictions)
-data.table::fwrite(dsi_model_stats, "res/tab/bulk_density_model_statistics.txt", sep = "\t")
-print(round(dsi_model_stats, 2))
+skeleton_model_stats <- error_statistics(
+  soildata[!is_na_skeleton, esqueleto],
+  skeleton_model$predictions
+)
+data.table::fwrite(skeleton_model_stats, "res/tab/skeleton_ranger_model_statistics.txt", sep = "\t")
+print(round(skeleton_model_stats, 2))
 
 # Write model parameters to disk
-write.table(capture.output(print(dsi_model))[6:15],
-  file = "res/tab/bulk_density_model_parameters.txt", sep = "\t", row.names = FALSE
+file_path <- "res/tab/skeleton_ranger_model_parameters.txt"
+write.table(capture.output(print(skeleton_model))[6:15],
+  file = file_path, sep = "\t", row.names = FALSE
 )
 if (FALSE) {
   # Read the model parameters from disk
-  dsi_model <- data.table::fread("res/tab/bulk_density_model_parameters.txt", sep = "\t")
-  print(dsi_model)
+  skeleton_model <- data.table::fread(file_path, sep = "\t")
+  print(skeleton_model)
 }
 
 # Check absolute error
-abs_error_tolerance <- 1
-soildata[!is_na_dsi, abs_error := abs(soildata[!is_na_dsi, dsi] - dsi_model$predictions)]
-if (any(soildata[!is_na_dsi, abs_error] >= abs_error_tolerance)) {
+abs_error_tolerance <- 10
+soildata[
+  !is_na_skeleton,
+  abs_error := abs(soildata[!is_na_skeleton, esqueleto] - skeleton_model$predictions)
+]
+if (any(soildata[!is_na_skeleton, abs_error] >= abs_error_tolerance)) {
   print(soildata[
     abs_error >= abs_error_tolerance,
-    .(id, camada_id, camada_nome, dsi, dsi_upper, dsi_lower, abs_error)
+    .(id, camada_id, camada_nome, esqueleto, abs_error)
   ])
 } else {
-  print(paste0("All absolute errors are below ", abs_error_tolerance, " g/dm^3."))
+  print(paste0("All absolute errors are below ", abs_error_tolerance, " %."))
 }
 
 # Figure: Variable importance
-# Plot only those with relative importance >= 0.01
-variable_importance_threshold <- 0.01
-dsi_model_variable <- sort(dsi_model$variable.importance)
-dsi_model_variable <- round(dsi_model_variable / max(dsi_model_variable), 2)
-png("res/fig/bulk_density_variable_importance.png", width = 480 * 3, height = 480 * 4, res = 72 * 3)
+variable_importance_threshold <- 0.05
+skeleton_model_variable <- sort(skeleton_model$variable.importance)
+skeleton_model_variable <- round(skeleton_model_variable / max(skeleton_model_variable), 2)
+dev.off()
+png("res/fig/skeleton_variable_importance.png", width = 480 * 3, height = 480 * 4, res = 72 * 3)
 par(mar = c(4, 6, 1, 1) + 0.1)
-barplot(dsi_model_variable[dsi_model_variable >= variable_importance_threshold],
+barplot(skeleton_model_variable[skeleton_model_variable >= variable_importance_threshold],
   horiz = TRUE, las = 1,
   col = "gray", border = "gray",
-  xlab = "Relative importance >= 0.01", cex.names = 0.5
+  xlab = paste("Relative importance >=", variable_importance_threshold), cex.names = 0.5
 )
 grid(nx = NULL, ny = FALSE, col = "gray")
 dev.off()
-names(dsi_model_variable[dsi_model_variable < variable_importance_threshold])
+names(skeleton_model_variable[skeleton_model_variable < variable_importance_threshold])
 
 # Figure: Plot fitted versus observed values
-# Set color of points as a function of the absolute error, that is, abs(y - x). The absolute error
-# ranges from 0 to 1.
-color_breaks <- seq(0, 1, by = 0.2)
-color_class <- cut(soildata[!is_na_dsi, abs_error], breaks = color_breaks, include.lowest = TRUE)
+color_breaks <- seq(0, 10, by = 2)
+color_class <- cut(soildata[!is_na_skeleton, abs_error], breaks = color_breaks, include.lowest = TRUE)
 color_palette <- RColorBrewer::brewer.pal(length(color_breaks) - 1, "Purples")
-png("res/fig/bulk_density_observed_versus_oob.png", width = 480 * 3, height = 480 * 3, res = 72 * 3)
+dev.off()
+png("res/fig/skeleton_observed_versus_oob.png", width = 480 * 3, height = 480 * 3, res = 72 * 3)
 par(mar = c(4, 4.5, 2, 2) + 0.1)
 plot(
-  y = soildata[!is_na_dsi, dsi], x = dsi_model$predictions, xlim = c(0, 2.5), ylim = c(0, 2.5),
+  y = soildata[!is_na_skeleton, esqueleto], x = skeleton_model$predictions,
   panel.first = grid(),
   pch = 21, bg = color_palette[as.numeric(color_class)],
-  ylab = expression("Observed soil bulk density, g cm"^-3),
-  xlab = expression("Fitted bulk soil density (OOB), g cm"^-3)
+  ylab = "Observed proportion of coarse fragments (%)",
+  xlab = "Fitted proportion of coarse fragments (%)"
 )
 abline(0, 1)
-legend("topleft", title = expression("Absolute error, g cm"^-3),
+legend("topleft",
+  title = "Absolute error (%)",
   legend = levels(color_class),
   pt.bg = color_palette, border = "white", box.lwd = 0, pch = 21
 )
 dev.off()
 
-# Predict soil bulk density
-dsi_digits <- 2
-tmp <- predict(dsi_model, data = covariates[is_na_dsi, ])
-soildata[is_na_dsi, dsi := round(tmp$predictions, dsi_digits)]
-nrow(unique(soildata[, "id"])) # Result: 14880
-nrow(soildata) # Result: 27649
+# Predict soil skeleton
+skeleton_digits <- 0
+tmp <- predict(skeleton_model, data = covariates[is_na_skeleton, ])
+soildata[is_na_skeleton, esqueleto := round(tmp$predictions, skeleton_digits)]
+nrow(unique(soildata[, "id"])) # Result: 15499
+nrow(soildata) # Result: 29465
 
-# Figure. Distribution of soil bulk density data
-png("res/fig/bulk_density_histogram.png", width = 480 * 3, height = 480 * 3, res = 72 * 3)
+# Figure. Distribution of soil skeleton data
+dev.off()
+png("res/fig/skeleton_histogram.png", width = 480 * 3, height = 480 * 3, res = 72 * 3)
 par(mar = c(5, 4, 2, 2) + 0.1)
-hist(soildata[, dsi],
-  xlab = expression("Soil bulk density, g cm"^-3),
-  ylab = paste0("Absolute frequency (n = ", length(soildata[, dsi]), ")"),
+hist(soildata[, esqueleto],
+  xlab = "Proportion of coarse fragments (%)",
+  ylab = paste0("Absolute frequency (n = ", length(soildata[, esqueleto]), ")"),
   main = "", col = "gray", border = "gray"
 )
 grid(nx = FALSE, ny = NULL, col = "gray")
-rug(soildata[!is_na_dsi, dsi])
-# Legend: bars contain all data points, while the rug plot shows only the non-missing values used
-# for model training
+rug(soildata[!is_na_skeleton, esqueleto])
 legend("topright",
   legend = c("All data (columns)", "Training data (rug)"),
   fill = c("gray", "black"),
   border = "white",
-  box.lwd = 0 
+  box.lwd = 0
 )
 dev.off()
 
 # Write data to disk
 soildata[, abs_error := NULL]
 summary_soildata(soildata)
-# Layers: 27649
-# Events: 14880
-# Georeferenced events: 12537
+# Layers: 29465
+# Events: 15499
+# Georeferenced events: 13151
 data.table::fwrite(soildata, "data/30_soildata_soc.txt", sep = "\t")
