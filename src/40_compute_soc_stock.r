@@ -15,18 +15,15 @@ source("src/00_helper_functions.r")
 # Read data processed in the previous script
 soildata <- data.table::fread("data/31_soildata_soc.txt", sep = "\t")
 summary_soildata(soildata)
-# Layers: 29752
-# Events: 15643
-# Georeferenced events: 13295
+# Layers: 29683
+# Events: 15640
+# Georeferenced events: 13292
 
 # THIS HAS ALREADY BEEN CORRECTED IN THE ORIGINAL DATASET. WE KEEP IT HERE FOR REFERENCE.
 soildata[
   dataset_id == "ctb0607" & observacao_id == "PERFIL-92",
   carbono := ifelse(carbono == 413, 41.3, carbono)
 ]
-
-# ctb0808 is a duplicate of ctb0574. remove it
-soildata <- soildata[dataset_id != "ctb0808", ]
 
 # Remove data from Technosols and Anthrosols
 # Solo construído no aterro encerrado da Caturrita, Santa Maria (RS)
@@ -39,31 +36,31 @@ soildata <- soildata[dataset_id != "ctb0599", ]
 soildata <- soildata[dataset_id != "ctb0018", ]
 
 summary_soildata(soildata)
-# Layers: 29311
-# Events: 15399
-# Georeferenced events: 13066
+# Layers: 29365
+# Events: 15453
+# Georeferenced events: 13120
 
 # Filter out soil layers missing data on soil organic carbon
 is_na_carbono <- is.na(soildata[["carbono"]])
-sum(is_na_carbono) # Result: 1789 layers
+sum(is_na_carbono) # Result: 1785 layers
 soildata <- soildata[!is_na_carbono, ]
 summary_soildata(soildata)
-# Layers: 27645
-# Events: 14675
-# Georeferenced events: 12529
+# Layers: 27580
+# Events: 14672
+# Georeferenced events: 12526
 
 # Topsoil --> BECAUSE WE REMOVED LAYERS WITH MISSING DATA ON SOIL ORGANIC CARBON
 # For each event (id), check if there is a layer with profund_sup == 0. Filter out events without a
 # topsoil layer. This procedure was performed before: it is repeated here because layers missing
 # data on soil organic carbon were removed (there may be other reasons too).
 soildata[, topsoil := any(profund_sup == 0), by = id]
-nrow(unique(soildata[topsoil == FALSE, "id"])) # 80 events
+nrow(unique(soildata[topsoil == FALSE, "id"])) # 79 events
 soildata <- soildata[topsoil == TRUE, ]
 soildata[, topsoil := NULL]
 summary_soildata(soildata)
-# Layers: 27530
-# Events: 14595
-# Georeferenced events: 12488
+# Layers: 27466
+# Events: 14593
+# Georeferenced events: 12486
 
 # Empty layers --> ALSO BECAUSE WE REMOVED LAYERS WITH MISSING DATA ON SOIL ORGANIC CARBON
 # Is there any soil profile (id) missing an intermediate layer? A missing intermediate layer occurs
@@ -75,9 +72,9 @@ nrow(unique(soildata[empty_layer == TRUE, "id"])) # Result: 1382 events
 soildata <- soildata[empty_layer == FALSE | is.na(empty_layer), ]
 soildata <- soildata[, empty_layer := NULL]
 summary_soildata(soildata)
-# Layers: 26148
-# Events: 14595
-# Georeferenced events: 12488
+# Layers: 26084
+# Events: 14593
+# Georeferenced events: 12486
 
 # Layer limits
 # Resetting the limits of each layer according to the target depth range (0 and 30 cm).
@@ -90,12 +87,12 @@ soildata[profund_sup > target_layer[2], profund_sup := target_layer[2]]
 soildata[profund_inf > target_layer[2], profund_inf := target_layer[2]]
 # Recompute layer thickness
 soildata[, espessura := profund_inf - profund_sup]
-nrow(soildata[espessura <= 0, ]) # 2886 layers with thickness <= 0 --> remove them
+nrow(soildata[espessura <= 0, ]) # 2882 layers with thickness <= 0 --> remove them
 soildata <- soildata[espessura > 0, ]
 summary_soildata(soildata)
-# Layers: 23262
-# Events: 14595
-# Georeferenced events: 12488
+# Layers: 23202
+# Events: 14593
+# Georeferenced events: 12486
 
 # Volume of coarse fragments
 # The volume of coarse fragments is calculated as the volume of the skeleton divided by the density
@@ -125,7 +122,7 @@ if (FALSE) {
 soildata[, n := .N, by = "id"]
 table(soildata[, n])
 #     1     2     3     4     5 
-#  7702 10462  4659   424    15 
+#  7745 10398  4620   424    15 
 soildata[, n := NULL]
 
 # Aggregate soil organic carbon stock in the topsoil (0 to 30 cm) of each event
@@ -146,61 +143,103 @@ soc_data <- soildata[
 ]
 summary(soc_data[, soc_stock_g_m2])
 summary_soildata(soc_data)
-# Layers: 12488
-# Events: 12488
-# Georeferenced events: 12488
+# Layers: 12486
+# Events: 12486
+# Georeferenced events: 12486
 
-# Check events with very high SOC stock. If they are correct, create new nearby instances
+# The following points have very high SOC stock. We create new nearby instances.
 # ctb0832-226: ok
-# -21.23333333, -41.31666667
+# -21.23333333, -41.31666667 (ORIGINAL)
 # -21.232867, -41.316707
 # -21.233262, -41.316175
 # -21.233265, -41.315750
 # -21.233301, -41.314682
+tmp <- soc_data[id == "ctb0832-226"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-21.232867, -21.233262, -21.233265, -21.233301)]
+tmp[, coord_x := c(-41.316707, -41.316175, -41.315750, -41.314682)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
 
 # ctb0691-15: ok
-# -20.270007, -40.277173
+# -20.270007, -40.277173 (ORIGINAL)
 # -20.270420, -40.278063
 # -20.262183, -40.285028
 # -20.270310, -40.281488
 # -20.272343, -40.280716
+tmp <- soc_data[id == "ctb0691-15"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-20.270420, -20.262183, -20.270310, -20.272343)]
+tmp[, coord_x := c(-40.278063, -40.285028, -40.281488, -40.280716)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
 
 # ctb0662-P89: ok
-# -19.5616, -39.8885
+# -19.5616, -39.8885 (ORIGINAL)
 # -19.561325, -39.889315
 # -19.561086, -39.889300
 # -19.563407, -39.890190
-# -19.563407, -39.890190
+# -19.562224, -39.890426
+tmp <- soc_data[id == "ctb0662-P89"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-19.561325, -19.561086, -19.563407, -19.562224)]
+tmp[, coord_x := c(-39.889315, -39.889300, -39.890190, -39.890426)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
 
 # ctb0617-Perfil-49: ok
-# -19.505398, -47.788986
+# -19.505398, -47.788986 (ORIGINAL)
 # -19.503990, -47.782874
 # -19.504975, -47.791988
 # -19.500990, -47.780961
 # -19.504005, -47.794110
+tmp <- soc_data[id == "ctb0617-Perfil-49"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-19.503990, -19.504975, -19.500990, -19.504005)]
+tmp[, coord_x := c(-47.782874, -47.791988, -47.780961, -47.794110)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
 
 # ctb0777-41: ok
-# -13.070637, -46.0070019
+# -13.070637, -46.0070019 (ORIGINAL)
 # -13.066117, -46.007771
 # -13.073140, -46.004166
 # -13.078574, -45.999789
 # -13.083507, -45.983137
-
-# ctb0607-PERFIL-92: error in the SOC content
-# -10.7552957, -37.0623882
+tmp <- soc_data[id == "ctb0777-41"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-13.066117, -13.073140, -13.078574, -13.083507)]
+tmp[, coord_x := c(-46.007771, -46.004166, -45.999789, -45.983137)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
 
 # ctb0574-GB-46
-# -23.0079224, -43.5042010
+# -23.0079224, -43.5042010 (ORIGINAL)
 # -23.011275, -43.498102
 # -23.005505, -43.497909
 # -23.009870, -43.496542
 # -23.009707, -43.508743
+tmp <- soc_data[id == "ctb0574-GB-46"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-23.011275, -23.005505, -23.009870, -23.009707)]
+tmp[, coord_x := c(-43.498102, -43.497909, -43.496542, -43.508743)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
+
+# Summary
+summary_soildata(soc_data)
+# Layers: 12510
+# Events: 12510
+# Georeferenced events: 12510
 
 # Set column order
 soc_data <- soc_data[, .(id, coord_x, coord_y, year, soc_stock_g_m2)]
-
-# Summary
-
 
 # Plot with mapview
 if (FALSE) {
