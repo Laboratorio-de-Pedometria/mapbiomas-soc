@@ -266,7 +266,7 @@ dev.off()
 # Write data to disk
 soildata[, abs_error := NULL]
 summary_soildata(soildata)
-# Layers: 29752
-# Events: 15643
-# Georeferenced events: 13295
+# Layers: 29683
+# Events: 15640
+# Georeferenced events: 13292
 data.table::fwrite(soildata, "data/30_soildata_soc.txt", sep = "\t")

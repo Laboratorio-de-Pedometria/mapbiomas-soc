@@ -142,6 +142,9 @@ hyper_best <- hyper_best[mtry == min(mtry), ]
 hyper_best <- hyper_best[min_node_size == max(min_node_size), ]
 print(hyper_best)
 
+# Hard code the best hyperparameters for the model
+hyper_best <- data.frame(num_trees = 800, mtry = 16, min_node_size = 1, max_depth = 30)
+
 # Fit the best model
 t0 <- Sys.time()
 set.seed(2001)
@@ -256,7 +259,7 @@ dev.off()
 # Write data to disk
 soildata[, abs_error := NULL]
 summary_soildata(soildata)
-# Layers: 29752
-# Events: 15643
-# Georeferenced events: 13295
+# Layers: 29683
+# Events: 15640
+# Georeferenced events: 13292
 data.table::fwrite(soildata, "data/31_soildata_soc.txt", sep = "\t")
