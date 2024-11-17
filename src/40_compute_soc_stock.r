@@ -19,6 +19,15 @@ summary_soildata(soildata)
 # Events: 15643
 # Georeferenced events: 13295
 
+# THIS HAS ALREADY BEEN CORRECTED IN THE ORIGINAL DATASET. WE KEEP IT HERE FOR REFERENCE.
+soildata[
+  dataset_id == "ctb0607" & observacao_id == "PERFIL-92",
+  carbono := ifelse(carbono == 413, 41.3, carbono)
+]
+
+# ctb0808 is a duplicate of ctb0574. remove it
+soildata <- soildata[dataset_id != "ctb0808", ]
+
 # Remove data from Technosols and Anthrosols
 # Solo construído no aterro encerrado da Caturrita, Santa Maria (RS)
 soildata <- soildata[dataset_id != "ctb0036", ]
@@ -30,10 +39,9 @@ soildata <- soildata[dataset_id != "ctb0599", ]
 soildata <- soildata[dataset_id != "ctb0018", ]
 
 summary_soildata(soildata)
-# Layers: 29434
-# Events: 15456
-# Georeferenced events: 13123
-
+# Layers: 29311
+# Events: 15399
+# Georeferenced events: 13066
 
 # Filter out soil layers missing data on soil organic carbon
 is_na_carbono <- is.na(soildata[["carbono"]])
@@ -129,29 +137,80 @@ soc_data <- soildata[
     !is.na(coord_y) &
     !is.na(data_ano),
   .(
-    soc_stock_t_ha = round(sum(soc_stock_kgm2, na.rm = TRUE) * 10),
-    sampling_year = as.integer(round(mean(data_ano, na.rm = TRUE))),
+    soc_stock_g_m2 = round(sum(soc_stock_kgm2, na.rm = TRUE) * 1000),
+    year = as.integer(round(mean(data_ano, na.rm = TRUE))),
     coord_x = mean(coord_x, na.rm = TRUE),
     coord_y = mean(coord_y, na.rm = TRUE)
   ),
   by = id
 ]
-
-# Summary
+summary(soc_data[, soc_stock_g_m2])
 summary_soildata(soc_data)
 # Layers: 12488
 # Events: 12488
 # Georeferenced events: 12488
 
+# Check events with very high SOC stock. If they are correct, create new nearby instances
+# ctb0832-226: ok
+# -21.23333333, -41.31666667
+# -21.232867, -41.316707
+# -21.233262, -41.316175
+# -21.233265, -41.315750
+# -21.233301, -41.314682
+
+# ctb0691-15: ok
+# -20.270007, -40.277173
+# -20.270420, -40.278063
+# -20.262183, -40.285028
+# -20.270310, -40.281488
+# -20.272343, -40.280716
+
+# ctb0662-P89: ok
+# -19.5616, -39.8885
+# -19.561325, -39.889315
+# -19.561086, -39.889300
+# -19.563407, -39.890190
+# -19.563407, -39.890190
+
+# ctb0617-Perfil-49: ok
+# -19.505398, -47.788986
+# -19.503990, -47.782874
+# -19.504975, -47.791988
+# -19.500990, -47.780961
+# -19.504005, -47.794110
+
+# ctb0777-41: ok
+# -13.070637, -46.0070019
+# -13.066117, -46.007771
+# -13.073140, -46.004166
+# -13.078574, -45.999789
+# -13.083507, -45.983137
+
+# ctb0607-PERFIL-92: error in the SOC content
+# -10.7552957, -37.0623882
+
+# ctb0574-GB-46
+# -23.0079224, -43.5042010
+# -23.011275, -43.498102
+# -23.005505, -43.497909
+# -23.009870, -43.496542
+# -23.009707, -43.508743
+
+# Set column order
+soc_data <- soc_data[, .(id, coord_x, coord_y, year, soc_stock_g_m2)]
+
+# Summary
+
+
 # Plot with mapview
 if (FALSE) {
   soc_data_sf <- sf::st_as_sf(soc_data, coords = c("coord_x", "coord_y"), crs = 4326)
-  mapview::mapview(soc_data_sf, zcol = "soc_stock_t_ha")
+  mapview::mapview(soc_data_sf, zcol = "soc_stock_g_m2")
 }
 
 # Write data to disk ###############################################################################
 folder_path <- "~/Insync/MapBiomas Solo/Trainning samples/"
-file_name <- "-organic-carbon-stock-tonne-per-hectare.csv"
+file_name <- "-organic-carbon-stock-gram-per-square-meter.csv"
 # List existing files in the folder_path and get the last one. Then read it.
 existing_files <- list.files(path = folder_path, pattern = file_name)
 last_file <- existing_files[length(existing_files)]
@@ -160,17 +219,8 @@ last_soc_data <- data.table::fread(paste0(folder_path, last_file))
 if (!identical(last_soc_data, soc_data)) {
   file_path <- paste0(folder_path, format(Sys.time(), "%Y-%m-%d"), file_name)
   file_path <- path.expand(file_path)
-  data.table::fwrite(soc_data[, .(id, coord_x, coord_y, sampling_year, soc_stock_t_ha)], file_path)
+  data.table::fwrite(soc_data, file_path)
 }
-
-
-
-
-file_path <- "~/Insync/MapBiomas Solo/Trainning samples/"
-file_path <- paste0(file_path, format(Sys.time(), "%Y-%m-%d"), "-points-soc-stock-tha.csv")
-file_path <- path.expand(file_path)
-data.table::fwrite(, file_path)
-
 
 
 
