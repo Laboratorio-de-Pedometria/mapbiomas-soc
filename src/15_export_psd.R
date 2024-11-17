@@ -15,9 +15,9 @@ source("src/00_helper_functions.r")
 # Read SoilData data processed in the previous script
 soildata <- data.table::fread("data/14_soildata_soc.txt", sep = "\t")
 summary_soildata(soildata)
-# Layers: 29752
-# Events: 15643
-# Georeferenced events: 13295
+# Layers: 29683
+# Events: 15640
+# Georeferenced events: 13292
 
 # Create a data.table with the particle size distribution
 psd_data <- soildata[
@@ -29,7 +29,7 @@ psd_data[, depth := profund_sup + (profund_inf - profund_sup) / 2, by = .I]
 # Drop rows with depth > 40 cm
 psd_data <- psd_data[depth <= 40]
 summary_soildata(psd_data)
-# Layers: 19939
+# Layers: 19885
 # Events: 11593
 # Georeferenced events: 11593
 
@@ -39,7 +39,6 @@ psd_data[, log_silt_sand := log(silte / areia)]
 summary(psd_data[, .(log_clay_sand, log_silt_sand)])
 
 # Prepare figures
-dev.off()
 file_path <- "res/fig/psd_histogram.png"
 png(file_path, width = 480 * 3, height = 480 * 2, res = 72 * 2)
 par(mfrow = c(2, 3))
@@ -60,7 +59,7 @@ data.table::setcolorder(
   c("id", "coord_x", "coord_y", "depth", "log_clay_sand", "log_silt_sand")
 )
 summary_soildata(psd_data)
-# Layers: 19939
+# Layers: 19885
 # Events: 11593
 # Georeferenced events: 11593
 
