@@ -552,6 +552,7 @@ summary_soildata(soildata)
 # Georeferenced events: 13292
 
 # Update coordinates (this has already been implemented in the source spreadsheets)
+# MATA ATLÂNTICA
 # ctb0832-226
 # -21.23333333, -41.31666667
 soildata[id == "ctb0832-226", .(id, coord_y, coord_x)]
@@ -573,11 +574,26 @@ soildata[id == "ctb0662-P89", coord_y := -19.5616]
 soildata[id == "ctb0662-P89", coord_x := -39.8885]
 soildata[id == "ctb0662-P89", .(id, coord_y, coord_x)]
 
+# ctb0574-GB-46
+# -23.0079224, -43.5042010
+soildata[id == "ctb0574-GB-46", .(id, coord_y, coord_x)]
+soildata[id == "ctb0574-GB-46", coord_y := -23.0079224]
+soildata[id == "ctb0574-GB-46", coord_x := -43.5042010]
+soildata[id == "ctb0574-GB-46", .(id, coord_y, coord_x)]
+
+# CERRADO
+# ctb0617-Perfil-45
+# -19.5055229, -47.7914277
+soildata[id == "ctb0617-Perfil-45", .(id, coord_y, coord_x)]
+soildata[id == "ctb0617-Perfil-45", coord_y := -19.5055229]
+soildata[id == "ctb0617-Perfil-45", coord_x := -47.7914277]
+soildata[id == "ctb0617-Perfil-45", .(id, coord_y, coord_x)]
+
 # ctb0617-Perfil-49
-# -19.505398, -47.788986
+# -19.5042035, -47.7903787
 soildata[id == "ctb0617-Perfil-49", .(id, coord_y, coord_x)]
-soildata[id == "ctb0617-Perfil-49", coord_y := -19.505398]
-soildata[id == "ctb0617-Perfil-49", coord_x := -47.788986]
+soildata[id == "ctb0617-Perfil-49", coord_y := -19.5042035]
+soildata[id == "ctb0617-Perfil-49", coord_x := -47.7903787]
 soildata[id == "ctb0617-Perfil-49", .(id, coord_y, coord_x)]
 
 # ctb0777-41
@@ -587,6 +603,39 @@ soildata[id == "ctb0777-41", coord_y := -13.070637]
 soildata[id == "ctb0777-41", coord_x := -46.0070019]
 soildata[id == "ctb0777-41", .(id, coord_y, coord_x)]
 
+# ctb0600-TS-8
+# -16.6849201, -48.7208003
+soildata[id == "ctb0600-TS-8", .(id, coord_y, coord_x)]
+soildata[id == "ctb0600-TS-8", coord_y := -16.6849201]
+soildata[id == "ctb0600-TS-8", coord_x := -48.7208003]
+soildata[id == "ctb0600-TS-8", .(id, coord_y, coord_x)]
+
+# CAATINGA
+# ctb0694-49
+# -5.3244224, -35.4646402
+soildata[id == "ctb0694-49", .(id, coord_y, coord_x)]
+soildata[id == "ctb0694-49", coord_y := -5.3244224]
+soildata[id == "ctb0694-49", coord_x := -35.4646402]
+soildata[id == "ctb0694-49", .(id, coord_y, coord_x)]
+
+# PANTANAL
+# ctb0763-169
+# -19.052547, -57.6605278
+soildata[id == "ctb0763-169", .(id, coord_y, coord_x)]
+soildata[id == "ctb0763-169", coord_y := -19.052547]
+soildata[id == "ctb0763-169", coord_x := -57.6605278]
+soildata[id == "ctb0763-169", .(id, coord_y, coord_x)]
+
+# PAMPA
+# ctb0797-RS-113
+# # -30.8161997, -53.8114681
+soildata[id == "ctb0797-RS-113", .(id, coord_y, coord_x)]
+soildata[id == "ctb0797-RS-113", coord_y := -30.8161997]
+soildata[id == "ctb0797-RS-113", coord_x := -53.8114681]
+soildata[id == "ctb0797-RS-113", .(id, coord_y, coord_x)]
+
+
+# OTHER
 # ctb0607-PERFIL-92
 # -10.7552957, -37.0623882
 soildata[id == "ctb0607-PERFIL-92", .(id, coord_y, coord_x)]
@@ -594,12 +643,18 @@ soildata[id == "ctb0607-PERFIL-92", coord_y := -10.7552957]
 soildata[id == "ctb0607-PERFIL-92", coord_x := -37.0623882]
 soildata[id == "ctb0607-PERFIL-92", .(id, coord_y, coord_x)]
 
-# ctb0574-GB-46
-# -23.0079224, -43.5042010
-soildata[id == "ctb0574-GB-46", .(id, coord_y, coord_x)]
-soildata[id == "ctb0574-GB-46", coord_y := -23.0079224]
-soildata[id == "ctb0574-GB-46", coord_x := -43.5042010]
-soildata[id == "ctb0574-GB-46", .(id, coord_y, coord_x)]
+# THIS HAS ALREADY BEEN CORRECTED IN THE ORIGINAL DATASET. WE KEEP IT HERE FOR REFERENCE.
+soildata[
+  dataset_id == "ctb0607" & observacao_id == "PERFIL-92",
+  carbono := ifelse(carbono == 413, 41.3, carbono)
+]
+
+# THIS HAS ALREADY BEEN CORRECTED IN THE ORIGINAL DATASET. WE KEEP IT HERE FOR REFERENCE.
+# ctb0718-51. carbon is recorded as 145 g/kg. It is corrected to 14.5 g/kg.
+soildata[
+  dataset_id == "ctb0718" & observacao_id == "51",
+  carbono := ifelse(carbono == 145, 14.5, carbono)
+]
 
 # Write data to disk ############################################################
 # Export cleaned data
