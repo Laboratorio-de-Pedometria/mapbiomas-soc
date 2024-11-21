@@ -8,6 +8,12 @@ rm(list = ls())
 if (!require("data.table")) {
   install.packages("data.table")
 }
+if (!require("sf")) {
+  install.packages("sf")
+}
+if (!require("geobr")) {
+  install.packages("geobr")
+}
 
 # Source helper functions
 source("src/00_helper_functions.r")
@@ -18,12 +24,6 @@ summary_soildata(soildata)
 # Layers: 29683
 # Events: 15640
 # Georeferenced events: 13292
-
-# THIS HAS ALREADY BEEN CORRECTED IN THE ORIGINAL DATASET. WE KEEP IT HERE FOR REFERENCE.
-soildata[
-  dataset_id == "ctb0607" & observacao_id == "PERFIL-92",
-  carbono := ifelse(carbono == 413, 41.3, carbono)
-]
 
 # Remove data from Technosols and Anthrosols
 # Solo construído no aterro encerrado da Caturrita, Santa Maria (RS)
@@ -147,8 +147,25 @@ summary_soildata(soc_data)
 # Events: 12486
 # Georeferenced events: 12486
 
+# Brazilian biomes
+# Intersect soil organic carbon samples with Brazilian biomes
+biome <- geobr::read_biomes()
+biome <- sf::st_transform(biome, 4326)
+biome <- biome[biome$name_biome != "Sistema Costeiro", "name_biome"]
+soc_data_sf <- sf::st_as_sf(soc_data, coords = c("coord_x", "coord_y"), crs = 4326)
+soc_data_sf <- sf::st_join(soc_data_sf, biome)
+soc_data_sf <- data.table::setDT(soc_data_sf)
+
 # The following points have very high SOC stock. We create new nearby instances.
-# ctb0832-226: ok
+# x11()
+
+# MATA ATLÂNTICA
+# 80000 g/m^2
+# hist(soc_data_sf[name_biome == "Mata Atlântica", soc_stock_g_m2])
+# rug(soc_data_sf[name_biome == "Mata Atlântica", soc_stock_g_m2])
+soc_data_sf[name_biome == "Mata Atlântica" & soc_stock_g_m2 > 80000, ]
+
+# ctb0832-226
 # -21.23333333, -41.31666667 (ORIGINAL)
 # -21.232867, -41.316707
 # -21.233262, -41.316175
@@ -162,7 +179,7 @@ set.seed(1984)
 tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
 soc_data <- rbind(soc_data, tmp)
 
-# ctb0691-15: ok
+# ctb0691-15
 # -20.270007, -40.277173 (ORIGINAL)
 # -20.270420, -40.278063
 # -20.262183, -40.285028
@@ -176,7 +193,7 @@ set.seed(1984)
 tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
 soc_data <- rbind(soc_data, tmp)
 
-# ctb0662-P89: ok
+# ctb0662-P89
 # -19.5616, -39.8885 (ORIGINAL)
 # -19.561325, -39.889315
 # -19.561086, -39.889300
@@ -186,34 +203,6 @@ tmp <- soc_data[id == "ctb0662-P89"][rep(1, 4)]
 tmp[, id := paste0(id, "-REP", 1:4)]
 tmp[, coord_y := c(-19.561325, -19.561086, -19.563407, -19.562224)]
 tmp[, coord_x := c(-39.889315, -39.889300, -39.890190, -39.890426)]
-set.seed(1984)
-tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
-soc_data <- rbind(soc_data, tmp)
-
-# ctb0617-Perfil-49: ok
-# -19.505398, -47.788986 (ORIGINAL)
-# -19.503990, -47.782874
-# -19.504975, -47.791988
-# -19.500990, -47.780961
-# -19.504005, -47.794110
-tmp <- soc_data[id == "ctb0617-Perfil-49"][rep(1, 4)]
-tmp[, id := paste0(id, "-REP", 1:4)]
-tmp[, coord_y := c(-19.503990, -19.504975, -19.500990, -19.504005)]
-tmp[, coord_x := c(-47.782874, -47.791988, -47.780961, -47.794110)]
-set.seed(1984)
-tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
-soc_data <- rbind(soc_data, tmp)
-
-# ctb0777-41: ok
-# -13.070637, -46.0070019 (ORIGINAL)
-# -13.066117, -46.007771
-# -13.073140, -46.004166
-# -13.078574, -45.999789
-# -13.083507, -45.983137
-tmp <- soc_data[id == "ctb0777-41"][rep(1, 4)]
-tmp[, id := paste0(id, "-REP", 1:4)]
-tmp[, coord_y := c(-13.066117, -13.073140, -13.078574, -13.083507)]
-tmp[, coord_x := c(-46.007771, -46.004166, -45.999789, -45.983137)]
 set.seed(1984)
 tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
 soc_data <- rbind(soc_data, tmp)
@@ -232,6 +221,316 @@ set.seed(1984)
 tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
 soc_data <- rbind(soc_data, tmp)
 
+# CERRADO
+# 60000 g/m^2
+# hist(soc_data_sf[name_biome == "Cerrado", soc_stock_g_m2])
+# rug(soc_data_sf[name_biome == "Cerrado", soc_stock_g_m2])
+soc_data_sf[name_biome == "Cerrado" & soc_stock_g_m2 > 60000, ]
+
+# ctb0617-Perfil-49
+# -19.5042035, -47.7903787 (ORIGINAL)
+# -19.503229, -47.789611
+# -19.503452, -47.791285
+# -19.502612, -47.791306
+# -19.501429, -47.789654
+tmp <- soc_data[id == "ctb0617-Perfil-49"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-19.503229, -19.503452, -19.502612, -19.501429)]
+tmp[, coord_x := c(-47.789611, -47.791285, -47.791306, -47.789654)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
+
+# ctb0617-Perfil-45
+# -19.5055229, -47.7914277 (ORIGINAL)
+# -19.505525, -47.789965
+# -19.505555, -47.790802
+# -19.505282, -47.792368
+# -19.504827, -47.793184
+tmp <- soc_data[id == "ctb0617-Perfil-45"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-19.505525, -19.505555, -19.505282, -19.504827)]
+tmp[, coord_x := c(-47.789965, -47.790802, -47.792368, -47.793184)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
+
+# ctb0777-41
+# -13.070637, -46.0070019 (ORIGINAL)
+# -13.066117, -46.007771
+# -13.073140, -46.004166
+# -13.078574, -45.999789
+# -13.083507, -45.983137
+tmp <- soc_data[id == "ctb0777-41"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-13.066117, -13.073140, -13.078574, -13.083507)]
+tmp[, coord_x := c(-46.007771, -46.004166, -45.999789, -45.983137)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
+
+# ctb0600-TS-8
+# -16.6849201, -48.7208003 (ORIGINAL)
+# -16.686965, -48.721114
+# -16.688906, -48.720489
+# -16.686869, -48.721344
+# -16.680299, -48.718884
+tmp <- soc_data[id == "ctb0600-TS-8"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-16.686965, -16.688906, -16.686869, -16.680299)]
+tmp[, coord_x := c(-48.721114, -48.720489, -48.721344, -48.718884)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
+
+# CAATINGA
+# 23000 g/m^2
+# hist(soc_data_sf[name_biome == "Caatinga", soc_stock_g_m2])
+# rug(soc_data_sf[name_biome == "Caatinga", soc_stock_g_m2])
+soc_data_sf[name_biome == "Caatinga" & soc_stock_g_m2 > 23000, ]
+
+# ctb0058-RN_33
+# -5.400389, -35.46005 (ORIGINAL)
+# -5.399865, -35.460195
+# -5.400656, -35.459691
+# -5.400291, -35.458628
+# -5.400056, -35.461008
+tmp <- soc_data[id == "ctb0058-RN_33"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-5.399865, -5.400656, -5.400291, -5.400056)]
+tmp[, coord_x := c(-35.460195, -35.459691, -35.458628, -35.461008)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
+
+# ctb0059-CE_366
+# -7.379668, -39.42 (ORIGINAL)
+# -7.380247, -39.419912
+# -7.378354, -39.420030
+# -7.379505, -39.421270
+# -7.379642, -39.418810
+tmp <- soc_data[id == "ctb0059-CE_366"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-7.380247, -7.378354, -7.379505, -7.379642)]
+tmp[, coord_x := c(-39.419912, -39.420030, -39.421270, -39.418810)]
+set.seed(1984)
+
+# ctb0059-CE_54
+# -3.599735, -38.88008 (ORIGINAL)
+# -3.599965, -38.880073
+# -3.599719, -38.879780
+# -3.599287, -38.880093
+# -3.599680, -38.880456
+tmp <- soc_data[id == "ctb0059-CE_54"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-3.599965, -3.599719, -3.599287, -3.599680)]
+tmp[, coord_x := c(-38.880073, -38.879780, -38.880093, -38.880456)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
+
+# ctb0694-49
+# -5.3244224, -35.4646402 (ORIGINAL)
+# -5.324633, -35.464634
+# -5.324412, -35.464353
+# -5.324412, -35.464888
+# -5.324027, -35.464661
+tmp <- soc_data[id == "ctb0694-49"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-5.324633, -5.324412, -5.324412, -5.324027)]
+tmp[, coord_x := c(-35.464634, -35.464353, -35.464888, -35.464661)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
+
+# PANTANAL
+# 10000 g/m^2
+# hist(soc_data_sf[name_biome == "Pantanal", soc_stock_g_m2])
+# rug(soc_data_sf[name_biome == "Pantanal", soc_stock_g_m2])
+soc_data_sf[name_biome == "Pantanal" & soc_stock_g_m2 > 10000, ]
+
+# ctb0054-P11
+# -16.65224, -56.38391 (ORIGINAL)
+# -16.652519, -56.383898
+# -16.652200, -56.383541
+# -16.652239, -56.384243
+# -16.651841, -56.383962
+tmp <- soc_data[id == "ctb0054-P11"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-16.652519, -16.652200, -16.652239, -16.651841)]
+tmp[, coord_x := c(-56.383898, -56.383541, -56.384243, -56.383962)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
+
+# ctb0054-P28
+# -16.84245, -56.40736 (ORIGINAL)
+# -16.842622, -56.407352
+# -16.842436, -56.407151
+# -16.842451, -56.407623
+# -16.842145, -56.407390
+tmp <- soc_data[id == "ctb0054-P28"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-16.842622, -16.842436, -16.842451, -16.842145)]
+tmp[, coord_x := c(-56.407352, -56.407151, -56.407623, -56.407390)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
+
+# ctb0054-P29
+# -16.80298, -56.29631 (ORIGINAL)
+# -16.803310, -56.296312
+# -16.802949, -56.295842
+# -16.802703, -56.296850
+# -16.802307, -56.296287
+tmp <- soc_data[id == "ctb0054-P29"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-16.803310, -16.802949, -16.802703, -16.802307)]
+tmp[, coord_x := c(-56.296312, -56.295842, -56.296850, -56.296287)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
+
+# ctb0763-169
+# -19.052547, -57.6605278 (ORIGINAL)
+# -19.052604, -57.660814
+# -19.052771, -57.661283
+# -19.052279, -57.660069
+# -19.052044, -57.659567
+tmp <- soc_data[id == "ctb0763-169"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-19.052604, -19.052771, -19.052279, -19.052044)]
+tmp[, coord_x := c(-57.660814, -57.661283, -57.660069, -57.659567)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
+
+# PAMPA
+# 16700 g/m^2
+# hist(soc_data_sf[name_biome == "Pampa", soc_stock_g_m2])
+# rug(soc_data_sf[name_biome == "Pampa", soc_stock_g_m2])
+soc_data_sf[name_biome == "Pampa" & soc_stock_g_m2 > 16700, ]
+
+# ctb0037-girua-075
+# -28.04955, -54.40351 (ORIGINAL)
+# -28.049667, -54.403504
+# -28.049547, -54.403327
+# -28.049534, -54.403682
+# -28.049372, -54.403527
+tmp <- soc_data[id == "ctb0037-girua-075"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-28.049667, -28.049547, -28.049534, -28.049372)]
+tmp[, coord_x := c(-54.403504, -54.403327, -54.403682, -54.403527)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
+
+# ctb0037-girua-086
+# -28.04434, -54.41399 (ORIGINAL)
+# -28.044481, -54.413983
+# -28.044337, -54.414179
+# -28.044309, -54.413779
+# -28.044119, -54.414011
+tmp <- soc_data[id == "ctb0037-girua-086"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-28.044481, -28.044337, -28.044309, -28.044119)]
+tmp[, coord_x := c(-54.413983, -54.414179, -54.413779, -54.414011)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
+
+# ctb0770-98
+# -32.13333, -52.58333 (ORIGINAL)
+# -32.133724, -52.583323
+# -32.133170, -52.582529
+# -32.132379, -52.583398
+# -32.132806, -52.584353
+tmp <- soc_data[id == "ctb0770-98"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-32.133724, -32.133170, -32.132379, -32.132806)]
+tmp[, coord_x := c(-52.583323, -52.582529, -52.583398, -52.584353)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
+
+# ctb0797-RS-113
+# -30.8161997, -53.8114681 (ORIGINAL)
+# -30.816407, -53.811462
+# -30.816209, -53.811049
+# -30.816195, -53.811794
+# -30.815831, -53.811494
+tmp <- soc_data[id == "ctb0797-RS-113"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-30.816407, -30.816209, -30.816195, -30.815831)]
+tmp[, coord_x := c(-53.811462, -53.811049, -53.811794, -53.811494)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
+
+# AMAZÔNIA
+# 40000 g/m^2
+hist(soc_data_sf[name_biome == "Amazônia", soc_stock_g_m2])
+rug(soc_data_sf[name_biome == "Amazônia", soc_stock_g_m2])
+soc_data_sf[name_biome == "Amazônia" & soc_stock_g_m2 > 43000, ]
+
+# ctb0033-RO1245
+# -12.25083, -63.24472 (ORIGINAL)
+# -12.251281, -63.244713
+# -12.250741, -63.244080
+# -12.250814, -63.245319
+# -12.250054, -63.244756
+tmp <- soc_data[id == "ctb0033-RO1245"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-12.251281, -12.250741, -12.250814, -12.250054)]
+tmp[, coord_x := c(-63.244713, -63.244080, -63.245319, -63.244756)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
+
+# ctb0033-RO1252
+# -12.4275, -63.44889 (ORIGINAL)
+# -12.427775, -63.448863
+# -12.427425, -63.448433
+# -12.427504, -63.449427
+# -12.426785, -63.448901
+tmp <- soc_data[id == "ctb0033-RO1252"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-12.427775, -12.427425, -12.427504, -12.426785)]
+tmp[, coord_x := c(-63.448863, -63.448433, -63.449427, -63.448901)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
+
+# ctb0717-22
+# -7.05, -72.65 (ORIGINAL)
+# -7.051129, -72.649946
+# -7.049883, -72.651427
+# -7.050000, -72.648519
+# -7.048733, -72.650107
+tmp <- soc_data[id == "ctb0717-22"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-7.051129, -7.049883, -7.050000, -7.048733)]
+tmp[, coord_x := c(-72.649946, -72.651427, -72.648519, -72.650107)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
+
+# ctb0053-RO_567_INDEFORMADA
+# -12.95998, -62.64021 (ORIGINAL)
+# -12.960279, -62.640199
+# -12.959962, -62.639774
+# -12.959971, -62.640601
+# -12.959482, -62.640242
+tmp <- soc_data[id == "ctb0053-RO_567_INDEFORMADA"][rep(1, 4)]
+tmp[, id := paste0(id, "-REP", 1:4)]
+tmp[, coord_y := c(-12.960279, -12.959962, -12.959971, -12.959482)]
+tmp[, coord_x := c(-62.640199, -62.639774, -62.640601, -62.640242)]
+set.seed(1984)
+tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
+soc_data <- rbind(soc_data, tmp)
+
+rm(soc_data_sf)
+
 # Summary
 summary_soildata(soc_data)
 # Layers: 12510
@@ -243,9 +542,13 @@ soc_data <- soc_data[, .(id, coord_x, coord_y, year, soc_stock_g_m2)]
 
 # Plot with mapview
 if (FALSE) {
-  soc_data_sf <- sf::st_as_sf(soc_data, coords = c("coord_x", "coord_y"), crs = 4326)
+  soc_data_sf <- sf::st_as_sf(
+    soc_data[soc_stock_g_m2 > 18000],
+    coords = c("coord_x", "coord_y"), crs = 4326
+  )
   mapview::mapview(soc_data_sf, zcol = "soc_stock_g_m2")
 }
+soc_data[id == "ctb0718-51", ]
 
 # Write data to disk ###############################################################################
 folder_path <- "~/Insync/MapBiomas Solo/Trainning samples/"
