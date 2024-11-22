@@ -21,26 +21,23 @@ source("src/00_helper_functions.r")
 file_path <- "data/21_soildata_soc.txt"
 soildata <- data.table::fread(file_path)
 summary_soildata(soildata)
-# Layers: 29465
-# Events: 15499
-# Georeferenced events: 13151
+# Layers: 29881
+# Events: 15729
+# Georeferenced events: 13381
 
 # Identify soil layers missing the proportion of coarse fragments
 soildata[, esqueleto := round(esqueleto / 10)]
 is_na_skeleton <- is.na(soildata[["esqueleto"]])
-sum(is_na_skeleton) # 4141 layers
+sum(is_na_skeleton) # 4193 layers
 
 # Set covariates
 colnames(soildata)
 covars_names <- c(
-  # "dataset_id",
   "estado_id", "coord_x_utm", "coord_y_utm",
   "profund_sup", "profund_inf", "espessura",
-  "ph",
-  "ctc", "argila", "silte", "areia", "carbono",
+  "ph", "ctc", "argila", "silte", "areia", "carbono",
   "ORDER", "SUBORDER", "STONESOL",
   "STONY", "ORGANIC", "AHRZN", "BHRZN", "BHRZN_DENSE", "EHRZN", "DENSIC",
-  # "fine_upper", "fine_lower",
   "cec_clay_ratio", "silt_clay_ratio",
   "bdod_0_5cm", "bdod_15_30cm", "bdod_5_15cm",
   "cfvo_0_5cm",  "cfvo_15_30cm", "cfvo_5_15cm",
@@ -48,9 +45,8 @@ covars_names <- c(
   "sand_0_5cm",  "sand_15_30cm", "sand_5_15cm",
   "soc_0_5cm", "soc_15_30cm", "soc_5_15cm",
   "lulc",
-  "aspect", "aspect_cosine", "aspect_sine", "convergence", "cti", "dev_magnitude", "dev_scale",
-  "dx", "dxx", "dxy", "dy", "dyy", "eastness", "elev_stdev", "geom", "northness", "pcurv",
-  "rough_magnitude", "roughness", "slope", "spi"
+  "convergence", "cti", "eastness", "geom", "northness", "pcurv",
+  "roughness", "slope", "spi"
 )
 
 # Missing value imputation
@@ -241,8 +237,8 @@ dev.off()
 skeleton_digits <- 0
 tmp <- predict(skeleton_model, data = covariates[is_na_skeleton, ])
 soildata[is_na_skeleton, esqueleto := round(tmp$predictions, skeleton_digits)]
-nrow(unique(soildata[, "id"])) # Result: 15643
-nrow(soildata) # Result: 29752
+nrow(unique(soildata[, "id"])) # Result: 15729
+nrow(soildata) # Result: 29881
 
 # Figure. Distribution of soil skeleton data
 dev.off()
@@ -266,7 +262,7 @@ dev.off()
 # Write data to disk
 soildata[, abs_error := NULL]
 summary_soildata(soildata)
-# Layers: 29683
-# Events: 15640
-# Georeferenced events: 13292
+# Layers: 29881
+# Events: 15729
+# Georeferenced events: 13381
 data.table::fwrite(soildata, "data/30_soildata_soc.txt", sep = "\t")

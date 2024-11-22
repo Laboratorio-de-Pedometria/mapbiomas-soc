@@ -18,17 +18,20 @@ source("src/00_helper_functions.r")
 # Read data from disk
 soildata <- data.table::fread("data/30_soildata_soc.txt")
 summary_soildata(soildata)
-# Layers: 29752
-# Events: 15643
-# Georeferenced events: 13295
+# Layers: 29881
+# Events: 15729
+# Georeferenced events: 13381
 
 # DELETE POSSIBLE INCONSISTENCIES
 soildata[dsi > 2.5, dsi := NA_real_]
 
+# Correct inconsistent soil bulk density values
+soildata[id == "ctb0058-RN_20", dsi := ifelse(dsi == 2.11, 1.11, dsi)]
+
 # Identify layers missing soil bulk density data
 is_na_dsi <- is.na(soildata[["dsi"]])
-nrow(soildata[is.na(dsi), ]) # Result: [1] 24 layers
-nrow(unique(soildata[is.na(dsi), "id"])) # Result: 13291 events
+nrow(soildata[is.na(dsi), ]) # Result: 24497 layers
+nrow(unique(soildata[is.na(dsi), "id"])) # Result: 13245 events
 
 # Set covariates
 colnames(soildata)
@@ -46,9 +49,8 @@ covars_names <- c(
   "sand_0_5cm",  "sand_15_30cm", "sand_5_15cm",
   "soc_0_5cm", "soc_15_30cm", "soc_5_15cm",
   "lulc",
-  "aspect", "aspect_cosine", "aspect_sine", "convergence", "cti", "dev_magnitude", "dev_scale",
-  "dx", "dxx", "dxy", "dy", "dyy", "eastness", "elev_stdev", "geom", "northness", "pcurv",
-  "rough_magnitude", "roughness", "slope", "spi"
+  "convergence", "cti", "eastness", "geom", "northness", "pcurv",
+  "roughness", "slope", "spi"
 )
 
 # Missing value imputation
@@ -143,7 +145,7 @@ hyper_best <- hyper_best[min_node_size == max(min_node_size), ]
 print(hyper_best)
 
 # Hard code the best hyperparameters for the model
-hyper_best <- data.frame(num_trees = 800, mtry = 16, min_node_size = 1, max_depth = 30)
+hyper_best <- data.frame(num_trees = 400, mtry = 16, min_node_size = 1, max_depth = 20)
 
 # Fit the best model
 t0 <- Sys.time()
@@ -233,8 +235,8 @@ dev.off()
 dsi_digits <- 2
 tmp <- predict(dsi_model, data = covariates[is_na_dsi, ])
 soildata[is_na_dsi, dsi := round(tmp$predictions, dsi_digits)]
-nrow(unique(soildata[, "id"])) # Result: 15643
-nrow(soildata) # Result: 29752
+nrow(unique(soildata[, "id"])) # Result: 15729
+nrow(soildata) # Result: 29881
 
 # Figure. Distribution of soil bulk density data
 png("res/fig/bulk_density_histogram.png", width = 480 * 3, height = 480 * 3, res = 72 * 3)
@@ -259,7 +261,7 @@ dev.off()
 # Write data to disk
 soildata[, abs_error := NULL]
 summary_soildata(soildata)
-# Layers: 29683
-# Events: 15640
-# Georeferenced events: 13292
+# Layers: 29881
+# Events: 15729
+# Georeferenced events: 13381
 data.table::fwrite(soildata, "data/31_soildata_soc.txt", sep = "\t")
