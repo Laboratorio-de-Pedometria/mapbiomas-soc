@@ -18,9 +18,9 @@ source("src/00_helper_functions.r")
 # Read data produced in the previous processing script
 soildata <- data.table::fread("data/14_soildata_soc.txt", sep = "\t")
 summary_soildata(soildata)
-# Layers: 29683
-# Events: 15640
-# Georeferenced events: 13292
+# Layers: 29881
+# Events: 15729
+# Georeferenced events: 13381
 
 # Correct layer depth and name
 # soildata[
@@ -55,6 +55,7 @@ if (FALSE) {
 soildata_sf <- sf::st_transform(soildata_sf, crs = 31983)
 soildata[!is.na(coord_x) & !is.na(coord_y), coord_x_utm := sf::st_coordinates(soildata_sf)[, 1]]
 soildata[!is.na(coord_x) & !is.na(coord_y), coord_y_utm := sf::st_coordinates(soildata_sf)[, 2]]
+summary(soildata[, .(coord_x_utm, coord_y_utm)])
 rm(soildata_sf)
 
 # SiBCS
@@ -205,7 +206,7 @@ summary(soildata[, silt_clay_ratio])
 
 # Write data to disk
 summary_soildata(soildata)
-# Layers: 29683
-# Events: 15640
-# Georeferenced events: 13292
+# Layers: 29881
+# Events: 15729
+# Georeferenced events: 13381
 data.table::fwrite(soildata, "data/20_soildata_soc.txt", sep = "\t")
