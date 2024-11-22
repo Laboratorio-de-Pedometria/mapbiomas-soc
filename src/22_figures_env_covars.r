@@ -23,9 +23,12 @@ source("src/00_helper_functions.r")
 # Read data processed in the previous script
 soildata <- data.table::fread("data/21_soildata_soc.txt", sep = "\t", na.strings = c("NA", ""))
 summary_soildata(soildata)
-# Layers: 29465
-# Events: 15499
-# Georeferenced events: 13151
+# Layers: 29881
+# Events: 15729
+# Georeferenced events: 13381
+
+# Correct samples from the year of 2024
+soildata[lulc == 2024, lulc := NA_integer_]
 
 # FIGURE
 # Distribution of events through land use/land cover classes
