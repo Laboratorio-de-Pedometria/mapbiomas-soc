@@ -29,7 +29,7 @@ curated_path <- list.files(
   pattern = "^ctb[0-9]{4}\\.csv$",
   full.names = TRUE, recursive = TRUE
 )
-length(curated_path) # 26 datasets
+length(curated_path) # 28 datasets
 print(curated_path)
 
 # Read all files and store them in a list
@@ -42,9 +42,9 @@ curated_data <- data.table::rbindlist(curated_list, fill = TRUE)
 curated_data <- curated_data[, ..read_cols]
 curated_data[, id := paste0(dataset_id, "-", observacao_id)]
 summary_soildata(curated_data)
-# Layers: 9407
-# Events: 3508
-# Georeferenced events: 3211
+# Layers: 9818
+# Events: 3654
+# Georeferenced events: 3357
 
 # Read SoilData data processed in the previous script
 soildata <- data.table::fread("data/12_soildata_soc.txt", sep = "\t")
@@ -70,9 +70,9 @@ summary_soildata(soildata)
 # Georeferenced events: 11633
 soildata <- rbind(soildata, curated_data, fill = TRUE)
 summary_soildata(soildata)
-# Layers: 60451
-# Events: 18269
-# Georeferenced events: 14844
+# Layers: 60862
+# Events: 18415
+# Georeferenced events: 14990
 
 # Check spatial distribution
 if (FALSE) {
