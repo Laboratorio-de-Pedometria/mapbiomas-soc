@@ -15,9 +15,9 @@ source("src/00_helper_functions.r")
 # Read SoilData data processed in the previous script
 soildata <- data.table::fread("data/14_soildata_soc.txt", sep = "\t")
 summary_soildata(soildata)
-# Layers: 29683
-# Events: 15640
-# Georeferenced events: 13292
+# Layers: 29881
+# Events: 15729
+# Georeferenced events: 13381
 
 # Create a data.table with the particle size distribution
 psd_data <- soildata[
@@ -29,9 +29,9 @@ psd_data[, depth := profund_sup + (profund_inf - profund_sup) / 2, by = .I]
 # Drop rows with depth > 40 cm
 psd_data <- psd_data[depth <= 40]
 summary_soildata(psd_data)
-# Layers: 19885
-# Events: 11593
-# Georeferenced events: 11593
+# Layers: 19965
+# Events: 11633
+# Georeferenced events: 11633
 
 # Compute additive log ratio transformation
 psd_data[, log_clay_sand := log(argila / areia)]
@@ -59,9 +59,9 @@ data.table::setcolorder(
   c("id", "coord_x", "coord_y", "depth", "log_clay_sand", "log_silt_sand")
 )
 summary_soildata(psd_data)
-# Layers: 19885
-# Events: 11593
-# Georeferenced events: 11593
+# Layers: 19965
+# Events: 11633
+# Georeferenced events: 11633
 
 # Plot using mapview
 if (FALSE) {
@@ -78,6 +78,7 @@ last_file <- existing_files[length(existing_files)]
 last_psd_data <- data.table::fread(paste0(folder_path, last_file))
 # Check if last_psd_data == psd_data. If not, write psd_data to disk.
 if (!identical(last_psd_data, psd_data)) {
+  cat("Writing data to disk...\n")
   file_path <- paste0(folder_path, format(Sys.time(), "%Y-%m-%d"), file_name)
   file_path <- path.expand(file_path)
   data.table::fwrite(psd_data, file_path)
