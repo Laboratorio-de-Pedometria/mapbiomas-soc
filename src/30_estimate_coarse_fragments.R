@@ -24,6 +24,8 @@ summary_soildata(soildata)
 # Layers: 29881
 # Events: 15729
 # Georeferenced events: 13381
+length(soildata[, unique(dataset_id)])
+# 250 datasets
 
 # Identify soil layers missing the proportion of coarse fragments
 soildata[, esqueleto := round(esqueleto / 10)]
