@@ -84,4 +84,7 @@ if (FALSE) {
 
 ####################################################################################################
 # Export cleaned data
+# Number of datasets
+length(soildata[, unique(dataset_id)])
+# 262 datasets
 data.table::fwrite(soildata, "data/13_soildata_soc.txt", sep = "\t")
