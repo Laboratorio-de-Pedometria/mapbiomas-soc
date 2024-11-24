@@ -93,6 +93,8 @@ summary_soildata(soildata)
 # Layers: 23390
 # Events: 14682
 # Georeferenced events: 12575
+length(soildata[, unique(dataset_id)])
+# 236 datasets
 
 # Volume of coarse fragments
 # The volume of coarse fragments is calculated as the volume of the skeleton divided by the density
@@ -124,6 +126,14 @@ table(soildata[, n])
 #     1     2     3     4     5 
 #  7762 10496  4677   440    15 
 soildata[, n := NULL]
+
+# Drop rows missing data on coord_x, coord_y, and data_ano and with a thickness of 0 cm
+summary_soildata(soildata[
+  !is.na(soc_stock_kgm2) & espessura > 0 & !is.na(coord_x) & !is.na(coord_y) & !is.na(data_ano)
+])
+# Layers: 19028
+# Events: 12575
+# Georeferenced events: 12575
 
 # Aggregate soil organic carbon stock in the topsoil (0 to 30 cm) of each event
 colnames(soildata)
@@ -550,6 +560,9 @@ if (FALSE) {
 }
 
 # Write data to disk ###############################################################################
+data.table::fwrite(soildata, "data/40_soildata_soc.txt", sep = "\t")
+
+# Training samples
 folder_path <- "~/Insync/MapBiomas Solo/Trainning samples/"
 file_name <- "-organic-carbon-stock-gram-per-square-meter.csv"
 # List existing files in the folder_path and get the last one. Then read it.
