@@ -8,6 +8,19 @@ rm(list = ls())
 if (!require("data.table")) {
   install.packages("data.table")
 }
+if (!require("sf")) {
+  install.packages("sf")
+}
+if (!require("geobr")) {
+  install.packages("geobr")
+}
+if (!require("rnaturalearth")) {
+  install.packages("rnaturalearth", dependencies = TRUE)
+}
+if (!require("prettymapr")) {
+  install.packages("prettymapr")
+  library("prettymapr")
+}
 
 # Source helper functions
 source("src/00_helper_functions.r")
@@ -38,7 +51,8 @@ psd_data[, log_clay_sand := log(argila / areia)]
 psd_data[, log_silt_sand := log(silte / areia)]
 summary(psd_data[, .(log_clay_sand, log_silt_sand)])
 
-# Prepare figures
+# Figure: Histograms
+dev.off()
 file_path <- "res/fig/psd_histogram.png"
 png(file_path, width = 480 * 3, height = 480 * 2, res = 72 * 2)
 par(mfrow = c(2, 3))
@@ -48,6 +62,43 @@ hist(psd_data$areia, main = "Sand", xlab = "Sand (%)", col = "gray")
 hist(psd_data$log_clay_sand, main = "log(Clay/Sand)", xlab = "log(Clay/Sand)", col = "gray")
 hist(psd_data$log_silt_sand, main = "log(Silt/Sand)", xlab = "log(Silt/Sand)", col = "gray")
 hist(psd_data$depth, main = "Depth", xlab = "Depth (cm)", col = "gray")
+dev.off()
+
+# Figure: Spatial distribution
+# Create spatial data
+psd_data_sf <- sf::st_as_sf(psd_data, coords = c("coord_x", "coord_y"), crs = 4326)
+# Read biomes and transform to WGS84
+biomes <- geobr::read_biomes()[-7, ]
+biomes <- sf::st_transform(biomes, crs = 4326)
+# Read Brazil and transform to WGS84
+brazil <- geobr::read_country()
+brazil <- sf::st_transform(brazil, crs = 4326)
+# Read South America and transform to WGS84
+southamerica <- rnaturalearth::ne_countries(continent = c("south america", "europe"),
+  returnclass = "sf", scale = "medium")
+southamerica <- southamerica[, "iso_a2"]
+# Save figure
+dev.off()
+file_path <- "res/fig/psd-spatial-distribution.png"
+png(file_path, width = 480 * 3, height = 480 * 3, res = 72 * 3)
+# x11()
+par(mar = rep(1.9, 4))
+plot(brazil,
+  reset = FALSE, col = "transparent",
+  axes = TRUE, graticule = TRUE, lwd = 0.01,
+  main = "Particle size fractions"
+)
+plot(southamerica, reset = FALSE, col = "gray96", add = TRUE, lwd = 0.5)
+plot(biomes["name_biome"], reset = FALSE,
+  main = "", axes = TRUE, col = "#eeece1", lwd = 0.5,
+  border = "gray69",
+  key.pos = NULL, graticule = TRUE, add = TRUE)
+plot(psd_data_sf["log_clay_sand"], reset = FALSE,
+  add = TRUE,
+  cex = 0.5, col = "firebrick4",
+  main = "Soil organic carbon stock"
+)
+prettymapr::addscalebar(plotunit = "latlon", plotepsg = 4326, pos = "bottomright")
 dev.off()
 
 # Drop unnecessary columns
@@ -62,6 +113,7 @@ summary_soildata(psd_data)
 # Layers: 19965
 # Events: 11633
 # Georeferenced events: 11633
+length(psd_data[, strsplit(id, "-")[[1]][1], by = .I][, unique(V1)])
 
 # Plot using mapview
 if (FALSE) {
