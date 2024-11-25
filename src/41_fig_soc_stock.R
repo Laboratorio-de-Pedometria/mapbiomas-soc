@@ -44,6 +44,8 @@ summary_soildata(soildata)
 # Events: 12575
 # Georeferenced events: 12575
 
+# FIGURES FOR ATBD #################################################################################
+# https://drive.google.com/drive/folders/1y36YUjrKYgyyRdkIHrmLFW_KRjT9qAv_?usp=drive_link
 # Frequency distribution of soil organic carbon stocks
 dev.off()
 file_path <- "res/fig/carbon-stock-histogram.png"
@@ -115,55 +117,29 @@ plot(soildata_sf["soc_stock_g_m2"],
 prettymapr::addscalebar(plotunit = "latlon", plotepsg = 4326, pos = "bottomright")
 dev.off()
 
-# Avaliar distribuição de frequência da espessura da camada
-# dev.off()
-# png("mapbiomas-soc/res/fig/carbon-stock-depth-distribution.png",
-#   width = 480 * 3, height = 480 * 3, res = 72 * 3
-# )
-# # x11()
-# par(mar = c(5, 4, 2, 2) + 0.1)
-# y_max <- hist(febr_data[, espessura], plot = FALSE)$counts
-# y_max <- ceiling(max(y_max) / 1000) * 1000
-# hist(febr_data[, espessura] / 100,
-#   panel.first = grid(nx = FALSE, ny = NULL),
-#   xlab = "Espessura da camada superficial, m",
-#   ylab = paste0("Frequência absoluta (n = ", nrow(febr_data), ")"),
-#   ylim = c(0, y_max),
-#   xlim = c(0, 30) / 100,
-#   main = ""
-# )
-# rug(febr_data[, espessura] / 100)
-# dev.off()
-
-# Criar objeto espacial e avaliar distribuição do estoque por bioma
-# soildata_sf <- sf::st_as_sf(soildata, coords = c("coord_x", "coord_y"), crs = 4326)
-# nrow(soildata_sf) # 12575 events
-# dev.off()
-# png("fig/carbon-stock-spatial-distribution.png", width = 480 * 3, height = 480 * 3, res = 72 * 3)
-# # x11()
-# plot(biomes["name_biome"], reset = FALSE,
-#   main = "", axes = TRUE, col = "transparent", lwd = 0.5, border = "darkgray",
-#   key.pos = NULL, graticule = TRUE)
-# cex <- soildata_sf[["soc_stock_g_m2"]] / (max(soildata_sf[["soc_stock_g_m2"]]) * 0.4)
-# plot(soildata_sf["soc_stock_g_m2"], add = TRUE, pch = 21, cex = cex, col = "black")
-# prob <- c(0, 0.5, 0.95, 0.975, 1)
-# quant <- round(quantile(soildata_sf[["soc_stock_g_m2"]], prob) / 1000, 1)
-# leg_text <- paste(quant, "~ kg/m^2")
-# leg_text <- sapply(leg_text, function(x) parse(text = x))
-# legend(x = -40, y = 8, legend = leg_text, pch = 21, box.lwd = 0, pt.cex = quantile(cex, prob))
-# dev.off()
-
-
-
-# Avaliar distribuição temporal dos pontos
-# Definir fatias temporais
-# x11()
-time_slices <- c(1900, 1985, 1995, 2005, 2015, 2021)
-time_main <- c("<1985", "1985-1994", "1995-2004", "2005-2014", "2015-2021")
+# FACT SHEET: Spatial distribution of sample points
 dev.off()
-png("mapbiomas-soc/res/fig/points-spatial-temporal-distribution.png",
-  width = 480 * 5, height = 480, res = 72 * 2
+file_path <- "res/fig/soc-stock-spatial-distribution-fact-sheet.png"
+png(file_path, width = 480 * 3, height = 480 * 3, res = 72 * 3)
+# x11()
+par(mar = rep(1.9, 4))
+plot(biomes["name_biome"], reset = FALSE,
+  main = "", axes = FALSE, col = "#eeece1", lwd = 0.5,
+  border = "gray69", key.pos = NULL)
+plot(soildata_sf["soc_stock_g_m2"], add = TRUE, cex = 0.5, col = "firebrick")
+prettymapr::addscalebar(
+  plotunit = "latlon", plotepsg = 4326, pos = "bottomright", padin = c(1.2, 0.75)
 )
+dev.off()
+
+# Spatio temporal distribution of the soil organic carbon stock data
+# Set time slices
+time_slices <- c(1900, 1985, 1995, 2005, 2015, 2023)
+time_main <- c("<1985", "1985-1994", "1995-2004", "2005-2014", "2015-2023")
+dev.off()
+# x11()
+file_path <- "res/fig/soc-stock-spatial-temporal-distribution.png"
+png(file_path, width = 480 * 5, height = 480, res = 72 * 2)
 par(mar = rep(1.9, 4), mfrow = c(1, 5))
 for (i in 1:5) {
   plot(brazil,
@@ -181,12 +157,59 @@ for (i in 1:5) {
     border = "gray69",
     key.pos = NULL, add = TRUE
   )
-  idx <- which(febr_data_sf[["data_coleta_ano"]] >= time_slices[i] &
-    febr_data_sf[["data_coleta_ano"]] < time_slices[i + 1])
-  plot(febr_data_sf[idx, "cos_estoque_gm2"], add = TRUE,
-  cex = 0.5, col = "firebrick")
+  idx <- which(soildata_sf[["year"]] >= time_slices[i] &
+    soildata_sf[["year"]] < time_slices[i + 1])
+  plot(soildata_sf[idx, "soc_stock_g_m2"], add = TRUE, cex = 0.5, col = "firebrick")
 }
 dev.off()
+
+# FACT SHEET: Temporal distribution of samples per time slice (barplot)
+dev.off()
+file_path <- "res/fig/soc-stock-temporal-distribution-fact-sheet.png"
+png(file_path, width = 480 * 3, height = 480 * 3, res = 72 * 3)
+# x11()
+year_hist <- cut(soildata[, year], breaks = time_slices, labels = time_main)
+year_hist <- table(year_hist)
+par(mar = c(5, 4, 2, 2) + 0.1)
+bp <- barplot(year_hist,
+  col = "firebrick",
+  xlab = "Ano de amostragem",
+  ylab = paste0("Frequência absoluta (n = ", sum(year_hist), ")")
+)
+text(bp, year_hist, labels = year_hist, pos = 1, cex = 1, col = "white")
+dev.off()
+
+# Distribution of soil organic carbon stock data by biome
+# Intersect soildata with biomes
+soildata_sf <- sf::st_join(soildata_sf, biomes[, "name_biome"])
+# Create a table with the number of samples per biome
+biome_hist <- table(soildata_sf[["name_biome"]])
+dev.off()
+file_path <- "res/fig/soc-stock-biome-distribution-fact-sheet.png"
+png(file_path, width = 480 * 4, height = 480 * 3, res = 72 * 3)
+# x11()
+par(mar = c(5, 4, 2, 2) + 0.1)
+bp <- barplot(biome_hist,
+  col = "firebrick",
+  xlab = "Bioma",
+  ylab = paste0("Frequência absoluta (n = ", sum(biome_hist), ")"), ylim = c(0, 5000)
+)
+text(bp, biome_hist, labels = biome_hist, pos = 3, cex = 1)
+dev.off()
+
+# Samples per mapped year
+# ~325 amostras por ano mapeado (a maioria foi coletada antes de 1985)
+12667 / (2023 - 1984)
+
+# Areal density over Brazil
+# ~ 1,5 amostra/mil km2 (vazios e agrupamentos são comuns)
+12667 / 8510000 * 1000
+
+# Areal density of points per biome
+# O Pampa tem a maior densidade amostral (5,1 amostras/mil km2) e o Pantanal a menor (0,6 amostras/mil km2)
+biome_area <- sf::st_area(biomes) / (1000 * 1000 * 1000)
+biome_density <- round(c(biome_hist) / biome_area, 1)
+t(biome_density)
 
 # Avaliar distribuição por bioma
 biomes$name_biome <- gsub(" ", "-", biomes$name_biome)
@@ -227,3 +250,41 @@ febr_data <- sf::st_as_sf(febr_data, coords = c("coord_x", "coord_y"), crs = 432
 x11()
 plot(febr_data["cos_estoque_gm2"])
 mapview::mapview(febr_data["cos_estoque_gm2"])
+
+# Avaliar distribuição de frequência da espessura da camada
+# dev.off()
+# png("mapbiomas-soc/res/fig/carbon-stock-depth-distribution.png",
+#   width = 480 * 3, height = 480 * 3, res = 72 * 3
+# )
+# # x11()
+# par(mar = c(5, 4, 2, 2) + 0.1)
+# y_max <- hist(febr_data[, espessura], plot = FALSE)$counts
+# y_max <- ceiling(max(y_max) / 1000) * 1000
+# hist(febr_data[, espessura] / 100,
+#   panel.first = grid(nx = FALSE, ny = NULL),
+#   xlab = "Espessura da camada superficial, m",
+#   ylab = paste0("Frequência absoluta (n = ", nrow(febr_data), ")"),
+#   ylim = c(0, y_max),
+#   xlim = c(0, 30) / 100,
+#   main = ""
+# )
+# rug(febr_data[, espessura] / 100)
+# dev.off()
+
+# Criar objeto espacial e avaliar distribuição do estoque por bioma
+# soildata_sf <- sf::st_as_sf(soildata, coords = c("coord_x", "coord_y"), crs = 4326)
+# nrow(soildata_sf) # 12575 events
+# dev.off()
+# png("fig/carbon-stock-spatial-distribution.png", width = 480 * 3, height = 480 * 3, res = 72 * 3)
+# # x11()
+# plot(biomes["name_biome"], reset = FALSE,
+#   main = "", axes = TRUE, col = "transparent", lwd = 0.5, border = "darkgray",
+#   key.pos = NULL, graticule = TRUE)
+# cex <- soildata_sf[["soc_stock_g_m2"]] / (max(soildata_sf[["soc_stock_g_m2"]]) * 0.4)
+# plot(soildata_sf["soc_stock_g_m2"], add = TRUE, pch = 21, cex = cex, col = "black")
+# prob <- c(0, 0.5, 0.95, 0.975, 1)
+# quant <- round(quantile(soildata_sf[["soc_stock_g_m2"]], prob) / 1000, 1)
+# leg_text <- paste(quant, "~ kg/m^2")
+# leg_text <- sapply(leg_text, function(x) parse(text = x))
+# legend(x = -40, y = 8, legend = leg_text, pch = 21, box.lwd = 0, pt.cex = quantile(cex, prob))
+# dev.off()
