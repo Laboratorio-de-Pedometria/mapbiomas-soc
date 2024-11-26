@@ -136,7 +136,6 @@ summary_soildata(soildata[
 # Georeferenced events: 12575
 
 # Aggregate soil organic carbon stock in the topsoil (0 to 30 cm) of each event
-colnames(soildata)
 soc_data <- soildata[
   !is.na(soc_stock_kgm2) &
     espessura > 0 &
@@ -157,23 +156,31 @@ summary_soildata(soc_data)
 # Events: 12575
 # Georeferenced events: 12575
 
-# Brazilian biomes
+# Check if the is any event with sampling year equal to the current year.
+# If so, set the year to the previous year.
+current_year <- as.integer(format(Sys.Date(), "%Y"))
+print(soc_data[year == current_year, id])
+soc_data[year == current_year, year := current_year - 1]
+
 # Intersect soil organic carbon samples with Brazilian biomes
+# Download the data for the Brazilian biomes
 biome <- geobr::read_biomes()
 biome <- sf::st_transform(biome, 4326)
 biome <- biome[biome$name_biome != "Sistema Costeiro", "name_biome"]
+# Create a spatial object with the soil organic carbon data
 soc_data_sf <- sf::st_as_sf(soc_data, coords = c("coord_x", "coord_y"), crs = 4326)
+# Intersect the soil organic carbon data with the Brazilian biomes
 soc_data_sf <- sf::st_join(soc_data_sf, biome)
-soc_data_sf <- data.table::setDT(soc_data_sf)
+soc_data[, name_biome := soc_data_sf$name_biome]
+rm(soc_data_sf)
 
-# The following points have very high SOC stock. We create new nearby instances.
-# x11()
-
+# Replicate instances with high SOC stock, creating new nearby instances
 # MATA ATLÂNTICA
 # 68000 g/m^2
-# hist(soc_data_sf[name_biome == "Mata Atlântica", soc_stock_g_m2])
-# rug(soc_data_sf[name_biome == "Mata Atlântica", soc_stock_g_m2])
-soc_data_sf[name_biome == "Mata Atlântica" & soc_stock_g_m2 > 68000, ]
+# x11()
+# hist(soc_data[name_biome == "Mata Atlântica", soc_stock_g_m2])
+# rug(soc_data[name_biome == "Mata Atlântica", soc_stock_g_m2])
+soc_data[name_biome == "Mata Atlântica" & soc_stock_g_m2 > 68000, ]
 
 # ctb0832-226
 # -21.23333333, -41.31666667 (ORIGINAL)
@@ -233,9 +240,9 @@ soc_data <- rbind(soc_data, tmp)
 
 # CERRADO
 # 60000 g/m^2
-# hist(soc_data_sf[name_biome == "Cerrado", soc_stock_g_m2])
-# rug(soc_data_sf[name_biome == "Cerrado", soc_stock_g_m2])
-soc_data_sf[name_biome == "Cerrado" & soc_stock_g_m2 > 60000, ]
+# hist(soc_data[name_biome == "Cerrado", soc_stock_g_m2])
+# rug(soc_data[name_biome == "Cerrado", soc_stock_g_m2])
+soc_data[name_biome == "Cerrado" & soc_stock_g_m2 > 60000, ]
 
 # ctb0617-Perfil-49
 # -19.5042035, -47.7903787 (ORIGINAL)
@@ -295,9 +302,9 @@ soc_data <- rbind(soc_data, tmp)
 
 # CAATINGA
 # 23000 g/m^2
-# hist(soc_data_sf[name_biome == "Caatinga", soc_stock_g_m2])
-# rug(soc_data_sf[name_biome == "Caatinga", soc_stock_g_m2])
-soc_data_sf[name_biome == "Caatinga" & soc_stock_g_m2 > 23000, ]
+# hist(soc_data[name_biome == "Caatinga", soc_stock_g_m2])
+# rug(soc_data[name_biome == "Caatinga", soc_stock_g_m2])
+soc_data[name_biome == "Caatinga" & soc_stock_g_m2 > 23000, ]
 
 # ctb0058-RN_33
 # -5.400389, -35.46005 (ORIGINAL)
@@ -355,9 +362,9 @@ soc_data <- rbind(soc_data, tmp)
 
 # PANTANAL
 # 10000 g/m^2
-# hist(soc_data_sf[name_biome == "Pantanal", soc_stock_g_m2])
-# rug(soc_data_sf[name_biome == "Pantanal", soc_stock_g_m2])
-soc_data_sf[name_biome == "Pantanal" & soc_stock_g_m2 > 10000, ]
+# hist(soc_data[name_biome == "Pantanal", soc_stock_g_m2])
+# rug(soc_data[name_biome == "Pantanal", soc_stock_g_m2])
+soc_data[name_biome == "Pantanal" & soc_stock_g_m2 > 10000, ]
 
 # ctb0054-P11
 # -16.65224, -56.38391 (ORIGINAL)
@@ -417,9 +424,9 @@ soc_data <- rbind(soc_data, tmp)
 
 # PAMPA
 # 16700 g/m^2
-# hist(soc_data_sf[name_biome == "Pampa", soc_stock_g_m2])
-# rug(soc_data_sf[name_biome == "Pampa", soc_stock_g_m2])
-soc_data_sf[name_biome == "Pampa" & soc_stock_g_m2 > 16700, ]
+# hist(soc_data[name_biome == "Pampa", soc_stock_g_m2])
+# rug(soc_data[name_biome == "Pampa", soc_stock_g_m2])
+soc_data[name_biome == "Pampa" & soc_stock_g_m2 > 16700, ]
 
 # ctb0037-girua-075
 # -28.04955, -54.40351 (ORIGINAL)
@@ -479,9 +486,9 @@ soc_data <- rbind(soc_data, tmp)
 
 # AMAZÔNIA
 # 40000 g/m^2
-# hist(soc_data_sf[name_biome == "Amazônia", soc_stock_g_m2])
-# rug(soc_data_sf[name_biome == "Amazônia", soc_stock_g_m2])
-soc_data_sf[name_biome == "Amazônia" & soc_stock_g_m2 > 40000, ]
+# hist(soc_data[name_biome == "Amazônia", soc_stock_g_m2])
+# rug(soc_data[name_biome == "Amazônia", soc_stock_g_m2])
+soc_data[name_biome == "Amazônia" & soc_stock_g_m2 > 40000, ]
 
 # ctb0033-RO1245
 # -12.25083, -63.24472 (ORIGINAL)
@@ -539,27 +546,24 @@ set.seed(1984)
 tmp[, soc_stock_g_m2 := soc_stock_g_m2 + runif(.N, -0.01 * soc_stock_g_m2, 0.01 * soc_stock_g_m2)]
 soc_data <- rbind(soc_data, tmp)
 
-rm(soc_data_sf)
-
 # Summary
 summary_soildata(soc_data)
 # Layers: 12667
 # Events: 12667
 # Georeferenced events: 12667
 
-# Set column order
+# Drop unwanted columns and set column order
+soc_data[, name_biome := NULL]
 soc_data <- soc_data[, .(id, coord_x, coord_y, year, soc_stock_g_m2)]
 
 # Plot with mapview
 if (FALSE) {
-  soc_data_sf <- sf::st_as_sf(
-    soc_data,
-    coords = c("coord_x", "coord_y"), crs = 4326
-  )
+  soc_data_sf <- sf::st_as_sf(soc_data, coords = c("coord_x", "coord_y"), crs = 4326)
   mapview::mapview(soc_data_sf, zcol = "soc_stock_g_m2")
 }
 
 # Write data to disk ###############################################################################
+# Processed data
 data.table::fwrite(soildata, "data/40_soildata_soc.txt", sep = "\t")
 
 # Training samples
