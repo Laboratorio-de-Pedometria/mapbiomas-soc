@@ -90,7 +90,7 @@ southamerica <- rnaturalearth::ne_countries(continent = c("south america", "euro
 southamerica <- southamerica[, "iso_a2"]
 # Save figure
 dev.off()
-file_path <- "res/fig/carbon-stock-spatial-distribution.png"
+file_path <- "res/fig/carbon-stock-spatial-distribution-brazil.png"
 png(file_path, width = 480 * 3, height = 480 * 3, res = 72 * 3)
 # x11()
 par(mar = rep(1.9, 4))
@@ -99,11 +99,7 @@ plot(brazil,
   axes = TRUE, graticule = TRUE, lwd = 0.01,
   main = "Soil organic carbon stock"
 )
-plot(southamerica,
-  reset = FALSE,
-  col = "gray96",
-  add = TRUE, lwd = 0.5
-)
+plot(southamerica, reset = FALSE, col = "gray96", add = TRUE, lwd = 0.5)
 plot(biomes["name_biome"], reset = FALSE,
   main = "", axes = TRUE, col = "#eeece1", lwd = 0.5,
   border = "gray69",
@@ -111,7 +107,7 @@ plot(biomes["name_biome"], reset = FALSE,
 plot(soildata_sf["soc_stock_g_m2"],
   add = TRUE,
   cex = 0.5,
-  col = "darkorange4",
+  col = "firebrick",
   main = "Soil organic carbon stock"
 )
 prettymapr::addscalebar(plotunit = "latlon", plotepsg = 4326, pos = "bottomright")
@@ -119,8 +115,8 @@ dev.off()
 
 # FACT SHEET: Spatial distribution of sample points
 dev.off()
-file_path <- "res/fig/soc-stock-spatial-distribution-fact-sheet.png"
-png(file_path, width = 480 * 3, height = 480 * 3, res = 72 * 3)
+file_path <- "res/fig/carbon-stock-spatial-distribution-brazil-fact-sheet.png"
+png(file_path, width = 480 * 3, height = 480 * 3, res = 72 * 3, bg = "transparent")
 # x11()
 par(mar = rep(1.9, 4))
 plot(biomes["name_biome"], reset = FALSE,
@@ -138,7 +134,7 @@ time_slices <- c(1900, 1985, 1995, 2005, 2015, 2023)
 time_main <- c("<1985", "1985-1994", "1995-2004", "2005-2014", "2015-2023")
 dev.off()
 # x11()
-file_path <- "res/fig/soc-stock-spatial-temporal-distribution.png"
+file_path <- "res/fig/carbon-stock-spatial-temporal-distribution-brazil.png"
 png(file_path, width = 480 * 5, height = 480, res = 72 * 2)
 par(mar = rep(1.9, 4), mfrow = c(1, 5))
 for (i in 1:5) {
@@ -160,13 +156,14 @@ for (i in 1:5) {
   idx <- which(soildata_sf[["year"]] >= time_slices[i] &
     soildata_sf[["year"]] < time_slices[i + 1])
   plot(soildata_sf[idx, "soc_stock_g_m2"], add = TRUE, cex = 0.5, col = "firebrick")
+  prettymapr::addscalebar(plotunit = "latlon", plotepsg = 4326, pos = "bottomright")
 }
 dev.off()
 
 # FACT SHEET: Temporal distribution of samples per time slice (barplot)
 dev.off()
-file_path <- "res/fig/soc-stock-temporal-distribution-fact-sheet.png"
-png(file_path, width = 480 * 3, height = 480 * 3, res = 72 * 3)
+file_path <- "res/fig/carbon-stock-temporal-distribution-brazil-fact-sheet.png"
+png(file_path, width = 480 * 3, height = 480 * 3, res = 72 * 3, bg = "transparent")
 # x11()
 year_hist <- cut(soildata[, year], breaks = time_slices, labels = time_main)
 year_hist <- table(year_hist)
@@ -178,6 +175,7 @@ bp <- barplot(year_hist,
 )
 text(bp, year_hist, labels = year_hist, pos = 1, cex = 1, col = "white")
 dev.off()
+print(year_hist)
 
 # Distribution of soil organic carbon stock data by biome
 # Intersect soildata with biomes
@@ -185,8 +183,8 @@ soildata_sf <- sf::st_join(soildata_sf, biomes[, "name_biome"])
 # Create a table with the number of samples per biome
 biome_hist <- table(soildata_sf[["name_biome"]])
 dev.off()
-file_path <- "res/fig/soc-stock-biome-distribution-fact-sheet.png"
-png(file_path, width = 480 * 4, height = 480 * 3, res = 72 * 3)
+file_path <- "res/fig/carbon-stock-biome-distribution-brazil-fact-sheet.png"
+png(file_path, width = 480 * 4, height = 480 * 3, res = 72 * 3, bg = "transparent")
 # x11()
 par(mar = c(5, 4, 2, 2) + 0.1)
 bp <- barplot(biome_hist,
@@ -196,7 +194,9 @@ bp <- barplot(biome_hist,
 )
 text(bp, biome_hist, labels = biome_hist, pos = 3, cex = 1)
 dev.off()
+print(biome_hist)
 
+# Compute statistics
 # Samples per mapped year
 # ~325 amostras por ano mapeado (a maioria foi coletada antes de 1985)
 12667 / (2023 - 1984)
@@ -206,10 +206,16 @@ dev.off()
 12667 / 8510000 * 1000
 
 # Areal density of points per biome
-# O Pampa tem a maior densidade amostral (5,1 amostras/mil km2) e o Pantanal a menor (0,6 amostras/mil km2)
+# O Pampa tem a maior densidade amostral (5,1 amostras/mil km2) e 
+# o Pantanal a menor (0,6 amostras/mil km2)
 biome_area <- sf::st_area(biomes) / (1000 * 1000 * 1000)
 biome_density <- round(c(biome_hist) / biome_area, 1)
 t(biome_density)
+
+
+
+
+
 
 # Avaliar distribuição por bioma
 biomes$name_biome <- gsub(" ", "-", biomes$name_biome)
