@@ -335,6 +335,9 @@ legend("topright",
 dev.off()
 
 # Replicate instances with high SOC stock, creating new nearby instances
+# This was originaly implemented before the quantile mapping. So, the instances with high SOC stock
+# are not necessarily the same now.
+
 # MATA ATLÂNTICA
 # 68000 g/m^2
 # x11()
@@ -712,9 +715,9 @@ summary_soildata(soc_data)
 # Events: 12667
 # Georeferenced events: 12667
 
-# Drop unwanted columns and set column order
-soc_data[, name_biome := NULL]
+# Select columns and set order
 soc_data <- soc_data[, .(id, coord_x, coord_y, year, soc_stock_g_m2)]
+soc_data[, soc_stock_g_m2 := round(soc_stock_g_m2)]
 
 # Plot with mapview
 if (FALSE) {
@@ -739,6 +742,7 @@ if (!identical(last_soc_data, soc_data)) {
   file_path <- paste0(folder_path, format(Sys.time(), "%Y-%m-%d"), file_name)
   file_path <- path.expand(file_path)
   data.table::fwrite(soc_data, file_path)
+  cat("Done!\n")
 }
 
 
