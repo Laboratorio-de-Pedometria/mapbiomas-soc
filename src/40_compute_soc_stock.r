@@ -14,6 +14,10 @@ if (!require("sf")) {
 if (!require("geobr")) {
   install.packages("geobr")
 }
+if (!require("qmap")) {
+  install.packages("qmap")
+  library(qmap)
+}
 
 # Source helper functions
 source("src/00_helper_functions.r")
@@ -173,6 +177,162 @@ soc_data_sf <- sf::st_as_sf(soc_data, coords = c("coord_x", "coord_y"), crs = 43
 soc_data_sf <- sf::st_join(soc_data_sf, biome)
 soc_data[, name_biome := soc_data_sf$name_biome]
 rm(soc_data_sf)
+
+# National Forest Inventory (NFI)
+# Identify the events that are part of the NFI:
+# - their id starts with ctb0053, ctb0055, ctb0056, ctb0057, ctb0058, ctb0059, ctb0060, or ctb0061
+soc_data[, nfi := grepl("^ctb0053|^ctb005[5-9]|^ctb006[0-1]", id)]
+# Compare the SOC stock between the NFI and non-NFI samples
+# For the NFI samples, the median SOC stock is higher than for the non-NFI samples in all biomes.
+# Differences are statistically significant in the Amazon, Atlantic Forest, and Caatinga. The
+# difference is not statistically significant in the Cerrado, but the confidence interval is very
+# wide for the NFI samples. There are no NFI samples in the Pampa and Pantanal biomes.
+dev.off()
+file_path <- "res/fig/40-soc_stock_boxplot_nfi_biome.png"
+png(file_path, width = 480 * 3, height = 480 * 2, res = 72 * 2)
+boxplot(
+  soc_stock_g_m2 ~ nfi + name_biome, soc_data,
+  col = c("lightgreen", "lightyellow"),
+  ylab = "Soil organic carbon stock (g/m^2)", cex.axis = 0.8, ylim = c(0, 20000)
+)
+legend("topright",
+  legend = c("Non-NFI", "NFI"),
+  fill = c("lightgreen", "lightyellow"), cex = 0.8
+)
+dev.off()
+# The SOC stock of NFI samples are skewed to the right. The skew is stronger for large SOC stocks.
+# We employ quantile mapping to correct the skewness of the NFI samples.
+
+# Quantile mapping
+# The quantile mapping is performed for the NFI samples in each biome. The quantiles of the SOC
+# stock of the NFI samples are matched to the quantiles of the SOC stock of the non-NFI samples.
+amazon_qmap <- qmap::fitQmap(
+  obs = soc_data[name_biome == "Amazônia" & soc_data$nfi == FALSE, "soc_stock_g_m2"],
+  mod = soc_data[name_biome == "Amazônia" & soc_data$nfi == TRUE, "soc_stock_g_m2"],
+  method = "PTF", wet.day = FALSE, transfun = "power"
+)
+amazon_qmap <- qmap::doQmap(
+  soc_data[name_biome == "Amazônia" & nfi == TRUE, soc_stock_g_m2], amazon_qmap
+)
+range(amazon_qmap)
+# x11()
+# par(mfrow = c(1, 3))
+# ylim <- extendrange(soc_data[name_biome == "Amazônia", "soc_stock_g_m2"])
+# boxplot(
+#   soc_data[name_biome == "Amazônia" & nfi == FALSE, "soc_stock_g_m2"],
+#   ylim = ylim, sub = "Non-NFI", notch = TRUE
+# )
+# abline(h = median(amazon_qmap), col = "red", lty = "dashed")
+# boxplot(
+#   soc_data[name_biome == "Amazônia" & nfi == TRUE, "soc_stock_g_m2"],
+#   ylim = ylim, sub = "NFI", notch = TRUE
+# )
+# abline(h = median(amazon_qmap), col = "red", lty = "dashed")
+# mtext("Amazon", side = 3, line = 1, cex = 1.5)
+# boxplot(amazon_qmap, ylim = ylim, sub = "NFI (corrected)", notch = TRUE)
+# abline(h = median(amazon_qmap), col = "red", lty = "dashed")
+
+# Caatinga
+caatinga_qmap <- qmap::fitQmap(
+  obs = soc_data[name_biome == "Caatinga" & soc_data$nfi == FALSE, "soc_stock_g_m2"],
+  mod = soc_data[name_biome == "Caatinga" & soc_data$nfi == TRUE, "soc_stock_g_m2"],
+  method = "PTF", wet.day = FALSE, transfun = "scale"
+)
+caatinga_qmap <- qmap::doQmap(
+  soc_data[name_biome == "Caatinga" & nfi == TRUE, soc_stock_g_m2], caatinga_qmap
+)
+range(caatinga_qmap)
+# x11()
+# par(mfrow = c(1, 3))
+# ylim <- extendrange(soc_data[name_biome == "Caatinga", "soc_stock_g_m2"])
+# boxplot(
+#   soc_data[name_biome == "Caatinga" & nfi == FALSE, "soc_stock_g_m2"],
+#   ylim = ylim, sub = "Non-NFI", notch = TRUE
+# )
+# abline(h = median(caatinga_qmap), col = "red", lty = "dashed")
+# boxplot(
+#   soc_data[name_biome == "Caatinga" & nfi == TRUE, "soc_stock_g_m2"],
+#   ylim = ylim, sub = "NFI", notch = TRUE
+# )
+# abline(h = median(caatinga_qmap), col = "red", lty = "dashed")
+# mtext("Caatinga", side = 3, line = 1, cex = 1.5)
+# boxplot(caatinga_qmap, ylim = ylim, sub = "NFI (corrected)", notch = TRUE)
+# abline(h = median(caatinga_qmap), col = "red", lty = "dashed")
+
+# Cerrado
+cerrado_qmap <- qmap::fitQmap(
+  obs = soc_data[name_biome == "Cerrado" & soc_data$nfi == FALSE, "soc_stock_g_m2"],
+  mod = soc_data[name_biome == "Cerrado" & soc_data$nfi == TRUE, "soc_stock_g_m2"],
+  method = "PTF", wet.day = FALSE, transfun = "power"
+)
+cerrado_qmap <- qmap::doQmap(
+  soc_data[name_biome == "Cerrado" & nfi == TRUE, soc_stock_g_m2], cerrado_qmap
+)
+range(cerrado_qmap)
+# x11()
+# par(mfrow = c(1, 3))
+# ylim <- extendrange(soc_data[name_biome == "Cerrado", "soc_stock_g_m2"])
+# boxplot(
+#   soc_data[name_biome == "Cerrado" & nfi == FALSE, "soc_stock_g_m2"],
+#   ylim = ylim, sub = "Non-NFI", notch = TRUE
+# )
+# abline(h = median(cerrado_qmap), col = "red", lty = "dashed")
+# boxplot(
+#   soc_data[name_biome == "Cerrado" & nfi == TRUE, "soc_stock_g_m2"],
+#   ylim = ylim, sub = "NFI", notch = TRUE
+# )
+# abline(h = median(cerrado_qmap), col = "red", lty = "dashed")
+# mtext("Cerrado", side = 3, line = 1, cex = 1.5)
+# boxplot(cerrado_qmap, ylim = ylim, sub = "NFI (corrected)", notch = TRUE)
+# abline(h = median(cerrado_qmap), col = "red", lty = "dashed")
+
+# Mata Atlântica
+atlantica_qmap <- qmap::fitQmap(
+  obs = soc_data[name_biome == "Mata Atlântica" & soc_data$nfi == FALSE, "soc_stock_g_m2"],
+  mod = soc_data[name_biome == "Mata Atlântica" & soc_data$nfi == TRUE, "soc_stock_g_m2"],
+  method = "PTF", wet.day = FALSE, transfun = "power"
+)
+atlantica_qmap <- qmap::doQmap(
+  soc_data[name_biome == "Mata Atlântica" & nfi == TRUE, soc_stock_g_m2], atlantica_qmap
+)
+range(atlantica_qmap)
+# x11()
+# par(mfrow = c(1, 3))
+# ylim <- extendrange(soc_data[name_biome == "Mata Atlântica", "soc_stock_g_m2"])
+# boxplot(
+#   soc_data[name_biome == "Mata Atlântica" & nfi == FALSE, "soc_stock_g_m2"],
+#   ylim = ylim, sub = "Non-NFI", notch = TRUE
+# )
+# abline(h = median(atlantica_qmap), col = "red", lty = "dashed")
+# boxplot(
+#   soc_data[name_biome == "Mata Atlântica" & nfi == TRUE, "soc_stock_g_m2"],
+#   ylim = ylim, sub = "NFI", notch = TRUE
+# )
+# abline(h = median(atlantica_qmap), col = "red", lty = "dashed")
+# mtext("Mata Atlântica", side = 3, line = 1, cex = 1.5)
+# boxplot(atlantica_qmap, ylim = ylim, sub = "NFI (corrected)", notch = TRUE)
+# abline(h = median(atlantica_qmap), col = "red", lty = "dashed")
+
+# Map bias-corrected SOC stock
+soc_data[nfi == TRUE & name_biome == "Amazônia", soc_stock_g_m2 := amazon_qmap]
+soc_data[nfi == TRUE & name_biome == "Caatinga", soc_stock_g_m2 := caatinga_qmap]
+soc_data[nfi == TRUE & name_biome == "Cerrado", soc_stock_g_m2 := cerrado_qmap]
+soc_data[nfi == TRUE & name_biome == "Mata Atlântica", soc_stock_g_m2 := atlantica_qmap]
+
+# Save figure with the boxplot of SOC stock by biome and NFI status
+dev.off()
+file_path <- "res/fig/40-soc_stock_boxplot_nfi_biome_adjusted.png"
+png(file_path, width = 480 * 3, height = 480 * 2, res = 72 * 2)
+boxplot(
+  soc_stock_g_m2 ~ nfi + name_biome, soc_data,
+  col = c("lightgreen", "lightyellow"),
+  ylab = "Soil organic carbon stock (g/m^2)", cex.axis = 0.8, ylim = c(0, 20000)
+)
+legend("topright",
+  legend = c("Non-NFI", "NFI"),
+  fill = c("lightgreen", "lightyellow"), cex = 0.8
+)
+dev.off()
 
 # Replicate instances with high SOC stock, creating new nearby instances
 # MATA ATLÂNTICA
