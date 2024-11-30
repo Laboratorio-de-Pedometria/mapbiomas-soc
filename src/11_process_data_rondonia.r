@@ -7,12 +7,15 @@ rm(list = ls())
 # Load required packages
 if (!require("data.table")) {
   install.packages("data.table")
+  library("data.table")
 }
 if (!require("sf")) {
   install.packages("sf")
+  library("sf")
 }
 if (!require("geobr")) {
   install.packages("geobr")
+  library("geobr")
 }
 if (!require("febr")) {
   if (!require(remotes)) {
