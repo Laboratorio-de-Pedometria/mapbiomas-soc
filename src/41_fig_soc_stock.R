@@ -194,7 +194,7 @@ bp <- barplot(biome_hist,
 )
 text(bp, biome_hist, labels = biome_hist, pos = 3, cex = 1)
 dev.off()
-print(biome_hist)
+print(t(biome_hist))
 
 # Compute statistics
 # Samples per mapped year
@@ -211,6 +211,39 @@ print(biome_hist)
 biome_area <- sf::st_area(biomes) / (1000 * 1000 * 1000)
 biome_density <- round(c(biome_hist) / biome_area, 1)
 t(biome_density)
+
+# Frequency distribution per biome along the time axis
+# Generate a figure for each biome, showing the temporal distribution (boxplots) of samples
+soildata[, bioma := soildata_sf$name_biome]
+soildata[, soc_stock_t_ha := soc_stock_g_m2 / 100]
+soildata[, year1985 := ifelse(year < 1985, 1985, year)]
+# soildata <- soildata[bioma == "Pampa" & year1985 != 2007, ]
+for (i in unique(na.exclude(soildata$bioma))) {
+  idx_bio <- which(soildata$bioma == i)
+  file_path <- paste0("res/fig/carbon-stock-temporal-boxplot-", i, ".png")
+  png(file_path, width = 480 * 4, height = 480 * 3, res = 72 * 3)
+  # x11()
+  bp <- boxplot(soildata[idx_bio, soc_stock_t_ha ~ year1985], main = i)
+  grid()
+  abline(h = median(soildata[idx_bio, soc_stock_t_ha]), lty = "dashed", col = "firebrick")
+  abline(h = 30, lty = "dotted", col = "blue")
+  print(bp)
+  legend("topright", legend = c("Mediana histórica", "30 t/ha"), lty = c("dashed", "dotted"),
+    col = c("firebrick", "blue"))
+  dev.off()
+}
+
+# tmp <- read.csv("/home/alessandro/Downloads/ids_lulc_0.csv")
+# soildata <- soildata[!(id %in% tmp$ID), ]
+# tmp[, .(median(V1), median(year), .N), by = bioma]
+
+# x11()
+# boxplot(soc_stock_g_m2 ~ year, data = soildata[bioma == "Caatinga", ], main = "Caatinga")
+# abline(h = median(soildata[bioma == "Caatinga", soc_stock_g_m2]))
+
+# hist(soildata[bioma == "Caatinga", soc_stock_g_m2 / 100])
+# rug(soildata[bioma == "Caatinga", soc_stock_g_m2 / 100])
+
 
 
 
