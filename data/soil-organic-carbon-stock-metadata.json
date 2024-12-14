@@ -1,0 +1,567 @@
+{
+    "publicationDate": "2024-12-06",
+    "datasetVersion": {
+        "distributionDate": "2024-12-06",
+        "metadataBlocks": {
+            "citation": {
+                "displayName": "Citation Metadata",
+                "name": "citation",
+                "fields": [
+                    {
+                        "typeName": "title",
+                        "multiple": false,
+                        "typeClass": "primitive",
+                        "value": "Training Field Soil Data for Annual Mapping of Soil Organic Carbon Stock (0–30 cm) in Brazil, 1985–2023 (MapBiomas Soil Collection 2, Beta Version)"
+                    },
+                    {
+                        "typeName": "author",
+                        "multiple": true,
+                        "typeClass": "compound",
+                        "value": [
+                            {
+                                "authorName": {
+                                    "typeName": "authorName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "MapBiomas"
+                                },
+                                "authorAffiliation": {
+                                    "typeName": "authorAffiliation",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "MapBiomas"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "typeName": "datasetContact",
+                        "multiple": true,
+                        "typeClass": "compound",
+                        "value": [
+                            {
+                                "datasetContactName": {
+                                    "typeName": "datasetContactName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "MapBiomas"
+                                },
+                                "datasetContactAffiliation": {
+                                    "typeName": "datasetContactAffiliation",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "MapBiomas"
+                                },
+                                "datasetContactEmail": {
+                                    "typeName": "datasetContactEmail",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "contato@mapbiomas.org"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "typeName": "dsDescription",
+                        "multiple": true,
+                        "typeClass": "compound",
+                        "value": [
+                            {
+                                "dsDescriptionValue": {
+                                    "typeName": "dsDescriptionValue",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Collection of 12,575 georeferenced points containing field data used to train regression models for mapping soil organic carbon stock (0–30 cm) in Brazil. These data were utilized to prepare the annual maps of soil organic carbon stocks in Collection 2 of the MapBiomas Soil project, covering the period 1985–2023 (beta version). Each record includes spatial and temporal coordinates, the year of soil collection, and the soil organic carbon stock (grams per square meter) calculated for the 0–30 cm soil layer."
+                                },
+                                "dsDescriptionDate": {
+                                    "typeName": "dsDescriptionDate",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "2024-12-06"
+                                }
+                            },
+                            {
+                                "dsDescriptionValue": {
+                                    "typeName": "dsDescriptionValue",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "<b>Detailed description</b>: Soil data were collected from 262 studies published in the Brazilian soil data repository SoilData (<a href=\\\"https://soildata.mapbiomas.org\\\">https://soildata.mapbiomas.org</a>). After analysis, a total of 250 datasets was selected for the spatial-temporal modeling of soil organic carbon stock. These data represent 15,729 points distributed across Brazil, with information on 29,881 soil layers. Some properties, such as the amount of coarse fragments and soil density, were missing in many samples. These missing values were estimated using statistical models known as pedotransfer functions. After this step, 12,575 points and 19,028 layers from 236 datasets were considered suitable for the spatial-temporal modeling of soil organic carbon stock. To calculate the soil organic carbon stock, the percentage of coarse fragments (% by weight) was converted to volume (% by volume) using a density of 2.65 g/cm³. The soil organic carbon stock (g/m²) for each layer was then calculated using the following equation: carbon content × (1 - coarse fragments) × soil density × layer thickness. For sampling points with multiple layers up to 30 cm depth, the carbon stocks from each layer were summed to obtain the total soil organic carbon stock at the point.<br/><br/>The dataset includes the following columns:<ul><li><b>point_id:</b> An alphanumeric code that identifies the source dataset (\"ctb\" followed by four numbers, such as ctb0003) and the ID of the soil profile, observation, or sampling point (event) in that dataset.</li><li><b>latitude and longitude:</b> Decimal geographic coordinates in the WGS84 coordinate reference system (EPSG:4326).</li><li><b>year:</b> The year of soil collection in the field.</li><li><b>soc_stock_g_m2:</b> Soil organic carbon stock in grams per square meter (g/m²) in the 0–30 cm layer.</li></ul><br/>The code used to process the data is available at <a href=\\\"https://github.com/Laboratorio-de-Pedometria/mapbiomas-soc\\\">https://github.com/Laboratorio-de-Pedometria/mapbiomas-soc</a>."
+                                },
+                                "dsDescriptionDate": {
+                                    "typeName": "dsDescriptionDate",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "2024-12-06"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "typeName": "subject",
+                        "multiple": true,
+                        "typeClass": "controlledVocabulary",
+                        "value": [
+                            "Agricultural Sciences",
+                            "Earth and Environmental Sciences"
+                        ]
+                    },
+                    {
+                        "typeName": "keyword",
+                        "multiple": true,
+                        "typeClass": "compound",
+                        "value": [
+                            {
+                                "keywordValue": {
+                                    "typeName": "keywordValue",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Soil organic carbon"
+                                }
+                            },
+                            {
+                                "keywordValue": {
+                                    "typeName": "keywordValue",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Topsoil"
+                                }
+                            },
+                            {
+                                "keywordValue": {
+                                    "typeName": "keywordValue",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Brazilian biomes"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "typeName": "language",
+                        "multiple": true,
+                        "typeClass": "controlledVocabulary",
+                        "value": [
+                            "English",
+                            "Portuguese"
+                        ]
+                    },
+                    {
+                        "typeName": "contributor",
+                        "multiple": true,
+                        "typeClass": "compound",
+                        "value": [
+                            {
+                                "contributorType": {
+                                    "typeName": "contributorType",
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "value": "Project Leader"
+                                },
+                                "contributorName": {
+                                    "typeName": "contributorName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Ferreira, Laerte"
+                                }
+                            },
+                            {
+                                "contributorType": {
+                                    "typeName": "contributorType",
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "value": "Project Leader"
+                                },
+                                "contributorName": {
+                                    "typeName": "contributorName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Samuel-Rosa, Alessandro"
+                                }
+                            },
+                            {
+                                "contributorType": {
+                                    "typeName": "contributorType",
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "value": "Project Leader"
+                                },
+                                "contributorName": {
+                                    "typeName": "contributorName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Horst, Taciara Zborowski"
+                                }
+                            },
+                            {
+                                "contributorType": {
+                                    "typeName": "contributorType",
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "value": "Project Leader"
+                                },
+                                "contributorName": {
+                                    "typeName": "contributorName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Shimbo, Julia"
+                                }
+                            },
+                            {
+                                "contributorType": {
+                                    "typeName": "contributorType",
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "value": "Project Leader"
+                                },
+                                "contributorName": {
+                                    "typeName": "contributorName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Rosa, Marcos"
+                                }
+                            },
+                            {
+                                "contributorType": {
+                                    "typeName": "contributorType",
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "value": "Data Manager"
+                                },
+                                "contributorName": {
+                                    "typeName": "contributorName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Anjos, Marcos Alexandre dos"
+                                }
+                            },
+                            {
+                                "contributorType": {
+                                    "typeName": "contributorType",
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "value": "Project Manager"
+                                },
+                                "contributorName": {
+                                    "typeName": "contributorName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Huf dos Reis, Aline Mari"
+                                }
+                            },
+                            {
+                                "contributorType": {
+                                    "typeName": "contributorType",
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "value": "Data Collector"
+                                },
+                                "contributorName": {
+                                    "typeName": "contributorName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Kerber, Débora Liriel"
+                                }
+                            },
+                            {
+                                "contributorType": {
+                                    "typeName": "contributorType",
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "value": "Data Collector"
+                                },
+                                "contributorName": {
+                                    "typeName": "contributorName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Peruzzi, Vitor"
+                                }
+                            },
+                            {
+                                "contributorType": {
+                                    "typeName": "contributorType",
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "value": "Data Collector"
+                                },
+                                "contributorName": {
+                                    "typeName": "contributorName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Serena, Gabriele Vitória Silva"
+                                }
+                            },
+                            {
+                                "contributorType": {
+                                    "typeName": "contributorType",
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "value": "Data Collector"
+                                },
+                                "contributorName": {
+                                    "typeName": "contributorName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Pretto, Ana Caroline"
+                                }
+                            },
+                            {
+                                "contributorType": {
+                                    "typeName": "contributorType",
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "value": "Data Collector"
+                                },
+                                "contributorName": {
+                                    "typeName": "contributorName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Pontes, David Oliveira"
+                                }
+                            },
+                            {
+                                "contributorType": {
+                                    "typeName": "contributorType",
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "value": "Data Collector"
+                                },
+                                "contributorName": {
+                                    "typeName": "contributorName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Silva, Luciana da Luz"
+                                }
+                            },
+                            {
+                                "contributorType": {
+                                    "typeName": "contributorType",
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "value": "Data Collector"
+                                },
+                                "contributorName": {
+                                    "typeName": "contributorName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Cardoso, Marcos Vinícius Souza"
+                                }
+                            },
+                            {
+                                "contributorType": {
+                                    "typeName": "contributorType",
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "value": "Data Collector"
+                                },
+                                "contributorName": {
+                                    "typeName": "contributorName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Cardoso, Maria Eduarda Ferreira"
+                                }
+                            },
+                            {
+                                "contributorType": {
+                                    "typeName": "contributorType",
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "value": "Data Curator"
+                                },
+                                "contributorName": {
+                                    "typeName": "contributorName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Alencastro, Mary Evelyn Santos"
+                                }
+                            },
+                            {
+                                "contributorType": {
+                                    "typeName": "contributorType",
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "value": "Data Curator"
+                                },
+                                "contributorName": {
+                                    "typeName": "contributorName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Sobucki, Lisiane"
+                                }
+                            },
+                            {
+                                "contributorType": {
+                                    "typeName": "contributorType",
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "value": "Data Collector"
+                                },
+                                "contributorName": {
+                                    "typeName": "contributorName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Parizzi, Talita"
+                                }
+                            },
+                            {
+                                "contributorType": {
+                                    "typeName": "contributorType",
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "value": "Data Collector"
+                                },
+                                "contributorName": {
+                                    "typeName": "contributorName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Capoane, Viviane"
+                                }
+                            },
+                            {
+                                "contributorType": {
+                                    "typeName": "contributorType",
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "value": "Data Collector"
+                                },
+                                "contributorName": {
+                                    "typeName": "contributorName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Souza, Deórgia"
+                                }
+                            },
+                            {
+                                "contributorType": {
+                                    "typeName": "contributorType",
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "value": "Data Collector"
+                                },
+                                "contributorName": {
+                                    "typeName": "contributorName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Tornquist, Carlos Gustavo"
+                                }
+                            },
+                            {
+                                "contributorType": {
+                                    "typeName": "contributorType",
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "value": "Data Collector"
+                                },
+                                "contributorName": {
+                                    "typeName": "contributorName",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "Rocha, Anderson Sandro da"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "typeName": "distributionDate",
+                        "multiple": false,
+                        "typeClass": "primitive",
+                        "value": "2024-12-06"
+                    },
+                    {
+                        "typeName": "depositor",
+                        "multiple": false,
+                        "typeClass": "primitive",
+                        "value": "Samuel-Rosa, Alessandro"
+                    },
+                    {
+                        "typeName": "dateOfDeposit",
+                        "multiple": false,
+                        "typeClass": "primitive",
+                        "value": "2024-12-06"
+                    },
+                    {
+                        "typeName": "timePeriodCovered",
+                        "multiple": true,
+                        "typeClass": "compound",
+                        "value": [
+                            {
+                                "timePeriodCoveredStart": {
+                                    "typeName": "timePeriodCoveredStart",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "1958"
+                                },
+                                "timePeriodCoveredEnd": {
+                                    "typeName": "timePeriodCoveredEnd",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "2023"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "typeName": "dateOfCollection",
+                        "multiple": true,
+                        "typeClass": "compound",
+                        "value": [
+                            {
+                                "dateOfCollectionStart": {
+                                    "typeName": "dateOfCollectionStart",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "1958"
+                                },
+                                "dateOfCollectionEnd": {
+                                    "typeName": "dateOfCollectionEnd",
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "value": "2023"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "typeName": "kindOfData",
+                        "multiple": true,
+                        "typeClass": "primitive",
+                        "value": [
+                            "survey data",
+                            "geo-referenced data",
+                            "aggregated data",
+                            "compiled data"
+                        ]
+                    }
+                ]
+            },
+            "geospatial": {
+                "displayName": "Geospatial Metadata",
+                "name": "geospatial",
+                "fields": [
+                    {
+                        "typeName": "geographicCoverage",
+                        "multiple": true,
+                        "typeClass": "compound",
+                        "value": [
+                            {
+                                "country": {
+                                    "typeName": "country",
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "value": "Brazil"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "typeName": "geographicUnit",
+                        "multiple": true,
+                        "typeClass": "primitive",
+                        "value": [
+                            "Country"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}
