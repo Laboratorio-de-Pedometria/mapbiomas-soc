@@ -77,7 +77,37 @@ brazil <- sf::st_transform(brazil, crs = 4326)
 southamerica <- rnaturalearth::ne_countries(continent = c("south america", "europe"),
   returnclass = "sf", scale = "medium")
 southamerica <- southamerica[, "iso_a2"]
-# Save figure
+# Save figure in Portuguese and English
+lang <- c("pt", "en")
+main <- list(
+  pt = "Granulometria (argila, silte e areia)",
+  en = "Particle size distribution (clay, silt and sand)"
+)
+dev.off()
+for(i in seq_along(lang)) {
+  file_path <- paste0("res/fig/psd-spatial-distribution-", lang[i], ".png")
+  png(file_path, width = 480 * 3, height = 480 * 3, res = 72 * 3)
+  par(mar = rep(1.9, 4))
+  plot(brazil,
+    reset = FALSE, col = "transparent",
+    axes = TRUE, graticule = TRUE, lwd = 0.01,
+    main = ""
+  )
+  mtext(main[[i]], side = 3, line = 0.5, cex = 1.5, adj = 0)
+  plot(southamerica, reset = FALSE, col = "gray96", add = TRUE, lwd = 0.5)
+  plot(biomes["name_biome"], reset = FALSE,
+    main = "", axes = TRUE, col = "#eeece1", lwd = 0.5,
+    border = "gray69",
+    key.pos = NULL, graticule = TRUE, add = TRUE
+  )
+  plot(psd_data_sf["log_clay_sand"], reset = FALSE,
+    add = TRUE,
+    cex = 0.5, col = "dodgerblue4"
+  )
+  prettymapr::addscalebar(plotunit = "latlon", plotepsg = 4326, pos = "bottomright")
+  dev.off()  
+}
+
 dev.off()
 file_path <- "res/fig/psd-spatial-distribution.png"
 png(file_path, width = 480 * 3, height = 480 * 3, res = 72 * 3)
@@ -86,8 +116,9 @@ par(mar = rep(1.9, 4))
 plot(brazil,
   reset = FALSE, col = "transparent",
   axes = TRUE, graticule = TRUE, lwd = 0.01,
-  main = "Particle size fractions"
+  main = ""
 )
+mtext("a) Granulometria (argila, silte e areia)", side = 3, line = 0.5, cex = 1.5, adj = 0)
 plot(southamerica, reset = FALSE, col = "gray96", add = TRUE, lwd = 0.5)
 plot(biomes["name_biome"], reset = FALSE,
   main = "", axes = TRUE, col = "#eeece1", lwd = 0.5,
@@ -95,8 +126,7 @@ plot(biomes["name_biome"], reset = FALSE,
   key.pos = NULL, graticule = TRUE, add = TRUE)
 plot(psd_data_sf["log_clay_sand"], reset = FALSE,
   add = TRUE,
-  cex = 0.5, col = "firebrick4",
-  main = "Soil organic carbon stock"
+  cex = 0.5, col = "dodgerblue4"
 )
 prettymapr::addscalebar(plotunit = "latlon", plotepsg = 4326, pos = "bottomright")
 dev.off()
