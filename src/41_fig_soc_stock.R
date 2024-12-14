@@ -88,30 +88,34 @@ brazil <- sf::st_transform(brazil, crs = 4326)
 southamerica <- rnaturalearth::ne_countries(continent = c("south america", "europe"),
   returnclass = "sf", scale = "medium")
 southamerica <- southamerica[, "iso_a2"]
-# Save figure
-dev.off()
-file_path <- "res/fig/carbon-stock-spatial-distribution-brazil.png"
-png(file_path, width = 480 * 3, height = 480 * 3, res = 72 * 3)
-# x11()
-par(mar = rep(1.9, 4))
-plot(brazil,
-  reset = FALSE, col = "transparent",
-  axes = TRUE, graticule = TRUE, lwd = 0.01,
-  main = "Soil organic carbon stock"
+# Save figures in portuguese and english
+lang <- c("pt", "en")
+main <- list(
+  pt = "Estoque de carbono orgânico do solo",
+  en = "Soil organic carbon stock"
 )
-plot(southamerica, reset = FALSE, col = "gray96", add = TRUE, lwd = 0.5)
-plot(biomes["name_biome"], reset = FALSE,
-  main = "", axes = TRUE, col = "#eeece1", lwd = 0.5,
-  border = "gray69",
-  key.pos = NULL, graticule = TRUE, add = TRUE)
-plot(soildata_sf["soc_stock_g_m2"],
-  add = TRUE,
-  cex = 0.5,
-  col = "firebrick",
-  main = "Soil organic carbon stock"
-)
-prettymapr::addscalebar(plotunit = "latlon", plotepsg = 4326, pos = "bottomright")
 dev.off()
+for (i in seq_along(lang)) {
+  file_path <- paste0("res/fig/carbon-stock-spatial-distribution-brazil-", lang[i], ".png")
+  png(file_path, width = 480 * 3, height = 480 * 3, res = 72 * 3)
+  # x11()
+  par(mar = rep(1.9, 4))
+  plot(brazil,
+    reset = FALSE, col = "transparent",
+    axes = TRUE, graticule = TRUE, lwd = 0.01,
+    main = ""
+  )
+  mtext(main[[i]], side = 3, line = 0.5, cex = 1.5, adj = 0)
+  plot(southamerica, reset = FALSE, col = "gray96", add = TRUE, lwd = 0.5)
+  plot(biomes["name_biome"], reset = FALSE,
+    main = "", axes = TRUE, col = "#eeece1", lwd = 0.5,
+    border = "gray69",
+    key.pos = NULL, graticule = TRUE, add = TRUE
+  )
+  plot(soildata_sf["soc_stock_g_m2"], add = TRUE, cex = 0.5, col = "firebrick")
+  prettymapr::addscalebar(plotunit = "latlon", plotepsg = 4326, pos = "bottomright")
+  dev.off()
+}
 
 # FACT SHEET: Spatial distribution of sample points
 dev.off()

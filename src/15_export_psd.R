@@ -100,10 +100,7 @@ for(i in seq_along(lang)) {
     border = "gray69",
     key.pos = NULL, graticule = TRUE, add = TRUE
   )
-  plot(psd_data_sf["log_clay_sand"], reset = FALSE,
-    add = TRUE,
-    cex = 0.5, col = "dodgerblue4"
-  )
+  plot(psd_data_sf["log_clay_sand"], add = TRUE, cex = 0.5, col = "dodgerblue4")
   prettymapr::addscalebar(plotunit = "latlon", plotepsg = 4326, pos = "bottomright")
   dev.off()  
 }
