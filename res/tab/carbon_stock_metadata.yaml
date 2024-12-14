@@ -1,0 +1,100 @@
+# Description: Metadata for the carbon stock dataset
+
+license: CC BY 4.0
+
+# Citation Metadata
+title: Annual mapping of soil organic carbon stock in Brazil 1985-2021 (beta collection). Training field soil data
+alternativeURL: https://github.com/Laboratorio-de-Pedometria/mapbiomas-soc
+author:
+  - authorName: MapBiomas
+  - authorAffiliation: MapBiomas
+datasetContact:
+  - datasetContactName: MapBiomas
+  - datasetContactAffiliation: MapBiomas
+  - datasetContactEmail: contato@mapbiomas.org
+dsDescription:
+  - dsDescriptionValue1: Collection of 12,575 points containing field data used to train regression models for mapping soil organic carbon stock in Brazil. The data was used to prepare the annual maps of soil organic carbon stocks in Collection 2 of the MapBiomas Soil project. It includes spatial and temporal coordinates, as well as the soil organic carbon stock (grams per square meter) at each point, with measurements taken up to 30 cm in depth.
+  - dsDescriptionDate1: 2024-12-14
+  - dsDescriptionValue2: >
+    <b>Detailed description</b>. Soil data were collected from 262 studies published in the Brazilian soil data repository SoilData (<a href="https://soildata.mapbiomas.org">https://soildata.mapbiomas.org</a>). After analysis, a total of 250 datasets was selected for the spatial-temporal modeling of soil organic carbon stock. These data represent 15,729 points distributed across Brazil, with information on 29,881 soil layers. Some properties, such as the amount of coarse fragments and soil density, were missing in many samples. These missing values were estimated using statistical models known as pedotransfer functions. After this step, 12,575 points and 19,028 layers from 236 datasets were considered suitable for the spatial-temporal modeling of soil organic carbon stock. To calculate the soil organic carbon stock, the percentage of coarse fragments (% by weight) was converted to volume (% by volume) using a density of 2.65 g/cm³. The soil organic carbon stock (g/m²) for each layer was then calculated using the following equation: carbon content * (1 - coarse fragments) * soil density * layer thickness. For sampling points with multiple layers up to 30 cm depth, the carbon stocks from each layer were summed to obtain the total soil organic carbon stock at the point. The code used to process the data is available at <a href="https://github.com/Laboratorio-de-Pedometria/mapbiomas-soc">https://github.com/Laboratorio-de-Pedometria/mapbiomas-soc</a>.
+  - dsDescriptionDate2: 2024-12-14
+subject:
+  - Agricultural Sciences
+  - Earth and Environmental Sciences
+keyword:
+  - Soil organic carbon
+  - Topsoil
+  - Brazilian biomes
+language:
+  - English
+  - Portuguese
+contributor:
+  - contributorType1: Project Leader
+  - contributorName1: Ferreira, Laerte
+  - contributorType2: Project Leader
+  - contributorName2: Samuel-Rosa, Alessandro
+  - contributorType3: Project Leader
+  - contributorName4: Horst, Taciara Zborowski
+  - contributorType4: Project Leader
+  - contributorName4: Shimbo, Julia
+  - contributorType5: Project Leader
+  - contributorName5: Rosa, Marcos
+  - contributorType6: Data Manager
+  - contributorName6: Anjos, Marcos Alexandre dos
+  - contributorType7: Project Manager
+  - contributorName7: Huf dos Reis, Aline Mari
+  - contributorType8: Data Colector
+  - contributorName8: Kerber, Débora Liriel
+  - contributorType9: Data Colector
+  - contributorName9: Peruzzi, Vitor
+  - contributorType10: Data Colector
+  - contributorName10: Serena, Gabriele Vitória Silva
+  - contributorType11: Data Colector
+  - contributorName11: Pretto, Ana Caroline
+  - contributorType12: Data Colector
+  - contributorName12: Pontes, David Oliveira
+  - contributorType13: Data Colector
+  - contributorName13: Silva, Luciana da Luz
+  - contributorType14: Data Colector
+  - contributorName14: Cardoso, Marcos Vinicus Souza
+  - contributorType15: Data Colector
+  - contributorName15: Cardoso, Maria Eduarda Ferreira
+  - contributorType16: Data Curator
+  - contributorName16: Alencastro, Mary Evelyn Santos
+  - contributorType17: Data Curator
+  - contributorName17: Sobucki, Lisiane
+  - contributorType18: Data Colector
+  - contributorName18: Parizzi, Talita
+  - contributorType19: Data Colector
+  - contributorName19: Capoane, Viviane
+  - contributorType20: Data Colector
+  - contributorName20: Souza, Deórgia
+  - contributorType21: Data Colector
+  - contributorName21: Tornquist, Carlos Gustavo
+  - contributorType22: Data Colector
+  - contributorName22: Xavier, Guilherme
+distributionDate: 2024-12-06
+timePeriodCovered:
+  - timePeriodCoveredStart: 1957
+  - timePeriodCoveredEnd: 2023
+dateOfCollection:
+  - dateOfCollectionStart: 1957
+  - dateOfCollectionEnd: 2023
+kindOfData:
+  - survey data
+  - compiled data
+  - spatial data
+  - temporal data
+  - aggregated data
+
+# Geospatial Metadata
+geographicCoverage:
+  - country: Brazil
+geographicUnit: Country
+
+# files
+description: Complete data set of training field soil data covering the entire Brazilian territory
+label: soil-organic-carbon-stock-0-30-cm-grams-per-square-meter
+
+    
+    
