@@ -105,27 +105,23 @@ for(i in seq_along(lang)) {
   dev.off()  
 }
 
+# Figure for Dataverse thumbnail
+# Supported image types are JPG, TIF, or PNG and should be no larger than 500 KB.
+# The maximum display size for an image file as a dataset thumbnail is 48 pixels wide by 48 pixels
+# high.
 dev.off()
-file_path <- "res/fig/psd-spatial-distribution.png"
-png(file_path, width = 480 * 3, height = 480 * 3, res = 72 * 3)
-# x11()
-par(mar = rep(1.9, 4))
+file_path <- "res/fig/psd-spatial-distribution-brazil-thumbnail.png"
+png(file_path, width = 480, height = 480, res = 72)
+par(mar = rep(0, 4))
 plot(brazil,
   reset = FALSE, col = "transparent",
   axes = TRUE, graticule = TRUE, lwd = 0.01,
   main = ""
 )
-mtext("a) Granulometria (argila, silte e areia)", side = 3, line = 0.5, cex = 1.5, adj = 0)
-plot(southamerica, reset = FALSE, col = "gray96", add = TRUE, lwd = 0.5)
-plot(biomes["name_biome"], reset = FALSE,
-  main = "", axes = TRUE, col = "#eeece1", lwd = 0.5,
-  border = "gray69",
-  key.pos = NULL, graticule = TRUE, add = TRUE)
-plot(psd_data_sf["log_clay_sand"], reset = FALSE,
-  add = TRUE,
-  cex = 0.5, col = "dodgerblue4"
+plot(biomes["name_biome"], reset = FALSE, main = "", axes = FALSE, col = "#eeece1", lwd = 0.5,
+  border = "gray69", key.pos = NULL
 )
-prettymapr::addscalebar(plotunit = "latlon", plotepsg = 4326, pos = "bottomright")
+plot(psd_data_sf["log_clay_sand"], add = TRUE, cex = 0.5, col = "dodgerblue4")
 dev.off()
 
 # Drop unnecessary columns
