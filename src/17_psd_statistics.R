@@ -1,6 +1,6 @@
 # title: Compute statistics for PSD data
 # author: Alessandro Samuel-Rosa and Taciara Zborowski Horst
-# date: 2024 CC-BY
+# date: 2025 CC-BY
 rm(list = ls())
 
 ####################################################################################################
