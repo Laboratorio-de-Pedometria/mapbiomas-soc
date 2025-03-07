@@ -1,4 +1,4 @@
-# title: Publish processed data to SoilData (Dataverse)
+# title: Compute statistics for PSD data
 # author: Alessandro Samuel-Rosa and Taciara Zborowski Horst
 # date: 2024 CC-BY
 rm(list = ls())
