@@ -130,6 +130,47 @@ The main output locations are:
 
 **Note:** While this repository generates the harmonized training datasets, the final versions used for producing the official MapBiomas Soil maps (both the annual SOC maps and the 1990 texture maps) are typically curated and made publicly available via the SoilData repository (<https://soildata.mapbiomas.org/>). The data generated here represents the input prepared for that final stage.
 
+## Contributors
+
+This project benefited from the contributions of the following individuals:
+
+**Project Leaders:**
+
+*   Ferreira, Laerte
+*   Samuel-Rosa, Alessandro
+*   Horst, Taciara Zborowski
+*   Shimbo, Julia
+*   Rosa, Marcos
+*   Azevedo, Tasso
+
+**Data Managers:**
+
+*   Anjos, Marcos Alexandre dos
+*   Oliveira, Sergio
+*   Munsberg, Glauco
+
+**Data Curators:**
+
+*   Huf dos Reis, Aline Mari
+*   Alencastro, Mary Evelyn Santos
+*   Sobucki, Lisiane
+
+**Data Collectors:**
+
+*   Kerber, Débora Liriel
+*   Peruzzi, Vitor
+*   Serena, Gabriele Vitória Silva
+*   Pretto, Ana Caroline
+*   Pontes, David Oliveira
+*   Silva, Luciana da Luz
+*   Cardoso, Marcos Vinícius Souza
+*   Cardoso, Maria Eduarda Ferreira
+*   Parizzi, Talita
+*   Capoane, Viviane
+*   Souza, Deórgia
+*   Tornquist, Carlos Gustavo
+*   Rocha, Anderson Sandro da
+
 ## License
 
 The source code in this repository is licensed under the MIT License - see the `LICENSE` file for details. In simple terms, this means you are generally free to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software, as long as you include the original copyright notice and license text.
