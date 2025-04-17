@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Status: Production](https://img.shields.io/badge/status-production-green.svg)](https://shields.io/)
-[![MapBiomas Soil Collection 2](https://img.shields.io/badge/MapBiomas%20Soil-Collection%202-blue.svg)](https://shields.io/)
+[![MapBiomas Soil Collection 2](https://img.shields.io/badge/MapBiomas%20Soil-Collection%202-blue.svg)](https://brasil.mapbiomas.org/metodo-mapbiomas-solo/)
 [![DOI SOC Data](https://img.shields.io/badge/DOI-10.60502%2FSoidData%2FSXCSDK-blue)](https://doi.org/10.60502/SoilData/SXCSDK)
 [![DOI Texture Data](https://img.shields.io/badge/DOI-10.60502%2FSoidData%2FP6R332-blue)](https://doi.org/10.60502/SoilData/P6R332)
 
