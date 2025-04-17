@@ -1,7 +1,0 @@
-data/*.txt
-data/*.rds
-data/*.json
-res/fig/*.png
-res/tab/*.txt
-tmp/*.csv
-res/fig/*.png
