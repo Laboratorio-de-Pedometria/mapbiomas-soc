@@ -187,4 +187,4 @@ Please also ensure you comply with the terms of use for any original input data 
 ## Support and Contributions
 
 *   **General Inquiries:** For questions about the overall MapBiomas Soil project, please use the main contact form: https://brasil.mapbiomas.org/contato/
-*   **Code-Specific Issues:** For questions, bug reports, or suggestions specifically related to the code in *this* repository, please open an issue on the [GitHub Issues](https://github.com/Laboratorio-de-Pedometria/mapbiomas-soc/issues) tab. While this project is primarily maintained by the MapBiomas Soil team, feedback via Issues is welcome.
+*   **Code-Specific Issues:** For questions, bug reports, or suggestions specifically related to the code in *this* repository, please open an issue on the [GitHub Issues](https://github.com/Laboratorio-de-Pedometria/mapbiomas-soil-train-prep/issues) tab. While this project is primarily maintained by the MapBiomas Soil team, feedback via Issues is welcome.
